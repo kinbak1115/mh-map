@@ -18,10 +18,10 @@ class MapApp {
 
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
-        this.currentColorType = 1;  // 新增的屬性：紀錄當前顏色類型
+        this.currentColorType = 1; // 新增的屬性：紀錄當前顏色類型
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+            attribution: '© CARTO'
         }).addTo(this.map);
 
         this.markers.addTo(this.map);
@@ -188,3 +188,11 @@ class MapApp {
 }
 
 const app = new MapApp();
+
+// markerColors 配置
+const markerColors = {
+    1: { color: 'red', iconUrl: 'path_to_red_icon.png' },
+    2: { color: 'blue', iconUrl: 'path_to_blue_icon.png' },
+    3: { color: 'green', iconUrl: 'path_to_green_icon.png' },
+    4: { color: 'orange', iconUrl: 'path_to_orange_icon.png' }
+};
