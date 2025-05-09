@@ -5,36 +5,36 @@
     <title>MH Now 古龍記錄地圖 - 蒲种</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-button {
-    font-size: 16px;
-    padding: 10px 16px;
-    margin: 4px 0;
-    width: 100%;
-    box-sizing: border-box;
-}
+        button {
+            font-size: 16px;
+            padding: 10px 16px;
+            margin: 4px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-select[multiple] {
-    font-size: 16px;
-    padding: 6px;
-    height: auto;
-}
+        select[multiple] {
+            font-size: 16px;
+            padding: 6px;
+            height: auto;
+        }
 
-/* 手機專用的調整 */
-@media (max-width: 600px) {
-    .leaflet-control-custom {
-        font-size: 16px;
-        padding: 12px;
-    }
+        /* 手機專用的調整 */
+        @media (max-width: 600px) {
+            .leaflet-control-custom {
+                font-size: 16px;
+                padding: 12px;
+            }
 
-    button {
-        font-size: 18px;
-        padding: 12px 20px;
-    }
+            button {
+                font-size: 18px;
+                padding: 12px 20px;
+            }
 
-    select[multiple] {
-        font-size: 18px;
-    }
-}
+            select[multiple] {
+                font-size: 18px;
+            }
+        }
 
         #map { height: 100vh; }
         .leaflet-control-custom {
@@ -44,6 +44,7 @@ select[multiple] {
             font-size: 14px;
             line-height: 1.5;
         }
+
         select[multiple] {
             width: 100%;
         }
@@ -64,27 +65,28 @@ select[multiple] {
         class MapApp {
             constructor() {
                 this.map = L.map('map');
-this.map.locate({ setView: true, maxZoom: 16 });
+                this.map.locate({ setView: true, maxZoom: 16 });
 
-this.map.on('locationfound', (e) => {
-    L.circle(e.latlng, {
-        radius: e.accuracy / 2,
-        color: 'blue',
-        fillOpacity: 0.2
-    }).addTo(this.map);
-});
+                this.map.on('locationfound', (e) => {
+                    L.circle(e.latlng, {
+                        radius: e.accuracy / 2,
+                        color: 'blue',
+                        fillOpacity: 0.2
+                    }).addTo(this.map);
+                });
 
-this.map.on('locationerror', (e) => {
-    alert("無法取得你的定位，使用預設地點。");
-    this.map.setView([3.0000, 101.6167], 14);
-});
+                this.map.on('locationerror', (e) => {
+                    alert("無法取得你的定位，使用預設地點。");
+                    this.map.setView([3.0000, 101.6167], 14);
+                });
 
                 this.markers = new L.FeatureGroup();
                 this.filteredTypes = [];
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-}).addTo(this.map);
+                    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+                }).addTo(this.map);
+
                 this.markers.addTo(this.map);
 
                 this.initControls();
@@ -195,24 +197,22 @@ this.map.on('locationerror', (e) => {
             }
 
             deleteMarker(button) {
-    const popup = button.closest('.leaflet-popup-content');
-    const name = popup.querySelector('b').textContent;
+                const popup = button.closest('.leaflet-popup-content');
+                const name = popup.querySelector('b').textContent;
 
-    // 取得目前 popup 綁定的 marker 位置
-    const popupElement = button.closest('.leaflet-popup');
-    const markerLatLng = app.map._popup._source.getLatLng();
+                // 取得目前 popup 綁定的 marker 位置
+                const popupElement = button.closest('.leaflet-popup');
+                const markerLatLng = app.map._popup._source.getLatLng();
 
-    this.markers.eachLayer(marker => {
-        if (
-            marker.data.name === name &&
-            marker.getLatLng().toString() === markerLatLng.toString()
-        ) {
-            this.markers.removeLayer(marker);
-        }
-    });
-    this.saveMarkers();
-
-
+                this.markers.eachLayer(marker => {
+                    if (
+                        marker.data.name === name &&
+                        marker.getLatLng().toString() === markerLatLng.toString()
+                    ) {
+                        this.markers.removeLayer(marker);
+                    }
+                });
+                this.saveMarkers();
             }
 
             saveMarkers() {
@@ -240,17 +240,4 @@ this.map.on('locationerror', (e) => {
                 this.filteredTypes = selectedTypes;
 
                 this.markers.eachLayer(marker => {
-                    const shouldShow = (selectedTypes.length === 0 || selectedTypes.includes(marker.data.type));
-                    if (shouldShow) {
-                        marker.addTo(this.map);
-                    } else {
-                        this.map.removeLayer(marker);
-                    }
-                });
-            }
-        }
-
-        const app = new MapApp();
-    </script>
-</body>
-</html>
+                    const shouldShow = (selectedTypes.length ===
