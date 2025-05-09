@@ -32,7 +32,22 @@
 
         class MapApp {
             constructor() {
-                this.map = L.map('map').setView([3.0000, 101.6167], 14);
+                this.map = L.map('map');
+this.map.locate({ setView: true, maxZoom: 16 });
+
+this.map.on('locationfound', (e) => {
+    L.circle(e.latlng, {
+        radius: e.accuracy / 2,
+        color: 'blue',
+        fillOpacity: 0.2
+    }).addTo(this.map);
+});
+
+this.map.on('locationerror', (e) => {
+    alert("無法取得你的定位，使用預設地點。");
+    this.map.setView([3.0000, 101.6167], 14);
+});
+
                 this.markers = new L.FeatureGroup();
                 this.filteredTypes = [];
 
