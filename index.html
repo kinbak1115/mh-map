@@ -97,7 +97,7 @@
                 const control = L.control({ position: 'topright' });
                 control.onAdd = () => {
                     const div = L.DomUtil.create('div', 'leaflet-control-custom');
-                    div.innerHTML = 
+                    div.innerHTML = `
                         <button onclick="app.toggleEditMode()" id="editBtn">新增標記</button><br><br>
                         <label>顯示顏色：</label><br>
                         <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
@@ -106,7 +106,7 @@
                             <option value="3">🟢 綠</option>
                             <option value="4">🟠 橙</option>
                         </select>
-                    ;
+                    `;
                     return div;
                 };
                 control.addTo(this.map);
@@ -137,7 +137,7 @@
             showMarkerForm(latlng) {
                 const input = prompt(
                     '輸入古龍資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(1-4), 備註\n顏色類型：1=紅 2=藍 3=綠 4=橙',
-                    古龍種, 現在, ${this.lastMarkerType}, 重要出沒點
+                    `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`
                 );
                 if (input) {
                     const [name, time, type, remark] = input.split(',').map(s => s.trim());
@@ -161,20 +161,20 @@
             }
 
             getPopupContent(data, latlng) {
-                return 
+                return `
                     <b style="color:${markerColors[data.type].color}">${data.name}</b><br>
                     時間: ${data.time}<br>
                     類型: ${markerColors[data.type].color}<br>
                     備註: ${data.remark}<br>
                     <button onclick='app.editMarker(${JSON.stringify({...data, latlng})})'>編輯</button>
                     <button onclick='app.deleteMarker(this)'>刪除</button>
-                ;
+                `;
             }
 
             editMarker(oldData) {
                 const input = prompt(
                     '編輯資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(1-4), 備註',
-                    ${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark}
+                    `${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark}`
                 );
                 if (input) {
                     const [name, time, type, remark] = input.split(',').map(s => s.trim());
