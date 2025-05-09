@@ -52,8 +52,26 @@
 <body>
     <div id="map"></div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
+        // Firebase 配置
+        const firebaseConfig = {
+            apiKey: "你的API金鑰",
+            authDomain: "你的專案ID.firebaseapp.com",
+            projectId: "你的專案ID",
+            storageBucket: "你的專案ID.appspot.com",
+            messagingSenderId: "你的發送者ID",
+            appId: "你的APP ID"
+        };
+
+        // 初始化 Firebase
+        const appFirebase = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
         const markerColors = {
             1: { color: 'red',    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' },
             2: { color: 'blue',   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png' },
@@ -89,8 +107,19 @@
                 this.markers.addTo(this.map);
 
                 this.initControls();
-                this.loadSavedMarkers();
                 this.initEventListeners();
+                this.checkLoginStatus();
+            }
+
+            checkLoginStatus() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.user = user;
+                        this.loadSavedMarkers();
+                    } else {
+                        alert('請先登入');
+                    }
+                });
             }
 
             initControls() {
@@ -224,14 +253,34 @@
                         ...marker.data
                     });
                 });
-                localStorage.setItem('mhnow_markers', JSON.stringify(saved));
+                // 儲存至 Firebase
+                if (this.user) {
+                    db.collection('users').doc(this.user.uid).set({
+                        markers: saved
+                    }).then(() => {
+                        console.log("標記已儲存至 Firebase！");
+                    }).catch((error) => {
+                        console.error("儲存標記時錯誤: ", error);
+                    });
+                }
             }
 
             loadSavedMarkers() {
-                const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-                saved.forEach(item => {
-                    this.addMarker([item.lat, item.lng], item);
-                });
+                if (this.user) {
+                    db.collection('users').doc(this.user.uid).get()
+                        .then(doc => {
+                            if (doc.exists) {
+                                const markers = doc.data().markers;
+                                markers.forEach(item => {
+                                    this.addMarker([item.lat, item.lng], item);
+                                });
+                                console.log("標記已載入！");
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("載入標記時錯誤: ", error);
+                        });
+                }
             }
 
             filterMarkersByTypes() {
@@ -251,6 +300,20 @@
         }
 
         const app = new MapApp();
+
+        // Google 登入按鈕
+        function googleSignIn() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).then((result) => {
+                const user = result.user;
+                console.log("登入成功:", user);
+                app.checkLoginStatus();
+            }).catch((error) => {
+                console.error("登入錯誤:", error);
+            });
+        }
     </script>
+
+    <button onclick="googleSignIn()">Google 登入</button>
 </body>
 </html>
