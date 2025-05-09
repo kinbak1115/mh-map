@@ -36,7 +36,9 @@
                 this.markers = new L.FeatureGroup();
                 this.filteredTypes = [];
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+}).addTo(this.map);
                 this.markers.addTo(this.map);
 
                 this.initControls();
@@ -147,15 +149,24 @@
             }
 
             deleteMarker(button) {
-                const popup = button.closest('.leaflet-popup-content');
-                const nameLine = popup.querySelector('b');
-                const name = nameLine.textContent;
-                this.markers.eachLayer(marker => {
-                    if (marker.data.name === name) {
-                        this.markers.removeLayer(marker);
-                    }
-                });
-                this.saveMarkers();
+    const popup = button.closest('.leaflet-popup-content');
+    const name = popup.querySelector('b').textContent;
+
+    // 取得目前 popup 綁定的 marker 位置
+    const popupElement = button.closest('.leaflet-popup');
+    const markerLatLng = app.map._popup._source.getLatLng();
+
+    this.markers.eachLayer(marker => {
+        if (
+            marker.data.name === name &&
+            marker.getLatLng().toString() === markerLatLng.toString()
+        ) {
+            this.markers.removeLayer(marker);
+        }
+    });
+    this.saveMarkers();
+
+
             }
 
             saveMarkers() {
