@@ -5,6 +5,37 @@
     <title>MH Now 古龍記錄地圖 - 蒲种</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
+button {
+    font-size: 16px;
+    padding: 10px 16px;
+    margin: 4px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+select[multiple] {
+    font-size: 16px;
+    padding: 6px;
+    height: auto;
+}
+
+/* 手機專用的調整 */
+@media (max-width: 600px) {
+    .leaflet-control-custom {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    button {
+        font-size: 18px;
+        padding: 12px 20px;
+    }
+
+    select[multiple] {
+        font-size: 18px;
+    }
+}
+
         #map { height: 100vh; }
         .leaflet-control-custom {
             padding: 10px;
