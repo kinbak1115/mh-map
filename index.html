@@ -1,12 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
   <title>MH Now 古龍記錄地圖 - 蒲种</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; }
     #map { height: 100vh; }
+
+    .leaflet-control-custom {
+      padding: 10px;
+      background: white;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+      font-size: 14px;
+      line-height: 1.5;
+    }
 
     button {
       font-size: 16px;
@@ -20,17 +27,9 @@
       font-size: 16px;
       padding: 6px;
       width: 100%;
-      height: auto;
     }
 
-    .leaflet-control-custom {
-      padding: 10px;
-      background: white;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
+    /* 手機優化 */
     @media (max-width: 600px) {
       .leaflet-control-custom {
         font-size: 16px;
@@ -52,21 +51,20 @@
       background-image: url('https://mhn.quest/icon/elder.png');
       background-size: cover;
       background-repeat: no-repeat;
-    }
-
-    .color-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 40px;
-      height: 40px;
-      opacity: 0.6;
       border-radius: 50%;
     }
 
-    .color-red { background-color: red; }
-    .color-blue { background-color: blue; }
-    .color-green { background-color: green; }
+    .color-red {
+      box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.6);
+    }
+
+    .color-blue {
+      box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.6);
+    }
+
+    .color-green {
+      box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.6);
+    }
   </style>
 </head>
 <body>
@@ -79,7 +77,7 @@
         this.map = L.map('map');
         this.map.locate({ setView: true, maxZoom: 16 });
 
-        this.map.on('locationfound', e => {
+        this.map.on('locationfound', (e) => {
           L.circle(e.latlng, {
             radius: e.accuracy / 2,
             color: 'blue',
@@ -92,18 +90,18 @@
           this.map.setView([3.0000, 101.6167], 14);
         });
 
+        this.markers = new L.FeatureGroup();
+        this.filteredTypes = [];
+        this.lastMarkerType = 1;
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
         }).addTo(this.map);
-
-        this.markers = new L.FeatureGroup().addTo(this.map);
-        this.editMode = false;
-        this.filteredTypes = [];
-        this.lastMarkerType = 0;
+        this.markers.addTo(this.map);
 
         this.initControls();
-        this.initEventListeners();
         this.loadSavedMarkers();
+        this.initEventListeners();
       }
 
       initControls() {
@@ -114,10 +112,10 @@
             <button onclick="app.toggleEditMode()" id="editBtn">新增標記</button><br><br>
             <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
-              <option value="0">🟤 原始</option>
               <option value="1">🔴 紅</option>
               <option value="2">🔵 藍</option>
               <option value="3">🟢 綠</option>
+              <option value="4">🟠 橙</option>
             </select>
           `;
           return div;
@@ -131,21 +129,15 @@
       }
 
       initEventListeners() {
-        this.map.on('click', e => {
-          if (this.editMode) {
-            this.showMarkerForm(e.latlng);
-          }
+        this.map.on('click', (e) => {
+          if (this.editMode) this.showMarkerForm(e.latlng);
         });
       }
 
-      getCustomIcon(type = 0) {
-        const colorClasses = ["", "color-red", "color-blue", "color-green"];
+      getCustomIcon(type = 1) {
+        const colorClasses = ["", "color-red", "color-blue", "color-green", ""];
         const colorClass = colorClasses[type];
-        const html = `
-          <div class="custom-icon">
-            <div class="color-overlay ${colorClass}"></div>
-          </div>
-        `;
+        const html = `<div class="custom-icon ${colorClass}"></div>`;
         return L.divIcon({
           html,
           className: "",
@@ -157,14 +149,14 @@
 
       showMarkerForm(latlng) {
         const input = prompt(
-          '輸入古龍資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(0-3), 備註\n顏色類型：0=原始, 1=紅, 2=藍, 3=綠',
-          `古龍種, 現在, ${this.lastMarkerType}, 出沒點`
+          '輸入古龍資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(1-4), 備註',
+          `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`
         );
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          this.lastMarkerType = markerType;
+          const markerType = Math.min(Math.max(parseInt(type) || this.lastMarkerType, 1), 4);
           this.addMarker(latlng, { name, time, type: markerType, remark });
+          this.lastMarkerType = markerType;
         }
       }
 
@@ -175,19 +167,19 @@
         }).bindPopup(this.getPopupContent(data, latlng));
 
         marker.data = data;
-
-        marker.on('click', () => {
-          if (!this.editMode) return;
-          marker.data.type = (marker.data.type + 1) % 4;
-          marker.setIcon(this.getCustomIcon(marker.data.type));
-          marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
-          this.saveMarkers();
-          this.filterMarkersByTypes();
-        });
-
+        marker.on('click', () => this.cycleMarkerColor(marker));
         marker.on('dragend', () => this.saveMarkers());
 
         this.markers.addLayer(marker);
+        this.saveMarkers();
+        this.filterMarkersByTypes();
+      }
+
+      cycleMarkerColor(marker) {
+        const nextType = marker.data.type % 3 + 1;
+        marker.data.type = nextType;
+        marker.setIcon(this.getCustomIcon(nextType));
+        marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
         this.saveMarkers();
         this.filterMarkersByTypes();
       }
@@ -196,7 +188,7 @@
         return `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
-          類型: ${["原始", "紅", "藍", "綠"][data.type]}<br>
+          類型: ${data.type}<br>
           備註: ${data.remark}<br>
           <button onclick='app.editMarker(${JSON.stringify({...data, latlng})})'>編輯</button>
           <button onclick='app.deleteMarker(this)'>刪除</button>
@@ -205,12 +197,13 @@
 
       editMarker(oldData) {
         const input = prompt(
-          '編輯資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(0-3), 備註',
+          '編輯資訊（用逗號分隔）:\n格式：名稱, 時間, 類型(1-4), 備註',
           `${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark}`
         );
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+          const markerType = Math.min(Math.max(parseInt(type) || 1, 1), 4);
+
           this.markers.eachLayer(marker => {
             if (marker.data.name === oldData.name &&
                 marker.getLatLng().toString() === L.latLng(oldData.latlng).toString()) {
@@ -226,9 +219,8 @@
 
       deleteMarker(button) {
         const markerLatLng = this.map._popup._source.getLatLng();
-        const name = button.closest('.leaflet-popup-content').querySelector('b').textContent;
         this.markers.eachLayer(marker => {
-          if (marker.data.name === name && marker.getLatLng().toString() === markerLatLng.toString()) {
+          if (marker.getLatLng().toString() === markerLatLng.toString()) {
             this.markers.removeLayer(marker);
           }
         });
@@ -255,13 +247,11 @@
       }
 
       filterMarkersByTypes() {
-        const selectedTypes = Array.from(document.getElementById('filterSelect').selectedOptions)
-          .map(opt => parseInt(opt.value));
-        this.filteredTypes = selectedTypes;
-
+        const selected = Array.from(document.getElementById('filterSelect').selectedOptions).map(opt => parseInt(opt.value));
+        this.filteredTypes = selected;
         this.markers.eachLayer(marker => {
-          const show = selectedTypes.length === 0 || selectedTypes.includes(marker.data.type);
-          if (show) {
+          const shouldShow = (selected.length === 0 || selected.includes(marker.data.type));
+          if (shouldShow) {
             marker.addTo(this.map);
           } else {
             this.map.removeLayer(marker);
