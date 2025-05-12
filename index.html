@@ -112,7 +112,7 @@
         const control = L.control({ position: 'topright' });
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.innerHTML = `
+          div.innerHTML = 
             <button onclick="app.toggleEditMode()" id="editBtn">新增標記</button><br><br>
             <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
@@ -125,7 +125,7 @@
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
-          `;
+          ;
           L.DomEvent.disableClickPropagation(div);
           return div;
         };
@@ -141,24 +141,22 @@ reader.onload = (event) => {
     const imported = JSON.parse(event.target.result);
     const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
 
-// 根據名稱與座標比對更新整個 marker 資料
-for (let i = 0; i < existing.length; i++) {
-  const marker = existing[i];
-  const match = imported.find(m =>
-    m.name === marker.name &&
-    Math.abs(m.lat - marker.lat) < 0.00001 &&
-    Math.abs(m.lng - marker.lng) < 0.00001
-  );
-  if (match) {
-    // 將匹配到的資料整個覆蓋進來（保留原來的座標）
-    Object.assign(marker, match);
-  }
-}
+    // 根據名稱與座標比對更新 type（顏色）
+    for (let i = 0; i < existing.length; i++) {
+      const marker = existing[i];
+      const match = imported.find(m =>
+        m.name === marker.name &&
+        Math.abs(m.lat - marker.lat) < 0.00001 &&
+        Math.abs(m.lng - marker.lng) < 0.00001
+      );
+      if (match) {
+        marker.type = match.type; // 只更新顏色
+      }
+    }
 
-localStorage.setItem('mhnow_markers', JSON.stringify(existing));
-alert('資料還原成功，將重新載入地圖。');
-location.reload();
-
+    localStorage.setItem('mhnow_markers', JSON.stringify(existing));
+    alert('顏色還原成功，將重新載入地圖。');
+    location.reload();
   } catch {
     alert('還原失敗，檔案格式錯誤。');
   }
@@ -188,7 +186,7 @@ location.reload();
         const size = 20 * scale;
         return L.divIcon({
           className: '',
-          html: `<div class="marker-border" style="
+          html: <div class="marker-border" style="
             background-image: url('${iconUrl}');
             background-size: contain; 
             background-repeat: no-repeat;
@@ -197,7 +195,7 @@ location.reload();
             width: ${size}px;
             height: ${size}px;
             clip-path: circle(48% at 50% 50%);
-          "></div>`,
+          "></div>,
           iconSize: [size, size],
           iconAnchor: [size / 2, size],
           popupAnchor: [0, -size]
@@ -214,7 +212,7 @@ location.reload();
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('輸入古龍資訊（名稱, 時間, 顏色(0-3), 備註）', `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`);
+        const input = prompt('輸入古龍資訊（名稱, 時間, 顏色(0-3), 備註）', 古龍種, 現在, ${this.lastMarkerType}, 重要出沒點);
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -245,14 +243,14 @@ location.reload();
       }
 
       getPopupContent(data, latlng) {
-        return `
+        return 
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
           <button onclick='app.editMarker(${JSON.stringify({ ...data, latlng })})'>編輯</button>
           <button onclick='app.deleteMarker(this)'>刪除</button>
-        `;
+        ;
       }
 
       cycleMarkerColor(marker) {
@@ -266,7 +264,7 @@ location.reload();
       }
 
       editMarker(oldData) {
-        const input = prompt('編輯資訊（名稱, 時間, 顏色(0-3), 備註）', `${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark}`);
+        const input = prompt('編輯資訊（名稱, 時間, 顏色(0-3), 備註）', ${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark});
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -346,7 +344,7 @@ location.reload();
         const blob = new Blob([saved], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `mhnow_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = mhnow_backup_${new Date().toISOString().slice(0, 10)}.json;
         a.click();
       }
 
