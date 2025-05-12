@@ -58,7 +58,6 @@
       transition: transform 0.2s ease;
     }
 
-    /* 新增版本顯示樣式 */
     #version {
       position: absolute;
       bottom: 10px;
@@ -74,9 +73,7 @@
 </head>
 <body>
   <div id="map"></div>
-
-  <!-- 新增版本顯示 -->
-  <div id="version">版本 1.0.0</div>
+  <div id="version">版本 1.0.1</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -140,6 +137,7 @@
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
+            <button onclick="app.importAllMarkers()">📂 匯入全部</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
@@ -152,31 +150,30 @@
           if (!file) return;
 
           const reader = new FileReader();
-reader.onload = (event) => {
-  try {
-    const imported = JSON.parse(event.target.result);
-    const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+          reader.onload = (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
 
-    // 根據名稱與座標比對更新 type（顏色）
-    for (let i = 0; i < existing.length; i++) {
-      const marker = existing[i];
-      const match = imported.find(m =>
-        m.name === marker.name &&
-        Math.abs(m.lat - marker.lat) < 0.00001 &&
-        Math.abs(m.lng - marker.lng) < 0.00001
-      );
-      if (match) {
-        marker.type = match.type; // 只更新顏色
-      }
-    }
+              for (let i = 0; i < existing.length; i++) {
+                const marker = existing[i];
+                const match = imported.find(m =>
+                  m.name === marker.name &&
+                  Math.abs(m.lat - marker.lat) < 0.00001 &&
+                  Math.abs(m.lng - marker.lng) < 0.00001
+                );
+                if (match) {
+                  marker.type = match.type;
+                }
+              }
 
-    localStorage.setItem('mhnow_markers', JSON.stringify(existing));
-    alert('顏色還原成功，將重新載入地圖。');
-    location.reload();
-  } catch {
-    alert('還原失敗，檔案格式錯誤。');
-  }
-};
+              localStorage.setItem('mhnow_markers', JSON.stringify(existing));
+              alert('顏色還原成功，將重新載入地圖。');
+              location.reload();
+            } catch {
+              alert('還原失敗，檔案格式錯誤。');
+            }
+          };
           reader.readAsText(file);
         });
       }
@@ -232,7 +229,7 @@ reader.onload = (event) => {
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          this.addMarker(latlng, { name, time, type: markerType, remark });
+          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng });
           this.lastMarkerType = markerType;
         }
       }
@@ -264,8 +261,6 @@ reader.onload = (event) => {
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
-          <button onclick='app.editMarker(${JSON.stringify({ ...data, latlng })})'>編輯</button>
-          <button onclick='app.deleteMarker(this)'>刪除</button>
         `;
       }
 
@@ -279,40 +274,12 @@ reader.onload = (event) => {
         this.updateMarkerScales();
       }
 
-      editMarker(oldData) {
-        const input = prompt('編輯資訊（名稱, 時間, 顏色(0-3), 備註）', `${oldData.name}, ${oldData.time}, ${oldData.type}, ${oldData.remark}`);
-        if (input) {
-          const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          this.markers.eachLayer(marker => {
-            if (marker.data.name === oldData.name &&
-                marker.getLatLng().toString() === L.latLng(oldData.latlng).toString()) {
-              marker.setIcon(this.getCustomIcon(markerType));
-              marker.setPopupContent(this.getPopupContent({ name, time, type: markerType, remark }, marker.getLatLng()));
-              marker.data = { name, time, type: markerType, remark };
-              this.saveMarkers();
-              this.filterMarkersByTypes();
-              this.updateMarkerScales();
-            }
-          });
-        }
-      }
-
-      deleteMarker(button) {
-        const marker = button.closest('.leaflet-popup').getAttribute('data-id');
-        this.markers.eachLayer(markerLayer => {
-          if (markerLayer._leaflet_id == marker) {
-            this.markers.removeLayer(markerLayer);
-            this.saveMarkers();
-            this.filterMarkersByTypes();
-            this.updateMarkerScales();
-          }
-        });
-      }
-
       saveMarkers() {
         const savedMarkers = [];
-        this.markers.eachLayer(marker => savedMarkers.push(marker.data));
+        this.markers.eachLayer(marker => {
+          const latlng = marker.getLatLng();
+          savedMarkers.push({ ...marker.data, lat: latlng.lat, lng: latlng.lng });
+        });
         localStorage.setItem('mhnow_markers', JSON.stringify(savedMarkers));
       }
 
@@ -325,9 +292,12 @@ reader.onload = (event) => {
       }
 
       filterMarkersByTypes() {
-        const types = this.filteredTypes.length ? this.filteredTypes : [0, 1, 2, 3];
+        const select = document.getElementById('filterSelect');
+        const selected = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+        this.filteredTypes = selected.length ? selected : [0, 1, 2, 3];
+
         this.markers.eachLayer(marker => {
-          const isVisible = types.includes(marker.data.type);
+          const isVisible = this.filteredTypes.includes(marker.data.type);
           marker.setOpacity(isVisible ? 1 : 0);
         });
       }
@@ -346,7 +316,10 @@ reader.onload = (event) => {
       }
 
       backupMarkers() {
-        const backup = JSON.stringify(this.markers.getLayers().map(marker => marker.data));
+        const backup = JSON.stringify(this.markers.getLayers().map(marker => {
+          const latlng = marker.getLatLng();
+          return { ...marker.data, lat: latlng.lat, lng: latlng.lng };
+        }));
         const blob = new Blob([backup], { type: 'application/json' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -356,6 +329,33 @@ reader.onload = (event) => {
 
       restoreMarkers() {
         document.getElementById('restoreFile').click();
+      }
+
+      importAllMarkers() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none';
+        input.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              if (!Array.isArray(imported)) throw new Error();
+
+              localStorage.setItem('mhnow_markers', JSON.stringify(imported));
+              alert('已成功匯入所有標記，將重新載入地圖。');
+              location.reload();
+            } catch {
+              alert('匯入失敗，檔案格式錯誤。');
+            }
+          };
+          reader.readAsText(file);
+        });
+        input.click();
       }
     }
 
