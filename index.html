@@ -73,18 +73,12 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.0.1</div>
+  <div id="version">版本 1.0.2</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-
-    const markerColors = {
-      0: '',
-      1: 'red',
-      2: 'blue',
-      3: 'green'
-    };
+    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
 
     class MapApp {
       constructor() {
@@ -137,7 +131,7 @@
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
-            <button onclick="app.importAllMarkers()">📂 匯入全部</button>
+            <button onclick="app.importFromGitHub()">🌐 從 GitHub 匯入</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
@@ -154,7 +148,6 @@
             try {
               const imported = JSON.parse(event.target.result);
               const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-
               for (let i = 0; i < existing.length; i++) {
                 const marker = existing[i];
                 const match = imported.find(m =>
@@ -166,7 +159,6 @@
                   marker.type = match.type;
                 }
               }
-
               localStorage.setItem('mhnow_markers', JSON.stringify(existing));
               alert('顏色還原成功，將重新載入地圖。');
               location.reload();
@@ -176,6 +168,20 @@
           };
           reader.readAsText(file);
         });
+      }
+
+      importFromGitHub() {
+        const url = prompt('請輸入 GitHub raw JSON URL（例如：https://raw.githubusercontent.com/...）');
+        if (!url) return;
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (!Array.isArray(data)) throw new Error();
+            localStorage.setItem('mhnow_markers', JSON.stringify(data));
+            alert('匯入成功，即將重新載入地圖。');
+            location.reload();
+          })
+          .catch(() => alert('匯入失敗，請檢查網址與 JSON 格式。'));
       }
 
       toggleEditMode() {
@@ -277,8 +283,9 @@
       saveMarkers() {
         const savedMarkers = [];
         this.markers.eachLayer(marker => {
-          const latlng = marker.getLatLng();
-          savedMarkers.push({ ...marker.data, lat: latlng.lat, lng: latlng.lng });
+          const { name, time, type, remark } = marker.data;
+          const { lat, lng } = marker.getLatLng();
+          savedMarkers.push({ name, time, type, remark, lat, lng });
         });
         localStorage.setItem('mhnow_markers', JSON.stringify(savedMarkers));
       }
@@ -293,11 +300,10 @@
 
       filterMarkersByTypes() {
         const select = document.getElementById('filterSelect');
-        const selected = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
-        this.filteredTypes = selected.length ? selected : [0, 1, 2, 3];
-
+        this.filteredTypes = Array.from(select.selectedOptions).map(o => parseInt(o.value));
+        const types = this.filteredTypes.length ? this.filteredTypes : [0, 1, 2, 3];
         this.markers.eachLayer(marker => {
-          const isVisible = this.filteredTypes.includes(marker.data.type);
+          const isVisible = types.includes(marker.data.type);
           marker.setOpacity(isVisible ? 1 : 0);
         });
       }
@@ -316,10 +322,7 @@
       }
 
       backupMarkers() {
-        const backup = JSON.stringify(this.markers.getLayers().map(marker => {
-          const latlng = marker.getLatLng();
-          return { ...marker.data, lat: latlng.lat, lng: latlng.lng };
-        }));
+        const backup = JSON.stringify(this.markers.getLayers().map(marker => marker.data));
         const blob = new Blob([backup], { type: 'application/json' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -329,33 +332,6 @@
 
       restoreMarkers() {
         document.getElementById('restoreFile').click();
-      }
-
-      importAllMarkers() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.style.display = 'none';
-        input.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            try {
-              const imported = JSON.parse(event.target.result);
-              if (!Array.isArray(imported)) throw new Error();
-
-              localStorage.setItem('mhnow_markers', JSON.stringify(imported));
-              alert('已成功匯入所有標記，將重新載入地圖。');
-              location.reload();
-            } catch {
-              alert('匯入失敗，檔案格式錯誤。');
-            }
-          };
-          reader.readAsText(file);
-        });
-        input.click();
       }
     }
 
