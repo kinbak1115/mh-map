@@ -108,7 +108,9 @@
         this.updateMarkerScales();
       }
 
-initControls() {
+const VERSION = "1.0.0";
+
+function initControls() {
   const customControl = L.control({ position: "topright" });
   customControl.onAdd = function () {
     const div = L.DomUtil.create("div", "leaflet-bar");
@@ -129,7 +131,8 @@ initControls() {
     `;
     return div;
   };
-        control.addTo(this.map);
+  customControl.addTo(map);
+}
 
         document.getElementById('restoreFile').addEventListener('change', (e) => {
           const file = e.target.files[0];
@@ -352,7 +355,7 @@ reader.onload = (event) => {
         document.getElementById('restoreFile').click();
       }
     }
-    const VERSION = "1.0.0";
+
     const app = new MapApp();
   </script>
 </body>
