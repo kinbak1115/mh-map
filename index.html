@@ -57,10 +57,26 @@
       transform: scale(1);
       transition: transform 0.2s ease;
     }
+
+    /* 新增版本顯示樣式 */
+    #version {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- 新增版本顯示 -->
+  <div id="version">版本 1.0.0</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -283,69 +299,59 @@ reader.onload = (event) => {
       }
 
       deleteMarker(button) {
-        const popup = button.closest('.leaflet-popup-content');
-        const name = popup.querySelector('b').textContent;
-        const markerLatLng = this.map._popup._source.getLatLng();
-        this.markers.eachLayer(marker => {
-          if (marker.data.name === name && marker.getLatLng().toString() === markerLatLng.toString()) {
-            this.markers.removeLayer(marker);
+        const marker = button.closest('.leaflet-popup').getAttribute('data-id');
+        this.markers.eachLayer(markerLayer => {
+          if (markerLayer._leaflet_id == marker) {
+            this.markers.removeLayer(markerLayer);
+            this.saveMarkers();
+            this.filterMarkersByTypes();
+            this.updateMarkerScales();
           }
         });
-        this.saveMarkers();
       }
 
       saveMarkers() {
-        const saved = [];
-        this.markers.eachLayer(marker => {
-          saved.push({ lat: marker.getLatLng().lat, lng: marker.getLatLng().lng, ...marker.data });
-        });
-        localStorage.setItem('mhnow_markers', JSON.stringify(saved));
+        const savedMarkers = [];
+        this.markers.eachLayer(marker => savedMarkers.push(marker.data));
+        localStorage.setItem('mhnow_markers', JSON.stringify(savedMarkers));
       }
 
       loadSavedMarkers() {
-        const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-        saved.forEach(item => this.addMarker([item.lat, item.lng], item));
+        const savedMarkers = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+        savedMarkers.forEach(data => {
+          const latlng = L.latLng(data.lat, data.lng);
+          this.addMarker(latlng, data);
+        });
       }
 
       filterMarkersByTypes() {
-        const select = document.getElementById('filterSelect');
-        const selectedTypes = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
-        this.filteredTypes = selectedTypes;
+        const types = this.filteredTypes.length ? this.filteredTypes : [0, 1, 2, 3];
         this.markers.eachLayer(marker => {
-          const shouldShow = selectedTypes.length === 0 || selectedTypes.includes(marker.data.type);
-          if (shouldShow) {
-            marker.addTo(this.map);
-          } else {
-            this.map.removeLayer(marker);
-          }
+          const isVisible = types.includes(marker.data.type);
+          marker.setOpacity(isVisible ? 1 : 0);
         });
       }
 
       confirmResetColors() {
-        if (confirm('你確定要將所有標記恢復為原始色嗎？') &&
-            confirm('再次確認：這將把所有標記顏色改回原始。')) {
-          this.resetAllToDefault();
+        if (confirm('確定要將所有標記顏色還原為原始嗎？')) {
+          this.markers.eachLayer(marker => {
+            marker.data.type = 0;
+            marker.setIcon(this.getCustomIcon(0));
+            marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
+          });
+          this.saveMarkers();
+          this.filterMarkersByTypes();
+          this.updateMarkerScales();
         }
       }
 
-      resetAllToDefault() {
-        this.markers.eachLayer(marker => {
-          marker.data.type = 0;
-          marker.setIcon(this.getCustomIcon(0));
-          marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
-        });
-        this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
-      }
-
       backupMarkers() {
-        const saved = localStorage.getItem('mhnow_markers');
-        const blob = new Blob([saved], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `mhnow_backup_${new Date().toISOString().slice(0, 10)}.json`;
-        a.click();
+        const backup = JSON.stringify(this.markers.getLayers().map(marker => marker.data));
+        const blob = new Blob([backup], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'markers_backup.json';
+        link.click();
       }
 
       restoreMarkers() {
