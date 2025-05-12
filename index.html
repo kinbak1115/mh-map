@@ -141,22 +141,24 @@ reader.onload = (event) => {
     const imported = JSON.parse(event.target.result);
     const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
 
-    // 根據名稱與座標比對更新 type（顏色）
-    for (let i = 0; i < existing.length; i++) {
-      const marker = existing[i];
-      const match = imported.find(m =>
-        m.name === marker.name &&
-        Math.abs(m.lat - marker.lat) < 0.00001 &&
-        Math.abs(m.lng - marker.lng) < 0.00001
-      );
-      if (match) {
-        marker.type = match.type; // 只更新顏色
-      }
-    }
+// 根據名稱與座標比對更新整個 marker 資料
+for (let i = 0; i < existing.length; i++) {
+  const marker = existing[i];
+  const match = imported.find(m =>
+    m.name === marker.name &&
+    Math.abs(m.lat - marker.lat) < 0.00001 &&
+    Math.abs(m.lng - marker.lng) < 0.00001
+  );
+  if (match) {
+    // 將匹配到的資料整個覆蓋進來（保留原來的座標）
+    Object.assign(marker, match);
+  }
+}
 
-    localStorage.setItem('mhnow_markers', JSON.stringify(existing));
-    alert('顏色還原成功，將重新載入地圖。');
-    location.reload();
+localStorage.setItem('mhnow_markers', JSON.stringify(existing));
+alert('資料還原成功，將重新載入地圖。');
+location.reload();
+
   } catch {
     alert('還原失敗，檔案格式錯誤。');
   }
