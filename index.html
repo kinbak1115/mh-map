@@ -227,14 +227,14 @@
         });
       }
 
-      updateMarkerScales() {
-        const zoom = this.map.getZoom();
-        let scale = 1.0;
-        if (zoom >= 18) scale = 1.0;
-        else if (zoom === 17) scale = 0.9;
-        else if (zoom === 16) scale = 0.7;
-        else if (zoom === 15) scale = 0.5;
-        else scale = 0.3;
+updateMarkerScales() {
+  const zoom = this.map.getZoom();
+  let scale = 1.0;
+  if (zoom >= 18) scale = 2.0;
+  else if (zoom === 17) scale = 1.5;
+  else if (zoom === 16) scale = 1.0;
+  else if (zoom === 15) scale = 0.5;
+  else scale = 0.3;
 
         this.markers.eachLayer(marker => {
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
