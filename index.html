@@ -22,7 +22,7 @@
       .leaflet-control-custom {
         font-size: 16px;
         padding: 12px;
-        width: 100%; /* 滿版寬度 */
+        width: 100%;
       }
       button {
         font-size: 18px;
@@ -39,7 +39,7 @@
       box-shadow: 0 1px 5px rgba(0,0,0,0.4);
       font-size: 14px;
       line-height: 1.5;
-      width: 220px; /* 新增這一行來調整寬度 */
+      width: 220px;
     }
     .marker-border {
       border-radius: 50%;
@@ -68,11 +68,16 @@
     #zoomDisplay {
       bottom: 40px;
     }
+
+    /* 增加標記彈出視窗字體大小 */
+    .leaflet-popup-content {
+      font-size: 18px; /* 調整字體大小 */
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.9</div>
+  <div id="version">版本 1.2.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
