@@ -65,7 +65,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.3</div>
+  <div id="version">版本 1.1.1</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -99,7 +99,7 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
-        this.justAddedMarkerId = null;
+        this.editMode = false;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -167,6 +167,9 @@
       }
 
       importFromGitHub() {
+        if (!confirm('你確定要從 GitHub 匯入標記嗎？這將覆蓋當前資料。')) return;
+        if (!confirm('請再次確認：執行後將清除目前所有標記並替換為 GitHub 版本，確定繼續？')) return;
+
         const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
         fetch(url)
           .then(res => res.json())
@@ -183,6 +186,7 @@
         this.editMode = !this.editMode;
         document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '新增標記';
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
+        this.updateMarkerScales();
       }
 
       initEventListeners() {
@@ -228,9 +232,7 @@
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          const data = { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng };
-          const marker = this.addMarker(latlng, data);
-          this.justAddedMarkerId = marker._leaflet_id;
+          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng });
           this.lastMarkerType = markerType;
         }
       }
@@ -252,17 +254,15 @@
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
-        return marker;
       }
 
       getPopupContent(marker, data) {
-        const showDelete = marker._leaflet_id === this.justAddedMarkerId;
         return `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
-          ${showDelete ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
+          ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
         `;
       }
 
