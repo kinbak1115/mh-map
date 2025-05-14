@@ -50,9 +50,8 @@
       transform: scale(1);
       transition: transform 0.2s ease;
     }
-    #version {
+    #version, #zoomDisplay {
       position: absolute;
-      bottom: 10px;
       right: 10px;
       background-color: rgba(0, 0, 0, 0.7);
       color: white;
@@ -61,23 +60,18 @@
       border-radius: 5px;
       z-index: 1000;
     }
+    #version {
+      bottom: 10px;
+    }
     #zoomDisplay {
-      position: absolute;
-      bottom: 50px;
-      left: 10px;
-      background-color: rgba(255,255,255,0.9);
-      padding: 4px 8px;
-      font-size: 16px;
-      border-radius: 4px;
-      z-index: 1001;
-      pointer-events: none;
+      bottom: 40px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="version">版本 1.1.8</div>
-  <div id="zoomDisplay">Zoom: </div>
+  <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -121,17 +115,8 @@
         this.loadSavedMarkers();
         this.initEventListeners();
 
-        this.map.on('zoomend', () => {
-          this.updateMarkerScales();
-          this.updateZoomDisplay();
-        });
+        this.map.on('zoomend', () => this.updateMarkerScales());
         this.updateMarkerScales();
-        this.updateZoomDisplay();
-      }
-
-      updateZoomDisplay() {
-        const zoom = this.map.getZoom();
-        document.getElementById('zoomDisplay').textContent = 'Zoom: ' + zoom;
       }
 
       initControls() {
@@ -150,7 +135,7 @@
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
-            <button onclick="app.importFromGitHub()">🌐 匯入 GitHub 標記</button>
+            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
@@ -186,10 +171,15 @@
         });
       }
 
-      importFromGitHub() {
-        if (!confirm('確定要匯入 GitHub 標記？這會覆蓋現有標記。')) return;
-        if (!confirm('再次確認，匯入會清除現有資料。確定執行？')) return;
+      confirmImportFromGitHub() {
+        if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
+          if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
+            this.importFromGitHub();
+          }
+        }
+      }
 
+      importFromGitHub() {
         const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
         fetch(url)
           .then(res => res.json())
@@ -237,31 +227,22 @@
         });
       }
 
-updateMarkerScales() {
-  const zoom = this.map.getZoom();
-  let scale = 1.0;
-  if (zoom >= 18) {
-    scale = 1.0;
-  } else if (zoom === 17) {
-    scale = 0.9;
-  } else if (zoom === 16) {
-    scale = 0.7;
-  } else if (zoom === 15) {
-    scale = 0.5;
-  } else {
-    scale = 0.3;
-  }
+      updateMarkerScales() {
+        const zoom = this.map.getZoom();
+        let scale = 1.0;
+        if (zoom >= 18) scale = 1.0;
+        else if (zoom === 17) scale = 0.9;
+        else if (zoom === 16) scale = 0.7;
+        else if (zoom === 15) scale = 0.5;
+        else scale = 0.3;
 
-  this.markers.eachLayer(marker => {
-    marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-    marker.setPopupContent(this.getPopupContent(marker, marker.data));
-  });
+        this.markers.eachLayer(marker => {
+          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+          marker.setPopupContent(this.getPopupContent(marker, marker.data));
+        });
 
-  // 更新縮放顯示文字（如果有的話）
-  const zoomDisplay = document.getElementById('zoomDisplay');
-  if (zoomDisplay) zoomDisplay.textContent = `Zoom: ${zoom}`;
-}
-);
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        if (zoomDisplay) zoomDisplay.textContent = `Zoom: ${zoom}`;
       }
 
       showMarkerForm(latlng) {
@@ -294,16 +275,13 @@ updateMarkerScales() {
       }
 
       getPopupContent(marker, data) {
-        let content = `
+        return `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
+          ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
         `;
-        if (this.editMode) {
-          content += `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>`;
-        }
-        return content;
       }
 
       deleteMarker(id) {
