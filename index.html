@@ -65,7 +65,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.0.7</div>
+  <div id="version">版本 1.0.8</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -129,7 +129,7 @@
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
-<button onclick="app.importFromGitHub()">🌐 匯入 GitHub 標記</button>
+            <button onclick="app.importFromGitHub()">🌐 匯入 GitHub 標記</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
