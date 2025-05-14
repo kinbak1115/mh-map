@@ -22,6 +22,7 @@
       .leaflet-control-custom {
         font-size: 16px;
         padding: 12px;
+        width: 100%; /* 滿版寬度 */
       }
       button {
         font-size: 18px;
@@ -38,6 +39,7 @@
       box-shadow: 0 1px 5px rgba(0,0,0,0.4);
       font-size: 14px;
       line-height: 1.5;
+      width: 220px; /* 新增這一行來調整寬度 */
     }
     .marker-border {
       border-radius: 50%;
@@ -70,7 +72,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.8</div>
+  <div id="version">版本 1.1.9</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -227,14 +229,14 @@
         });
       }
 
-updateMarkerScales() {
-  const zoom = this.map.getZoom();
-  let scale = 1.0;
-  if (zoom >= 18) scale = 2.0;
-  else if (zoom === 17) scale = 1.3;
-  else if (zoom === 16) scale = 0.8;
-  else if (zoom === 15) scale = 0.5;
-  else scale = 0.3;
+      updateMarkerScales() {
+        const zoom = this.map.getZoom();
+        let scale = 1.0;
+        if (zoom >= 18) scale = 2.0;
+        else if (zoom === 17) scale = 1.3;
+        else if (zoom === 16) scale = 0.8;
+        else if (zoom === 15) scale = 0.5;
+        else scale = 0.3;
 
         this.markers.eachLayer(marker => {
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
