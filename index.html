@@ -61,23 +61,23 @@
       border-radius: 5px;
       z-index: 1000;
     }
-#zoomDisplay {
-  position: absolute;
-  bottom: 50px;
-  left: 10px;
-  background-color: rgba(255,255,255,0.9);
-  padding: 4px 8px;
-  font-size: 16px;
-  border-radius: 4px;
-  z-index: 999;
-  pointer-events: none;
-}
-
+    #zoomDisplay {
+      position: absolute;
+      bottom: 50px;
+      left: 10px;
+      background-color: rgba(255,255,255,0.9);
+      padding: 4px 8px;
+      font-size: 16px;
+      border-radius: 4px;
+      z-index: 1001;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.6</div>
+  <div id="version">版本 1.1.7</div>
+  <div id="zoomDisplay">Zoom: </div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -118,12 +118,20 @@
         this.markers.addTo(this.map);
 
         this.initControls();
-        this.initZoomDisplay();
         this.loadSavedMarkers();
         this.initEventListeners();
 
-        this.map.on('zoomend', () => this.updateMarkerScales());
+        this.map.on('zoomend', () => {
+          this.updateMarkerScales();
+          this.updateZoomDisplay();
+        });
         this.updateMarkerScales();
+        this.updateZoomDisplay();
+      }
+
+      updateZoomDisplay() {
+        const zoom = this.map.getZoom();
+        document.getElementById('zoomDisplay').textContent = 'Zoom: ' + zoom;
       }
 
       initControls() {
@@ -178,24 +186,9 @@
         });
       }
 
-      initZoomDisplay() {
-        const zoomControl = L.control({ position: 'bottomleft' });
-        zoomControl.onAdd = () => {
-          const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.id = 'zoomDisplay';
-          div.innerHTML = `Zoom: ${this.map.getZoom()}`;
-          return div;
-        };
-        zoomControl.addTo(this.map);
-
-        this.map.on('zoomend', () => {
-          document.getElementById('zoomDisplay').innerHTML = `Zoom: ${this.map.getZoom()}`;
-        });
-      }
-
       importFromGitHub() {
-        if (!confirm('確定要從 GitHub 匯入標記嗎？這將覆蓋現有標記。')) return;
-        if (!confirm('再次確認：是否匯入 GitHub 上的標記資料？')) return;
+        if (!confirm('確定要匯入 GitHub 標記？這會覆蓋現有標記。')) return;
+        if (!confirm('再次確認，匯入會清除現有資料。確定執行？')) return;
 
         const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
         fetch(url)
@@ -283,15 +276,16 @@
       }
 
       getPopupContent(marker, data) {
-        let html = `
+        let content = `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
-          備註: ${data.remark}<br>`;
+          備註: ${data.remark}<br>
+        `;
         if (this.editMode) {
-          html += `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>`;
+          content += `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>`;
         }
-        return html;
+        return content;
       }
 
       deleteMarker(id) {
