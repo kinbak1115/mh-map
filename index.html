@@ -65,7 +65,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.0.9</div>
+  <div id="version">版本 1.1.0</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -99,7 +99,6 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
-        this.lastClickedMarker = null;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -219,7 +218,7 @@
         const scale = Math.max(0.6, Math.min((zoom - 10) * 0.2, 2));
         this.markers.eachLayer(marker => {
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-          marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
+          marker.setPopupContent(this.getPopupContent(marker, marker.data));
         });
       }
 
@@ -240,22 +239,10 @@
         });
 
         marker.data = data;
-        marker.bindPopup(this.getPopupContent(data, latlng));
+        marker.bindPopup(this.getPopupContent(marker, data));
         marker.on('dragend', () => this.saveMarkers());
-
         marker.on('click', () => {
-          if (this.editMode) {
-            if (this.lastClickedMarker === marker) {
-              if (confirm(`刪除此標記：${marker.data.name}？`)) {
-                this.markers.removeLayer(marker);
-                this.saveMarkers();
-              }
-              this.lastClickedMarker = null;
-            } else {
-              this.cycleMarkerColor(marker);
-              this.lastClickedMarker = marker;
-            }
-          }
+          if (this.editMode) this.cycleMarkerColor(marker);
         });
 
         this.markers.addLayer(marker);
@@ -264,20 +251,29 @@
         this.updateMarkerScales();
       }
 
-      getPopupContent(data, latlng) {
+      getPopupContent(marker, data) {
         return `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
+          <button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>
         `;
+      }
+
+      deleteMarker(id) {
+        const marker = this.markers.getLayer(Number(id));
+        if (marker) {
+          this.markers.removeLayer(marker);
+          this.saveMarkers();
+        }
       }
 
       cycleMarkerColor(marker) {
         const nextType = (marker.data.type + 1) % 4;
         marker.data.type = nextType;
         marker.setIcon(this.getCustomIcon(nextType));
-        marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
+        marker.setPopupContent(this.getPopupContent(marker, marker.data));
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
@@ -312,7 +308,7 @@
           this.markers.eachLayer(marker => {
             marker.data.type = 0;
             marker.setIcon(this.getCustomIcon(0));
-            marker.setPopupContent(this.getPopupContent(marker.data, marker.getLatLng()));
+            marker.setPopupContent(this.getPopupContent(marker, marker.data));
           });
           this.saveMarkers();
           this.filterMarkersByTypes();
