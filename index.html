@@ -65,7 +65,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.4</div>
+  <div id="version">版本 1.1.5</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -99,7 +99,6 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
-        this.editMode = false;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -107,6 +106,7 @@
         this.markers.addTo(this.map);
 
         this.initControls();
+        this.initZoomDisplay();
         this.loadSavedMarkers();
         this.initEventListeners();
 
@@ -166,9 +166,24 @@
         });
       }
 
+      initZoomDisplay() {
+        const zoomControl = L.control({ position: 'bottomleft' });
+        zoomControl.onAdd = () => {
+          const div = L.DomUtil.create('div', 'leaflet-control-custom');
+          div.id = 'zoomDisplay';
+          div.innerHTML = `Zoom: ${this.map.getZoom()}`;
+          return div;
+        };
+        zoomControl.addTo(this.map);
+
+        this.map.on('zoomend', () => {
+          document.getElementById('zoomDisplay').innerHTML = `Zoom: ${this.map.getZoom()}`;
+        });
+      }
+
       importFromGitHub() {
-        if (!confirm('你確定要從 GitHub 匯入標記嗎？這將覆蓋當前資料。')) return;
-        if (!confirm('請再次確認：執行後將清除目前所有標記並替換為 GitHub 版本，確定繼續？')) return;
+        if (!confirm('確定要從 GitHub 匯入標記嗎？這將覆蓋現有標記。')) return;
+        if (!confirm('再次確認：是否匯入 GitHub 上的標記資料？')) return;
 
         const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
         fetch(url)
@@ -186,7 +201,6 @@
         this.editMode = !this.editMode;
         document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '新增標記';
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
-        this.updateMarkerScales();
       }
 
       initEventListeners() {
@@ -257,13 +271,15 @@
       }
 
       getPopupContent(marker, data) {
-        return `
+        let html = `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
-          備註: ${data.remark}<br>
-          ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
-        `;
+          備註: ${data.remark}<br>`;
+        if (this.editMode) {
+          html += `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>`;
+        }
+        return html;
       }
 
       deleteMarker(id) {
