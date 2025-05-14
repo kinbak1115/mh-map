@@ -5,8 +5,6 @@
   <title>MH Now 古龍記錄地圖 - 蒲种</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; }
-    #map { height: 100vh; }
     button {
       font-size: 16px;
       padding: 10px 16px;
@@ -33,12 +31,14 @@
         font-size: 18px;
       }
     }
+    #map { height: 100vh; }
     .leaflet-control-custom {
       padding: 10px;
       background: white;
       box-shadow: 0 1px 5px rgba(0,0,0,0.4);
       font-size: 14px;
       line-height: 1.5;
+      width: 220px;
     }
     .marker-border {
       border-radius: 50%;
@@ -61,24 +61,46 @@
       border-radius: 5px;
       z-index: 1000;
     }
-    #version { bottom: 10px; }
-    #zoomDisplay { bottom: 40px; }
+    #version {
+      bottom: 10px;
+    }
+    #zoomDisplay {
+      bottom: 40px;
+    }
+    .route-selected {
+      box-shadow: 0 0 8px 3px orange;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 2.0.1</div>
+  <div id="version">版本 2.0.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
+
+    const markerColors = {
+      0: '',
+      1: 'red',
+      2: 'blue',
+      3: 'green'
+    };
 
     class MapApp {
       constructor() {
         this.map = L.map('map');
         this.map.locate({ setView: true, maxZoom: 16 });
+
+        this.map.on('locationfound', (e) => {
+          L.circle(e.latlng, {
+            radius: e.accuracy / 2,
+            color: 'blue',
+            fillOpacity: 0.2
+          }).addTo(this.map);
+        });
+
         this.map.on('locationerror', () => {
           alert("無法取得你的定位，使用預設地點。");
           this.map.setView([3.0000, 101.6167], 14);
@@ -87,7 +109,7 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
-        this.selectedRoutePoints = [];
+        this.routePoints = [];
         this.routeLine = null;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -108,19 +130,20 @@
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
           div.innerHTML = `
-            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button><br>
-            <button onclick="app.planRouteFromSelected()">🚗 規劃路線</button><br>
-            <label>顯示顏色：</label>
+            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button><br><br>
+            <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
               <option value="0">⚪ 原始</option>
               <option value="1">🔴 紅</option>
               <option value="2">🔵 藍</option>
               <option value="3">🟢 綠</option>
-            </select><br>
-            <button onclick="app.confirmResetColors()">全部還原原始色</button><br>
+            </select><br><br>
+            <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
-            <input type="file" id="restoreFile" style="display:none" accept=".json">
+            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
+            <input type="file" id="restoreFile" style="display:none" accept=".json"><br><br>
+            <button onclick="app.drawRoute()">🚗 規劃開車路線</button>
           `;
           L.DomEvent.disableClickPropagation(div);
           return div;
@@ -134,11 +157,21 @@
           reader.onload = (event) => {
             try {
               const imported = JSON.parse(event.target.result);
-              localStorage.setItem('mhnow_markers', JSON.stringify(imported));
-              alert('還原成功，重新載入地圖。');
+              const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+              for (let i = 0; i < existing.length; i++) {
+                const marker = existing[i];
+                const match = imported.find(m =>
+                  m.name === marker.name &&
+                  Math.abs(m.lat - marker.lat) < 0.00001 &&
+                  Math.abs(m.lng - marker.lng) < 0.00001
+                );
+                if (match) marker.type = match.type;
+              }
+              localStorage.setItem('mhnow_markers', JSON.stringify(existing));
+              alert('顏色還原成功，將重新載入地圖。');
               location.reload();
             } catch {
-              alert('還原失敗，格式錯誤。');
+              alert('還原失敗，檔案格式錯誤。');
             }
           };
           reader.readAsText(file);
@@ -151,6 +184,14 @@
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
       }
 
+      initEventListeners() {
+        this.map.on('click', (e) => {
+          if (this.editMode) {
+            this.showMarkerForm(e.latlng);
+          }
+        });
+      }
+
       getCustomIcon(type = 0, scale = 1) {
         const borderColor = markerColors[type] || 'transparent';
         const size = 40 * scale;
@@ -158,6 +199,9 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
+            background-size: contain; 
+            background-repeat: no-repeat;
+            background-position: center;
             border-color: ${borderColor};
             width: ${size}px;
             height: ${size}px;
@@ -171,12 +215,20 @@
 
       updateMarkerScales() {
         const zoom = this.map.getZoom();
-        let scale = zoom >= 18 ? 2.0 : zoom === 17 ? 1.3 : zoom === 16 ? 0.8 : zoom === 15 ? 0.5 : 0.3;
+        let scale = 1.0;
+        if (zoom >= 18) scale = 2.0;
+        else if (zoom === 17) scale = 1.3;
+        else if (zoom === 16) scale = 0.8;
+        else if (zoom === 15) scale = 0.5;
+        else scale = 0.3;
+
         this.markers.eachLayer(marker => {
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
           marker.setPopupContent(this.getPopupContent(marker, marker.data));
         });
-        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
+
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        if (zoomDisplay) zoomDisplay.textContent = `Zoom: ${zoom}`;
       }
 
       showMarkerForm(latlng) {
@@ -189,77 +241,42 @@
         }
       }
 
-      getPopupContent(marker, data) {
-        const isChecked = this.selectedRoutePoints.includes(marker._leaflet_id);
-        return `
-          <b style="font-size:16px">${data.name}</b><br>
-          時間: ${data.time}<br>
-          類型: ${markerColors[data.type] || '原始'}<br>
-          備註: ${data.remark}<br>
-          <label><input type="checkbox" onchange="app.toggleRouteSelection(${marker._leaflet_id}, this.checked)" ${isChecked ? 'checked' : ''}> 加入路線</label><br>
-          ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
-        `;
-      }
-
-      toggleRouteSelection(id, checked) {
-        if (checked) {
-          if (!this.selectedRoutePoints.includes(id)) this.selectedRoutePoints.push(id);
-        } else {
-          this.selectedRoutePoints = this.selectedRoutePoints.filter(i => i !== id);
-        }
-      }
-
-      planRouteFromSelected() {
-        if (this.selectedRoutePoints.length < 2) {
-          alert("請選擇至少兩個點！");
-          return;
-        }
-        const coords = this.selectedRoutePoints.map(id => {
-          const m = this.markers.getLayer(id);
-          return [m.getLatLng().lng, m.getLatLng().lat];
-        });
-
-        fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
-          method: 'POST',
-          headers: {
-            'Authorization': '5b3ce3597851110001cf624888275cc4d89e470f966419278255df99',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ coordinates: coords })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (this.routeLine) this.map.removeLayer(this.routeLine);
-          this.routeLine = L.geoJSON(data, {
-            style: { color: 'orange', weight: 5 }
-          }).addTo(this.map);
-          this.map.fitBounds(this.routeLine.getBounds());
-        })
-        .catch(() => alert('規劃路線失敗，請稍後再試或檢查金鑰。'));
-      }
-
       addMarker(latlng, data) {
         const marker = L.marker(latlng, {
           draggable: this.editMode,
           icon: this.getCustomIcon(data.type)
         });
+
         marker.data = data;
         marker.bindPopup(this.getPopupContent(marker, data));
         marker.on('dragend', () => this.saveMarkers());
         marker.on('click', () => {
           if (this.editMode) this.cycleMarkerColor(marker);
         });
+
         this.markers.addLayer(marker);
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
       }
 
+      getPopupContent(marker, data) {
+        return `
+          <b style="font-size: 16px">${data.name}</b><br>
+          時間: ${data.time}<br>
+          類型: ${markerColors[data.type] || '原始'}<br>
+          備註: ${data.remark}<br>
+          ${this.editMode ? `
+            <button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button><br>
+            <button onclick="app.toggleRoutePoint(app.markers.getLayer(${marker._leaflet_id}))">🧭 加入路線</button>
+          ` : ''}
+        `;
+      }
+
       deleteMarker(id) {
         const marker = this.markers.getLayer(Number(id));
         if (marker) {
           this.markers.removeLayer(marker);
-          this.selectedRoutePoints = this.selectedRoutePoints.filter(mid => mid !== Number(id));
           this.saveMarkers();
         }
       }
@@ -272,6 +289,46 @@
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
+      }
+
+      toggleRoutePoint(marker) {
+        const idx = this.routePoints.indexOf(marker);
+        const el = marker.getElement();
+        if (idx > -1) {
+          this.routePoints.splice(idx, 1);
+          if (el) el.classList.remove('route-selected');
+        } else {
+          this.routePoints.push(marker);
+          if (el) el.classList.add('route-selected');
+        }
+      }
+
+      async drawRoute() {
+        if (this.routePoints.length < 2) {
+          alert('請至少選擇兩個標記來規劃路線');
+          return;
+        }
+        const coords = this.routePoints.map(m => [m.getLatLng().lng, m.getLatLng().lat]);
+        const body = { coordinates: coords, format: "geojson" };
+
+        try {
+          const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+            method: "POST",
+            headers: {
+              "Authorization": "5b3ce3597851110001cf624888275cc4d89e470f966419278255df99",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          const route = data.features[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          if (this.routeLine) this.map.removeLayer(this.routeLine);
+          this.routeLine = L.polyline(route, { color: "orange", weight: 5 }).addTo(this.map);
+          this.map.fitBounds(this.routeLine.getBounds());
+        } catch (err) {
+          alert("規劃路線失敗");
+          console.error(err);
+        }
       }
 
       saveMarkers() {
@@ -324,10 +381,25 @@
         document.getElementById('restoreFile').click();
       }
 
-      initEventListeners() {
-        this.map.on('click', (e) => {
-          if (this.editMode) this.showMarkerForm(e.latlng);
-        });
+      confirmImportFromGitHub() {
+        if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
+          if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
+            this.importFromGitHub();
+          }
+        }
+      }
+
+      importFromGitHub() {
+        const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (!Array.isArray(data)) throw new Error();
+            localStorage.setItem('mhnow_markers', JSON.stringify(data));
+            alert('成功從 GitHub 匯入標記，重新載入地圖。');
+            location.reload();
+          })
+          .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
     }
 
