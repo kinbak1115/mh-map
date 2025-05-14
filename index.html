@@ -76,7 +76,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.1.7</div>
+  <div id="version">版本 1.1.8</div>
   <div id="zoomDisplay">Zoom: </div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -237,13 +237,31 @@
         });
       }
 
-      updateMarkerScales() {
-        const zoom = this.map.getZoom();
-        const scale = Math.max(0.6, Math.min((zoom - 10) * 0.2, 2));
-        this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-          marker.setPopupContent(this.getPopupContent(marker, marker.data));
-        });
+updateMarkerScales() {
+  const zoom = this.map.getZoom();
+  let scale = 1.0;
+  if (zoom >= 18) {
+    scale = 1.0;
+  } else if (zoom === 17) {
+    scale = 0.9;
+  } else if (zoom === 16) {
+    scale = 0.7;
+  } else if (zoom === 15) {
+    scale = 0.5;
+  } else {
+    scale = 0.3;
+  }
+
+  this.markers.eachLayer(marker => {
+    marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+    marker.setPopupContent(this.getPopupContent(marker, marker.data));
+  });
+
+  // 更新縮放顯示文字（如果有的話）
+  const zoomDisplay = document.getElementById('zoomDisplay');
+  if (zoomDisplay) zoomDisplay.textContent = `Zoom: ${zoom}`;
+}
+);
       }
 
       showMarkerForm(latlng) {
