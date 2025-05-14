@@ -65,7 +65,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.0.8</div>
+  <div id="version">版本 1.0.9</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
@@ -99,6 +99,7 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
+        this.lastClickedMarker = null;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -241,8 +242,20 @@
         marker.data = data;
         marker.bindPopup(this.getPopupContent(data, latlng));
         marker.on('dragend', () => this.saveMarkers());
+
         marker.on('click', () => {
-          if (this.editMode) this.cycleMarkerColor(marker);
+          if (this.editMode) {
+            if (this.lastClickedMarker === marker) {
+              if (confirm(`刪除此標記：${marker.data.name}？`)) {
+                this.markers.removeLayer(marker);
+                this.saveMarkers();
+              }
+              this.lastClickedMarker = null;
+            } else {
+              this.cycleMarkerColor(marker);
+              this.lastClickedMarker = marker;
+            }
+          }
         });
 
         this.markers.addLayer(marker);
