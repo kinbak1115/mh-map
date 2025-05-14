@@ -74,33 +74,25 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 2.0.0</div>
+  <div id="version">版本 2.0.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-
-    const markerColors = {
-      0: '',
-      1: 'red',
-      2: 'blue',
-      3: 'green'
-    };
+    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
 
     class MapApp {
       constructor() {
         this.map = L.map('map');
         this.map.locate({ setView: true, maxZoom: 16 });
-
-        this.map.on('locationfound', (e) => {
+        this.map.on('locationfound', e => {
           L.circle(e.latlng, {
             radius: e.accuracy / 2,
             color: 'blue',
             fillOpacity: 0.2
           }).addTo(this.map);
         });
-
         this.map.on('locationerror', () => {
           alert("無法取得你的定位，使用預設地點。");
           this.map.setView([3.0000, 101.6167], 14);
@@ -150,11 +142,11 @@
         };
         control.addTo(this.map);
 
-        document.getElementById('restoreFile').addEventListener('change', (e) => {
+        document.getElementById('restoreFile').addEventListener('change', e => {
           const file = e.target.files[0];
           if (!file) return;
           const reader = new FileReader();
-          reader.onload = (event) => {
+          reader.onload = event => {
             try {
               const imported = JSON.parse(event.target.result);
               const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
@@ -185,7 +177,7 @@
       }
 
       initEventListeners() {
-        this.map.on('click', (e) => {
+        this.map.on('click', e => {
           if (this.editMode) {
             this.showMarkerForm(e.latlng);
           }
@@ -249,9 +241,14 @@
 
         marker.data = data;
         marker.bindPopup(this.getPopupContent(marker, data));
+
         marker.on('dragend', () => this.saveMarkers());
         marker.on('click', () => {
           if (this.editMode) this.cycleMarkerColor(marker);
+        });
+        marker.on('popupopen', () => {
+          const btn = document.querySelector(`.route-btn[data-id='${marker._leaflet_id}']`);
+          if (btn) btn.onclick = () => this.toggleRoutePoint(marker);
         });
 
         this.markers.addLayer(marker);
@@ -261,14 +258,15 @@
       }
 
       getPopupContent(marker, data) {
+        const id = marker._leaflet_id;
         return `
           <b style="font-size: 16px">${data.name}</b><br>
           時間: ${data.time}<br>
           類型: ${markerColors[data.type] || '原始'}<br>
           備註: ${data.remark}<br>
           ${this.editMode ? `
-            <button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button><br>
-            <button onclick="app.toggleRoutePoint(app.markers.getLayer(${marker._leaflet_id}))">🧭 加入路線</button>
+            <button onclick="app.deleteMarker('${id}')">🗑️ 刪除標記</button><br>
+            <button class="route-btn" data-id="${id}">🧭 加入路線</button>
           ` : ''}
         `;
       }
