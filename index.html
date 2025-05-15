@@ -151,8 +151,11 @@
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
           div.innerHTML = `
-            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
-            <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button><br>
+<div style="display:flex; gap: 4px; margin-bottom: 4px;">
+  <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+  <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+</div>
+
             <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
               <option value="0">⚪ 原始</option>
