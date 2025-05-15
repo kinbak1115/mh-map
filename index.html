@@ -54,15 +54,11 @@
     .marker-border {
       border-radius: 50%;
       border: 4px solid transparent;
-      background-size: contain;
+      width: 20px;
+      height: 20px;
+      background-size: cover;
       background-position: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      transition: transform 0.2s;
       clip-path: circle(50% at 50% 50%);
-    }
-
-    .marker-border:hover {
-      transform: scale(1.1);
     }
 
     #version, #zoomDisplay {
@@ -108,17 +104,13 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.3</div>
+  <div id="version">版本 2.1.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
-
-    // 預加載圖標
-    const preloadImage = new Image();
-    preloadImage.src = iconUrl;
 
     class MapApp {
       constructor() {
@@ -156,46 +148,6 @@
         this.map.on('zoomend', () => this.updateMarkerScales());
         this.updateMarkerScales();
       }
-
-      getCustomIcon(type = 0, scale = 1) {
-        const borderColor = markerColors[type] || 'transparent';
-        const baseSize = 266;
-        const scaledSize = baseSize * scale;
-        
-        return L.divIcon({
-          className: '',
-          html: `<div class="marker-border" style="
-            background-image: url('${iconUrl}');
-            border-color: ${borderColor};
-            width: ${scaledSize}px;
-            height: ${scaledSize}px;
-          "></div>`,
-          iconSize: [scaledSize, scaledSize],
-          iconAnchor: [scaledSize / 2, scaledSize / 2],
-          popupAnchor: [0, -scaledSize * 0.4]
-        });
-      }
-
-      updateMarkerScales() {
-        const zoom = this.map.getZoom();
-        let scale = 1.0;
-        
-        if (zoom >= 18) scale = 0.3;
-        else if (zoom === 17) scale = 0.25;
-        else if (zoom === 16) scale = 0.2;
-        else if (zoom === 15) scale = 0.15;
-        else scale = 0.1;
-
-        this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-        });
-
-        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
-      }
-
-      /* 其餘方法保持不變（initControls, addMarker, saveMarkers 等） */
-      /* 完整方法列表請參考之前的代碼，這裡為節省空間省略 */
-      /* 實際使用時請確保所有方法都包含 */
 
       initControls() {
         const control = L.control({ position: 'topright' });
@@ -262,40 +214,6 @@
         });
       }
 
-      addMarker(latlng, data) {
-        const marker = L.marker(latlng, {
-          draggable: this.editMode,
-          icon: this.getCustomIcon(data.type)
-        });
-
-        marker.data = data;
-        marker.on('dragend', () => this.saveMarkers());
-
-        const handler = () => {
-          this.selectedMarker = marker;
-          if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          } else if (this.routeSelecting) {
-            if (this.selectedMarkers.includes(marker)) {
-              this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-              marker.setOpacity(1);
-            } else {
-              this.selectedMarkers.push(marker);
-              marker.setOpacity(0.5);
-            }
-          } else {
-            this.updateInfoPanel(marker.data);
-          }
-        };
-
-        marker.on('click', handler);
-        marker.on('touchstart', handler);
-
-        this.markers.addLayer(marker);
-        this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
-      }
       updateInfoPanel(data) {
         const content = `
           <p><strong>${data.name}</strong></p>
@@ -329,7 +247,7 @@
             height: ${size}px;
           "></div>`,
           iconSize: [size, size],
-          iconAnchor: [size / 2, size],
+          iconAnchor: [size / 2, 1],
           popupAnchor: [0, -size]
         });
       }
@@ -470,32 +388,18 @@
         }
       }
 
-importFromGitHub() {
-  const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      if (!Array.isArray(data)) {
-        alert('GitHub 資料格式錯誤。');
-        return;
+      importFromGitHub() {
+        const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (!Array.isArray(data)) throw new Error();
+            localStorage.setItem('mhnow_markers', JSON.stringify(data));
+            alert('成功從 GitHub 匯入標記，重新載入地圖。');
+            location.reload();
+          })
+          .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
-      // 移除現有標記
-      this.markers.clearLayers();
-
-      // 存新資料到 localStorage 並重建標記
-      localStorage.setItem('mhnow_markers', JSON.stringify(data));
-      data.forEach(item => {
-        this.addMarker(L.latLng(item.lat, item.lng), item);
-      });
-
-      alert('成功從 GitHub 匯入標記！');
-    })
-    .catch(err => {
-      console.error(err);
-      alert('匯入失敗，無法從 GitHub 取得資料。');
-    });
-}
-
 
       toggleEditMode() {
         this.editMode = !this.editMode;
@@ -533,8 +437,7 @@ importFromGitHub() {
           () => alert('無法取得你的位置，請開啟定位權限')
         );
       }
-
- }
+    }
 
     const app = new MapApp();
   </script>
