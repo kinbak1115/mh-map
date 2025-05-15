@@ -8,9 +8,15 @@
     button {
       font-size: 16px;
       padding: 10px 16px;
-      margin: 4px;
-      width: calc(50% - 8px);
+      margin: 4px 0;
+      width: 100%;
       box-sizing: border-box;
+      flex: 1;
+    }
+    .flex-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
     }
     select[multiple] {
       font-size: 16px;
@@ -100,13 +106,19 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.0</div>
+  <div id="version">版本 2.1.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
+
+    const markerColors = {
+      0: '',
+      1: 'red',
+      2: 'blue',
+      3: 'green'
+    };
 
     class MapApp {
       constructor() {
@@ -151,35 +163,34 @@
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
           div.innerHTML = `
-<div style="display:flex; gap: 4px; margin-bottom: 4px;">
-  <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
-  <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
-</div>
+            <div class="flex-row">
+              <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+              <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+            </div>
 
-<label>顯示顏色：</label><br>
-<select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
-  <option value="0">⚪ 原始</option>
-  <option value="1">🔴 紅</option>
-  <option value="2">🔵 藍</option>
-  <option value="3">🟢 綠</option>
-</select><br><br>
+            <label>顯示顏色：</label><br>
+            <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+              <option value="0">⚪ 原始</option>
+              <option value="1">🔴 紅</option>
+              <option value="2">🔵 藍</option>
+              <option value="3">🟢 綠</option>
+            </select><br><br>
 
-<button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
+            <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
 
-<div style="display:flex; gap: 4px; margin-bottom: 4px;">
-  <button onclick="app.backupMarkers()">📤 備份</button>
-  <button onclick="app.restoreMarkers()">📥 還原</button>
-</div>
+            <div class="flex-row">
+              <button onclick="app.backupMarkers()">📤 備份</button>
+              <button onclick="app.restoreMarkers()">📥 還原</button>
+            </div>
 
-<button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
+            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
 
-<div style="display:flex; gap: 4px; margin-bottom: 4px;">
-  <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
-  <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
-</div>
+            <div class="flex-row">
+              <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+              <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+            </div>
 
-<input type="file" id="restoreFile" style="display:none" accept=".json">
-
+            <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
           return div;
@@ -226,7 +237,9 @@
 
       initEventListeners() {
         this.map.on('click', (e) => {
-          if (this.editMode) this.showMarkerForm(e.latlng);
+          if (this.editMode) {
+            this.showMarkerForm(e.latlng);
+          }
         });
       }
 
@@ -237,7 +250,7 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
-            background-size: contain;
+            background-size: contain; 
             background-repeat: no-repeat;
             background-position: center;
             border-color: ${borderColor};
@@ -285,9 +298,7 @@
         });
 
         marker.data = data;
-
         marker.on('dragend', () => this.saveMarkers());
-
         marker.on('click', () => {
           this.selectedMarker = marker;
           if (this.editMode) {
@@ -311,20 +322,6 @@
         this.updateMarkerScales();
       }
 
-      deleteSelectedMarker() {
-        if (!this.selectedMarker) {
-          alert("請先點選要刪除的標記");
-          return;
-        }
-
-        if (confirm("確定要刪除這個標記嗎？")) {
-          this.markers.removeLayer(this.selectedMarker);
-          this.selectedMarker = null;
-          this.saveMarkers();
-          document.getElementById('panelContent').textContent = '請點選地圖上的標記';
-        }
-      }
-
       cycleMarkerColor(marker) {
         const nextType = (marker.data.type + 1) % 4;
         marker.data.type = nextType;
@@ -334,11 +331,21 @@
         this.updateMarkerScales();
       }
 
+      deleteSelectedMarker() {
+        if (this.selectedMarker && this.editMode) {
+          if (confirm('確定刪除選中的標記？')) {
+            this.markers.removeLayer(this.selectedMarker);
+            this.selectedMarker = null;
+            this.saveMarkers();
+          }
+        } else {
+          alert('請先在編輯模式中點選要刪除的標記');
+        }
+      }
+
       saveMarkers() {
         const savedMarkers = [];
-        this.markers.eachLayer(marker =>
-          savedMarkers.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng })
-        );
+        this.markers.eachLayer(marker => savedMarkers.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
         localStorage.setItem('mhnow_markers', JSON.stringify(savedMarkers));
       }
 
@@ -408,7 +415,7 @@
 
       toggleEditMode() {
         this.editMode = !this.editMode;
-        document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '新增標記';
+        document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '編輯標記';
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
       }
 
