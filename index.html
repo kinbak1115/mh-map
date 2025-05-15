@@ -19,29 +19,43 @@
       width: 100%;
     }
     @media (max-width: 600px) {
-      .leaflet-control-custom {
-        font-size: 16px;
-        padding: 12px;
-        width: 100%;
-      }
-      button {
-        font-size: 18px;
-        padding: 12px 20px;
-      }
-      select[multiple] {
-        font-size: 18px;
-      }
-    }
-    #map { height: 100vh; }
+.leaflet-control-custom {
+  padding: 10px;
+  background: white;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+  font-size: 14px;
+  line-height: 1.5;
+  width: 220px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  box-sizing: border-box;
+}
 
-    .leaflet-control-custom {
-      padding: 10px;
-      background: white;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-      font-size: 14px;
-      line-height: 1.5;
-      width: 220px;
-    }
+button {
+  font-size: 16px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .leaflet-control-custom {
+    font-size: 16px;
+    padding: 12px;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  button {
+    font-size: 18px;
+    padding: 12px 10px;
+  }
+  select[multiple] {
+    font-size: 18px;
+  }
+}
+
 
     .marker-border {
       border-radius: 50%;
@@ -68,18 +82,20 @@
     #version { bottom: 10px; }
     #zoomDisplay { bottom: 40px; }
 
-    .info-panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 220px;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 14px;
-      z-index: 1000;
-    }
+.info-panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 240px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  z-index: 1000;
+  line-height: 1.6;
+}
+
 
     .info-panel h3 {
       margin: 0 0 8px;
