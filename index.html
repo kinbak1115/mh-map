@@ -7,9 +7,9 @@
   <style>
     button {
       font-size: 16px;
-      padding: 10px 16px;
-      margin: 4px 2px;
-      width: calc(50% - 4px);
+      padding: 8px 12px;
+      margin: 4px;
+      width: 47%;
       box-sizing: border-box;
     }
     select[multiple] {
@@ -26,7 +26,8 @@
       }
       button {
         font-size: 18px;
-        padding: 12px 20px;
+        padding: 10px 14px;
+        width: 47%;
       }
       select[multiple] {
         font-size: 18px;
@@ -41,18 +42,6 @@
       font-size: 14px;
       line-height: 1.5;
       width: 240px;
-    }
-
-    .marker-border {
-      border-radius: 50%;
-      border: 4px solid transparent;
-      width: 20px;
-      height: 20px;
-      background-size: cover;
-      background-position: center;
-      clip-path: circle(50% at 50% 50%);
-      transform: scale(1);
-      transition: transform 0.2s ease;
     }
 
     #version, #zoomDisplay {
@@ -72,9 +61,9 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 240px;
+      width: 260px;
       background: white;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       font-size: 16px;
@@ -89,10 +78,8 @@
 
     .info-panel p {
       margin: 6px 0;
-      line-height: 1.6;
+      font-size: 16px;
     }
-
-    .leaflet-popup-content { display: none; }
   </style>
 </head>
 <body>
@@ -101,48 +88,39 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.5</div>
+  <div id="version">版本 2.1.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // === 正確初始化 MapApp，並確保地圖加載成功 ===
-    window.onload = () => {
-      try {
-        const app = new MapApp(); // 確認 MapApp 正確初始化
+    const control = L.control({ position: 'topright' });
+    control.onAdd = () => {
+      const div = L.DomUtil.create('div', 'leaflet-control-custom');
+      div.innerHTML = `
+        <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+        <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+        
+        <button onclick="app.confirmResetColors()">全部還原原始色</button>
+        <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
 
-        // === 修正控制項的初始化 ===
-        const control = L.control({ position: 'topright' });
-        control.onAdd = () => {
-          const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.innerHTML = `
-            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
-            <button onclick="app.confirmResetColors()">還原原始色</button><br>
-            <button onclick="app.backupMarkers()">📤 備份</button>
-            <button onclick="app.restoreMarkers()">📥 還原</button><br>
-            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub</button>
-            <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button><br>
-            <button onclick="app.openGoogleRoute()">🗺️ Google 路線</button>
-            <input type="file" id="restoreFile" style="display:none" accept=".json">
-            <br><br>
-            <label>顯示顏色：</label><br>
-            <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
-              <option value="0">⚪ 原始</option>
-              <option value="1">🔴 紅</option>
-              <option value="2">🔵 藍</option>
-              <option value="3">🟢 綠</option>
-            </select>
-          `;
-          L.DomEvent.disableClickPropagation(div);
-          return div;
-        };
-        control.addTo(app.map);
+        <button onclick="app.backupMarkers()">📤 備份</button>
+        <button onclick="app.restoreMarkers()">📥 還原</button>
 
-      } catch (error) {
-        console.error("地圖初始化失敗: ", error.message);
-        alert("地圖載入失敗，請重新整理或檢查程式碼。");
-      }
-    }
+        <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
+        
+        <label>顯示顏色：</label>
+        <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+          <option value="0">⚪ 原始</option>
+          <option value="1">🔴 紅</option>
+          <option value="2">🔵 藍</option>
+          <option value="3">🟢 綠</option>
+        </select>
+        <input type="file" id="restoreFile" style="display:none" accept=".json">
+      `;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    };
+    control.addTo(app.map);
   </script>
 </body>
 </html>
