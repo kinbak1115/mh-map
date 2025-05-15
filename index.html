@@ -156,20 +156,30 @@
   <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
 </div>
 
-            <label>顯示顏色：</label><br>
-            <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
-              <option value="0">⚪ 原始</option>
-              <option value="1">🔴 紅</option>
-              <option value="2">🔵 藍</option>
-              <option value="3">🟢 綠</option>
-            </select><br><br>
-            <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
-            <button onclick="app.backupMarkers()">📤 備份</button>
-            <button onclick="app.restoreMarkers()">📥 還原</button><br>
-            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
-            <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
-            <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
-            <input type="file" id="restoreFile" style="display:none" accept=".json">
+<label>顯示顏色：</label><br>
+<select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+  <option value="0">⚪ 原始</option>
+  <option value="1">🔴 紅</option>
+  <option value="2">🔵 藍</option>
+  <option value="3">🟢 綠</option>
+</select><br><br>
+
+<button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
+
+<div style="display:flex; gap: 4px; margin-bottom: 4px;">
+  <button onclick="app.backupMarkers()">📤 備份</button>
+  <button onclick="app.restoreMarkers()">📥 還原</button>
+</div>
+
+<button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
+
+<div style="display:flex; gap: 4px; margin-bottom: 4px;">
+  <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+  <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+</div>
+
+<input type="file" id="restoreFile" style="display:none" accept=".json">
+
           `;
           L.DomEvent.disableClickPropagation(div);
           return div;
