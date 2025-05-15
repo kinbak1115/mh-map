@@ -1,46 +1,123 @@
-<!-- HTML 開頭略過 (doctype, head, style 相同) -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>魔物地圖標記器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+
+    .leaflet-control-layers-overlays label {
+      font-size: 14px;
+    }
+
+    #infoPanel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 250px;
+      z-index: 999;
+      font-size: 14px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    #infoPanel h4 {
+      margin: 0 0 5px 0;
+    }
+
+    #zoomDisplay {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      z-index: 999;
+    }
+
+    #version {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      z-index: 999;
+    }
+  </style>
+</head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 2.0.8</div>
   <div id="zoomDisplay">Zoom: -</div>
+  <div id="version">版本 2.0.9</div>
 
-  <!-- 固定資訊面板 -->
-  <div id="infoPanel" style="
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    padding: 10px;
-    max-width: 250px;
-    font-size: 16px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.2);
-  ">
-    <b>標記資訊</b><br>
-    <div id="infoContent">點擊標記以查看資訊</div>
+  <!-- 固定右側面板 -->
+  <div id="infoPanel">
+    <h4>標記資訊</h4>
+    <div id="infoContent">請點擊標記查看資訊</div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // ...（保持原本 JavaScript 不變，以下只列出改動區）
+    const markerColors = {
+      elder: '古龍',
+      rare: '稀有',
+      normal: '普通'
+    };
 
     class MapApp {
       constructor() {
-        // 原本 constructor 內容保持不變...
+        this.map = L.map('map').setView([25.04, 121.56], 13);
+        this.editMode = false;
+        this.routeSelecting = false;
+        this.selectedMarkers = [];
+        this.markers = L.layerGroup().addTo(this.map);
         this.infoContent = document.getElementById('infoContent');
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(this.map);
+
+        this.map.on('click', (e) => {
+          if (this.editMode) {
+            const name = prompt("輸入標記名稱:");
+            if (name) {
+              const time = prompt("時間：", "09:00");
+              const type = prompt("類型（elder, rare, normal）:", "normal");
+              const remark = prompt("備註：", "");
+              this.addMarker(e.latlng, { name, time, type, remark });
+            }
+          }
+        });
+
+        this.map.on('zoomend', () => {
+          document.getElementById("zoomDisplay").innerText = "Zoom: " + this.map.getZoom();
+        });
+
+        this.loadMarkers();
       }
 
-      // 更新 getPopupContent 為更新 infoPanel
-      getPopupContent(marker, data) {
-        // 不再使用 popup 內容，這裡只回傳文字
-        return `
-          <b>${data.name}</b><br>
-          時間: ${data.time}<br>
-          類型: ${markerColors[data.type] || '原始'}<br>
-          備註: ${data.remark}<br>
-          ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
-        `;
+      getCustomIcon(type) {
+        const color = {
+          elder: 'purple',
+          rare: 'gold',
+          normal: 'blue'
+        }[type] || 'gray';
+
+        return L.divIcon({
+          html: `<div style="background:${color}; width:12px; height:12px; border-radius:50%;"></div>`,
+          className: '',
+          iconSize: [12, 12]
+        });
       }
 
       showInfoInPanel(marker) {
@@ -48,7 +125,7 @@
         const html = `
           <b>${data.name}</b><br>
           時間: ${data.time}<br>
-          類型: ${markerColors[data.type] || '原始'}<br>
+          類型: ${markerColors[data.type] || '未指定'}<br>
           備註: ${data.remark}<br>
           ${this.editMode ? `<button onclick="app.deleteMarker('${marker._leaflet_id}')">🗑️ 刪除標記</button>` : ''}
         `;
@@ -62,7 +139,6 @@
         });
 
         marker.data = data;
-        // marker.bindPopup(this.getPopupContent(marker, data)); // 移除 popup 綁定
         marker.on('dragend', () => this.saveMarkers());
         marker.on('click', () => {
           if (this.editMode) {
@@ -82,8 +158,41 @@
 
         this.markers.addLayer(marker);
         this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
+      }
+
+      cycleMarkerColor(marker) {
+        const types = Object.keys(markerColors);
+        const index = types.indexOf(marker.data.type);
+        const nextType = types[(index + 1) % types.length];
+        marker.data.type = nextType;
+        marker.setIcon(this.getCustomIcon(nextType));
+        this.saveMarkers();
+      }
+
+      deleteMarker(id) {
+        this.markers.eachLayer(m => {
+          if (m._leaflet_id == id) {
+            this.markers.removeLayer(m);
+          }
+        });
+        this.saveMarkers();
+        this.infoContent.innerHTML = "請點擊標記查看資訊";
+      }
+
+      saveMarkers() {
+        const data = [];
+        this.markers.eachLayer(marker => {
+          data.push({
+            latlng: marker.getLatLng(),
+            data: marker.data
+          });
+        });
+        localStorage.setItem('mapMarkers', JSON.stringify(data));
+      }
+
+      loadMarkers() {
+        const data = JSON.parse(localStorage.getItem('mapMarkers')) || [];
+        data.forEach(item => this.addMarker(item.latlng, item.data));
       }
     }
 
