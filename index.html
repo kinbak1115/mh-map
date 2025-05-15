@@ -7,7 +7,6 @@
   <style>
     body, html { margin: 0; padding: 0; }
     #map { height: 100vh; }
-
     .leaflet-control-custom {
       background: white;
       padding: 10px;
@@ -16,27 +15,23 @@
       width: 240px;
       box-sizing: border-box;
     }
-
     .leaflet-control-custom .btn-row {
       display: flex;
       gap: 6px;
       margin-bottom: 6px;
     }
-
     .leaflet-control-custom button {
       flex: 1;
       font-size: 16px;
       padding: 10px;
       box-sizing: border-box;
     }
-
     select[multiple] {
       width: 100%;
       font-size: 16px;
       padding: 6px;
       margin-bottom: 10px;
     }
-
     @media (max-width: 600px) {
       .leaflet-control-custom {
         width: 100%;
@@ -50,7 +45,6 @@
         font-size: 18px;
       }
     }
-
     .marker-border {
       border-radius: 50%;
       border: 4px solid transparent;
@@ -60,7 +54,6 @@
       background-position: center;
       clip-path: circle(50% at 50% 50%);
     }
-
     #version, #zoomDisplay {
       position: absolute;
       right: 10px;
@@ -71,10 +64,8 @@
       border-radius: 5px;
       z-index: 1000;
     }
-
     #version { bottom: 10px; }
     #zoomDisplay { bottom: 40px; }
-
     .info-panel {
       position: absolute;
       top: 10px;
@@ -87,13 +78,11 @@
       font-size: 14px;
       z-index: 1000;
     }
-
     .info-panel h3 {
       margin: 0 0 8px;
       font-size: 16px;
       border-bottom: 1px solid #ccc;
     }
-
     .info-panel p { margin: 4px 0; }
     .leaflet-popup-content { display: none; }
   </style>
@@ -305,7 +294,7 @@
         };
 
         marker.on('click', handler);
-        marker.on('touchstart', handler); // 手機支援
+        marker.on('touchstart', handler);
 
         this.markers.addLayer(marker);
         this.saveMarkers();
@@ -388,32 +377,27 @@
         }
       }
 
-importFromGitHub() {
-  const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      if (!Array.isArray(data)) {
-        alert('GitHub 資料格式錯誤。');
-        return;
+      importFromGitHub() {
+        const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (!Array.isArray(data)) {
+              alert('GitHub 資料格式錯誤。');
+              return;
+            }
+            this.markers.clearLayers();
+            localStorage.setItem('mhnow_markers', JSON.stringify(data));
+            data.forEach(item => {
+              this.addMarker(L.latLng(item.lat, item.lng), item);
+            });
+            alert('成功從 GitHub 匯入標記！');
+          })
+          .catch(err => {
+            console.error(err);
+            alert('匯入失敗，無法從 GitHub 取得資料。');
+          });
       }
-      // 移除現有標記
-      this.markers.clearLayers();
-
-      // 存新資料到 localStorage 並重建標記
-      localStorage.setItem('mhnow_markers', JSON.stringify(data));
-      data.forEach(item => {
-        this.addMarker(L.latLng(item.lat, item.lng), item);
-      });
-
-      alert('成功從 GitHub 匯入標記！');
-    })
-    .catch(err => {
-      console.error(err);
-      alert('匯入失敗，無法從 GitHub 取得資料。');
-    });
-}
-
 
       toggleEditMode() {
         this.editMode = !this.editMode;
