@@ -8,8 +8,8 @@
     button {
       font-size: 16px;
       padding: 10px 16px;
-      margin: 4px 0;
-      width: 100%;
+      margin: 4px;
+      width: calc(50% - 8px);
       box-sizing: border-box;
     }
     select[multiple] {
@@ -77,13 +77,13 @@
       padding: 10px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 16px;
+      font-size: 14px;
       z-index: 1000;
     }
 
     .info-panel h3 {
       margin: 0 0 8px;
-      font-size: 18px;
+      font-size: 16px;
       border-bottom: 1px solid #ccc;
     }
 
@@ -92,17 +92,6 @@
     }
 
     .leaflet-popup-content { display: none; }
-
-    .button-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .button-grid button {
-      margin: 0;
-      width: 100%;
-    }
   </style>
 </head>
 <body>
@@ -111,19 +100,13 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.0.9</div>
+  <div id="version">版本 2.1.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-
-    const markerColors = {
-      0: '',
-      1: 'red',
-      2: 'blue',
-      3: 'green'
-    };
+    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
 
     class MapApp {
       constructor() {
@@ -148,6 +131,7 @@
         this.lastMarkerType = 0;
         this.routeSelecting = false;
         this.selectedMarkers = [];
+        this.selectedMarker = null;
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -167,7 +151,8 @@
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
           div.innerHTML = `
-            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button><br><br>
+            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+            <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button><br>
             <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
               <option value="0">⚪ 原始</option>
@@ -176,15 +161,11 @@
               <option value="3">🟢 綠</option>
             </select><br><br>
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
-            <div class="button-grid">
-              <button onclick="app.backupMarkers()">📤 備份</button>
-              <button onclick="app.restoreMarkers()">📥 還原</button>
-            </div><br>
+            <button onclick="app.backupMarkers()">📤 備份</button>
+            <button onclick="app.restoreMarkers()">📥 還原</button><br>
             <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
-            <div class="button-grid">
-              <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
-              <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
-            </div>
+            <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+            <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
@@ -232,9 +213,7 @@
 
       initEventListeners() {
         this.map.on('click', (e) => {
-          if (this.editMode) {
-            this.showMarkerForm(e.latlng);
-          }
+          if (this.editMode) this.showMarkerForm(e.latlng);
         });
       }
 
@@ -245,7 +224,7 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
-            background-size: contain; 
+            background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             border-color: ${borderColor};
@@ -293,8 +272,11 @@
         });
 
         marker.data = data;
+
         marker.on('dragend', () => this.saveMarkers());
+
         marker.on('click', () => {
+          this.selectedMarker = marker;
           if (this.editMode) {
             this.cycleMarkerColor(marker);
           } else if (this.routeSelecting) {
@@ -316,6 +298,20 @@
         this.updateMarkerScales();
       }
 
+      deleteSelectedMarker() {
+        if (!this.selectedMarker) {
+          alert("請先點選要刪除的標記");
+          return;
+        }
+
+        if (confirm("確定要刪除這個標記嗎？")) {
+          this.markers.removeLayer(this.selectedMarker);
+          this.selectedMarker = null;
+          this.saveMarkers();
+          document.getElementById('panelContent').textContent = '請點選地圖上的標記';
+        }
+      }
+
       cycleMarkerColor(marker) {
         const nextType = (marker.data.type + 1) % 4;
         marker.data.type = nextType;
@@ -327,7 +323,9 @@
 
       saveMarkers() {
         const savedMarkers = [];
-        this.markers.eachLayer(marker => savedMarkers.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
+        this.markers.eachLayer(marker =>
+          savedMarkers.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng })
+        );
         localStorage.setItem('mhnow_markers', JSON.stringify(savedMarkers));
       }
 
