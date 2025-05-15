@@ -106,34 +106,43 @@
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    const app = new MapApp();
+    // === 正確初始化 MapApp，並確保地圖加載成功 ===
+    window.onload = () => {
+      try {
+        const app = new MapApp(); // 確認 MapApp 正確初始化
 
-    // 這裡修正錯誤，改成正確寫法
-    const control = L.control({ position: 'topright' });
-    control.onAdd = () => {
-      const div = L.DomUtil.create('div', 'leaflet-control-custom');
-      div.innerHTML = `
-        <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
-        <button onclick="app.confirmResetColors()">還原原始色</button><br>
-        <button onclick="app.backupMarkers()">📤 備份</button>
-        <button onclick="app.restoreMarkers()">📥 還原</button><br>
-        <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub</button>
-        <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button><br>
-        <button onclick="app.openGoogleRoute()">🗺️ Google 路線</button>
-        <input type="file" id="restoreFile" style="display:none" accept=".json">
-        <br><br>
-        <label>顯示顏色：</label><br>
-        <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
-          <option value="0">⚪ 原始</option>
-          <option value="1">🔴 紅</option>
-          <option value="2">🔵 藍</option>
-          <option value="3">🟢 綠</option>
-        </select>
-      `;
-      L.DomEvent.disableClickPropagation(div);
-      return div;
-    };
-    control.addTo(app.map);
+        // === 修正控制項的初始化 ===
+        const control = L.control({ position: 'topright' });
+        control.onAdd = () => {
+          const div = L.DomUtil.create('div', 'leaflet-control-custom');
+          div.innerHTML = `
+            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+            <button onclick="app.confirmResetColors()">還原原始色</button><br>
+            <button onclick="app.backupMarkers()">📤 備份</button>
+            <button onclick="app.restoreMarkers()">📥 還原</button><br>
+            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub</button>
+            <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button><br>
+            <button onclick="app.openGoogleRoute()">🗺️ Google 路線</button>
+            <input type="file" id="restoreFile" style="display:none" accept=".json">
+            <br><br>
+            <label>顯示顏色：</label><br>
+            <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+              <option value="0">⚪ 原始</option>
+              <option value="1">🔴 紅</option>
+              <option value="2">🔵 藍</option>
+              <option value="3">🟢 綠</option>
+            </select>
+          `;
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+        control.addTo(app.map);
+
+      } catch (error) {
+        console.error("地圖初始化失敗: ", error.message);
+        alert("地圖載入失敗，請重新整理或檢查程式碼。");
+      }
+    }
   </script>
 </body>
 </html>
