@@ -106,7 +106,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.5</div> 
+  <div id="version">版本 2.1.6</div> 
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -142,6 +142,7 @@
         this.filteredTypes = [];
         this.lastMarkerType = 0;
         this.routeSelecting = false;
+        this.editMode = false;
         this.selectedMarkers = [];
         this.selectedMarker = null;
 
@@ -167,6 +168,7 @@
               <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
             </div>
+
             <label>顯示顏色：</label><br>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
               <option value="0">⚪ 原始</option>
@@ -174,16 +176,21 @@
               <option value="2">🔵 藍</option>
               <option value="3">🟢 綠</option>
             </select><br><br>
+
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
+
             <div class="flex-row">
               <button onclick="app.backupMarkers()">📤 備份</button>
               <button onclick="app.restoreMarkers()">📥 還原</button>
             </div>
+
             <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
+
             <div class="flex-row">
               <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
               <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
             </div>
+
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
           L.DomEvent.disableClickPropagation(div);
@@ -220,13 +227,12 @@
       }
 
       updateInfoPanel(data) {
-        const content = `
+        document.getElementById('panelContent').innerHTML = `
           <p><strong>${data.name}</strong></p>
           <p>時間：${data.time}</p>
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
         `;
-        document.getElementById('panelContent').innerHTML = content;
       }
 
       initEventListeners() {
@@ -244,7 +250,7 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
-            background-size: contain;
+            background-size: contain; 
             background-repeat: no-repeat;
             background-position: center;
             border-color: ${borderColor};
@@ -292,12 +298,12 @@
         });
 
         marker.data = data;
+
         marker.on('dragend', () => this.saveMarkers());
 
-        // 支援點擊與觸控事件
-        const markerClick = () => {
-          this.selectedMarker = marker;
+        marker.on('click', () => {
           if (this.editMode) {
+            this.selectedMarker = marker;
             this.cycleMarkerColor(marker);
           } else if (this.routeSelecting) {
             if (this.selectedMarkers.includes(marker)) {
@@ -310,10 +316,7 @@
           } else {
             this.updateInfoPanel(marker.data);
           }
-        };
-
-        marker.on('click', markerClick);
-        marker.on('touchstart', markerClick);
+        });
 
         this.markers.addLayer(marker);
         this.saveMarkers();
