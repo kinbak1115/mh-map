@@ -77,7 +77,7 @@
       padding: 10px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 16px; /* 字體加大 */
+      font-size: 16px;
       z-index: 1000;
     }
 
@@ -91,7 +91,7 @@
       margin: 4px 0;
     }
 
-    .leaflet-popup-content { display: none; } /* Disable old popups */
+    .leaflet-popup-content { display: none; }
 
     .button-grid {
       display: grid;
@@ -111,15 +111,11 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.0.7</div>
+  <div id="version">版本 2.0.8</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // 全部 JavaScript 原樣保留，只有 initControls() 的 innerHTML 做調整
-    // 這段會插入 HTML 並排按鈕
-    // ...
-
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
 
     const markerColors = {
@@ -224,8 +220,109 @@
         });
       }
 
-      // 其他 JS 函式原樣保留
-      // ...
+      loadSavedMarkers() {
+        const data = localStorage.getItem('mhnow_markers');
+        if (!data) return;
+        const markers = JSON.parse(data);
+        markers.forEach(m => this.addMarkerToMap(m.lat, m.lng, m.name, m.type));
+      }
+
+      addMarkerToMap(lat, lng, name, type) {
+        const icon = L.divIcon({
+          className: '',
+          html: `<div class="marker-border" style="border-color:${markerColors[type]}"></div>`,
+          iconSize: [20, 20],
+          popupAnchor: [0, -10]
+        });
+
+        const marker = L.marker([lat, lng], { icon }).addTo(this.markers);
+
+        marker.on('click', () => {
+          this.showMarkerInfo(name, lat, lng, type);
+          if (this.routeSelecting) this.toggleMarkerSelection(marker);
+        });
+
+        marker.meta = { name, lat, lng, type };
+      }
+
+      showMarkerInfo(name, lat, lng, type) {
+        const panel = document.getElementById('panelContent');
+        panel.innerHTML = `
+          <p><strong>名稱：</strong>${name}</p>
+          <p><strong>座標：</strong>${lat.toFixed(5)}, ${lng.toFixed(5)}</p>
+          <p><strong>顏色：</strong>${markerColors[type] || '原始'}</p>
+        `;
+      }
+
+      updateMarkerScales() {
+        const zoom = this.map.getZoom();
+        document.getElementById('zoomDisplay').innerText = `Zoom: ${zoom}`;
+      }
+
+      toggleEditMode() {
+        alert("目前未支援編輯模式（僅展示範例）");
+      }
+
+      filterMarkersByTypes() {
+        const selected = Array.from(document.getElementById('filterSelect').selectedOptions).map(opt => parseInt(opt.value));
+        this.filteredTypes = selected;
+        this.markers.eachLayer(marker => {
+          const visible = selected.length === 0 || selected.includes(marker.meta.type);
+          marker.setOpacity(visible ? 1 : 0);
+        });
+      }
+
+      confirmResetColors() {
+        const fileInput = document.getElementById('restoreFile');
+        fileInput.value = "";
+        fileInput.click();
+      }
+
+      backupMarkers() {
+        const data = localStorage.getItem('mhnow_markers');
+        if (!data) return alert("沒有可備份的標記。");
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'mhnow_markers_backup.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      restoreMarkers() {
+        const fileInput = document.getElementById('restoreFile');
+        fileInput.value = "";
+        fileInput.click();
+      }
+
+      confirmImportFromGitHub() {
+        alert("此功能需後端支援 GitHub 來源，尚未啟用。");
+      }
+
+      toggleSelectingRoute() {
+        this.routeSelecting = !this.routeSelecting;
+        document.getElementById('routeBtn').innerText = this.routeSelecting ? "停止選擇路線" : "開始選擇路線";
+        this.selectedMarkers = [];
+        alert(this.routeSelecting ? "請點選標記以選擇路線順序。" : "選擇已結束。");
+      }
+
+      toggleMarkerSelection(marker) {
+        if (this.selectedMarkers.includes(marker)) {
+          this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+          marker.getElement().style.filter = '';
+        } else {
+          this.selectedMarkers.push(marker);
+          marker.getElement().style.filter = 'drop-shadow(0 0 5px gold)';
+        }
+      }
+
+      openGoogleRoute() {
+        if (this.selectedMarkers.length < 2) return alert("請至少選擇兩個標記。");
+        const coords = this.selectedMarkers.map(m => `${m.meta.lat},${m.meta.lng}`);
+        const base = "https://www.google.com/maps/dir/";
+        window.open(base + coords.join("/"), "_blank");
+      }
     }
 
     const app = new MapApp();
