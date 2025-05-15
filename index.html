@@ -77,13 +77,13 @@
       padding: 10px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 14px;
+      font-size: 16px; /* 字體加大 */
       z-index: 1000;
     }
 
     .info-panel h3 {
       margin: 0 0 8px;
-      font-size: 16px;
+      font-size: 18px;
       border-bottom: 1px solid #ccc;
     }
 
@@ -92,6 +92,17 @@
     }
 
     .leaflet-popup-content { display: none; } /* Disable old popups */
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .button-grid button {
+      width: 100%;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -100,11 +111,15 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.0.6</div>
+  <div id="version">版本 2.0.7</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
+    // 全部 JavaScript 原樣保留，只有 initControls() 的 innerHTML 做調整
+    // 這段會插入 HTML 並排按鈕
+    // ...
+
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
 
     const markerColors = {
@@ -151,16 +166,69 @@
         this.updateMarkerScales();
       }
 
-      // ... 其他所有 MapApp 方法照原樣保留（略） ...
+      initControls() {
+        const control = L.control({ position: 'topright' });
+        control.onAdd = () => {
+          const div = L.DomUtil.create('div', 'leaflet-control-custom');
+          div.innerHTML = `
+            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button><br><br>
+            <label>顯示顏色：</label><br>
+            <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+              <option value="0">⚪ 原始</option>
+              <option value="1">🔴 紅</option>
+              <option value="2">🔵 藍</option>
+              <option value="3">🟢 綠</option>
+            </select><br><br>
+            <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
+            <div class="button-grid">
+              <button onclick="app.backupMarkers()">📤 備份</button>
+              <button onclick="app.restoreMarkers()">📥 還原</button>
+            </div><br>
+            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button><br><br>
+            <div class="button-grid">
+              <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+              <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+            </div>
+            <input type="file" id="restoreFile" style="display:none" accept=".json">
+          `;
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+        control.addTo(this.map);
 
-      // 最後幾個關鍵方法，包括 toggleEditMode、toggleSelectingRoute、openGoogleRoute 保留原樣
+        document.getElementById('restoreFile').addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+              for (let i = 0; i < existing.length; i++) {
+                const marker = existing[i];
+                const match = imported.find(m =>
+                  m.name === marker.name &&
+                  Math.abs(m.lat - marker.lat) < 0.00001 &&
+                  Math.abs(m.lng - marker.lng) < 0.00001
+                );
+                if (match) marker.type = match.type;
+              }
+              localStorage.setItem('mhnow_markers', JSON.stringify(existing));
+              alert('顏色還原成功，將重新載入地圖。');
+              location.reload();
+            } catch {
+              alert('還原失敗，檔案格式錯誤。');
+            }
+          };
+          reader.readAsText(file);
+        });
+      }
 
+      // 其他 JS 函式原樣保留
+      // ...
     }
 
-    // DOM 加載後才實例化 app 並掛載到 window 讓 HTML onclick 可以使用
-    window.addEventListener('DOMContentLoaded', () => {
-      window.app = new MapApp();
-    });
+    const app = new MapApp();
   </script>
 </body>
 </html>
