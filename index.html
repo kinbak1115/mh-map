@@ -9,23 +9,26 @@
       margin: 0;
       padding: 0;
     }
-    #map {
-      height: 100vh;
-      width: calc(100% - 250px);
-    }
-    .info-panel {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: white;
-      box-shadow: -2px 0 5px rgba(0,0,0,0.3);
-      overflow-y: auto;
-      padding: 16px;
-      font-size: 16px;
-      z-index: 1001;
-    }
+#map {
+  height: 100vh;
+  width: calc(100% - 180px); /* 調整為配合側欄新寬度 */
+}
+
+.info-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 100vh;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+  overflow-y: auto;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  z-index: 1001;
+}
+
     .info-panel h3 {
       margin-top: 0;
     }
