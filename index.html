@@ -3,13 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>MH Now 古龍記錄地圖 - 蒲种</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
-    body,
-    html {
+    html, body {
       margin: 0;
       padding: 0;
     }
@@ -72,8 +68,7 @@
       cursor: pointer;
     }
 
-    #version,
-    #zoomDisplay {
+    #version, #zoomDisplay {
       position: absolute;
       right: 10px;
       background: rgba(0, 0, 0, 0.7);
@@ -87,6 +82,7 @@
     #version {
       bottom: 10px;
     }
+
     #zoomDisplay {
       bottom: 40px;
     }
@@ -113,6 +109,7 @@
     .info-panel p {
       margin: 4px 0;
     }
+
     .leaflet-popup-content {
       display: none;
     }
@@ -124,13 +121,12 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.2.1</div>
+  <div id="version">版本 2.2.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    const iconUrl =
-      "https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png";
+    const iconUrl = "https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png";
     const markerColors = { 0: "", 1: "red", 2: "blue", 3: "green" };
 
     class MapApp {
@@ -142,7 +138,7 @@
           L.circle(e.latlng, {
             radius: e.accuracy / 2,
             color: "blue",
-            fillOpacity: 0.2,
+            fillOpacity: 0.2
           }).addTo(this.map);
         });
 
@@ -159,12 +155,9 @@
         this.selectedMarker = null;
         this.editMode = false;
 
-        L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-          {
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-          }
-        ).addTo(this.map);
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+        }).addTo(this.map);
         this.markers.addTo(this.map);
 
         this.initControls();
@@ -212,54 +205,32 @@
         };
         control.addTo(this.map);
 
-        document
-          .getElementById("restoreFile")
-          .addEventListener("change", (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const imported = JSON.parse(event.target.result);
-                const existing = JSON.parse(
-                  localStorage.getItem("mhnow_markers") || "[]"
+        document.getElementById("restoreFile").addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const imported = JSON.parse(event.target.result);
+              const existing = JSON.parse(localStorage.getItem("mhnow_markers") || "[]");
+              for (let i = 0; i < existing.length; i++) {
+                const marker = existing[i];
+                const match = imported.find(
+                  (m) =>
+                    m.name === marker.name &&
+                    Math.abs(m.lat - marker.lat) < 0.00001 &&
+                    Math.abs(m.lng - marker.lng) < 0.00001
                 );
-                for (let i = 0; i < existing.length; i++) {
-                  const marker = existing[i];
-                  const match = imported.find(
-                    (m) =>
-                      m.name === marker.name &&
-                      Math.abs(m.lat - marker.lat) < 0.00001 &&
-                      Math.abs(m.lng - marker.lng) < 0.00001
-                  );
-                  if (match) marker.type = match.type;
-                }
-                localStorage.setItem("mhnow_markers", JSON.stringify(existing));
-                alert("顏色還原成功，將重新載入地圖。");
-                location.reload();
-              } catch {
-                alert("還原失敗，檔案格式錯誤。");
+                if (match) marker.type = match.type;
               }
-            };
-            reader.readAsText(file);
-          });
-      }
-
-      updateInfoPanel(data) {
-        const content = `
-          <p><strong>${data.name}</strong></p>
-          <p>時間：${data.time}</p>
-          <p>類型：${markerColors[data.type] || "原始"}</p>
-          <p>備註：${data.remark}</p>
-        `;
-        document.getElementById("panelContent").innerHTML = content;
-      }
-
-      initEventListeners() {
-        this.map.on("click", (e) => {
-          if (this.editMode) {
-            this.showMarkerForm(e.latlng);
-          }
+              localStorage.setItem("mhnow_markers", JSON.stringify(existing));
+              alert("顏色還原成功，將重新載入地圖。");
+              location.reload();
+            } catch {
+              alert("還原失敗，檔案格式錯誤。");
+            }
+          };
+          reader.readAsText(file);
         });
       }
 
@@ -279,7 +250,7 @@
           "></div>`,
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2],
-          popupAnchor: [0, -size],
+          popupAnchor: [0, -size]
         });
       }
 
@@ -299,6 +270,14 @@
         document.getElementById("zoomDisplay").textContent = `Zoom: ${zoom}`;
       }
 
+      initEventListeners() {
+        this.map.on("click", (e) => {
+          if (this.editMode) {
+            this.showMarkerForm(e.latlng);
+          }
+        });
+      }
+
       showMarkerForm(latlng) {
         const input = prompt(
           "輸入古龍資訊（名稱, 時間, 顏色(0-3), 備註）",
@@ -313,7 +292,7 @@
             type: markerType,
             remark,
             lat: latlng.lat,
-            lng: latlng.lng,
+            lng: latlng.lng
           });
           this.lastMarkerType = markerType;
         }
@@ -322,13 +301,13 @@
       addMarker(latlng, data) {
         const marker = L.marker(latlng, {
           draggable: this.editMode,
-          icon: this.getCustomIcon(data.type),
+          icon: this.getCustomIcon(data.type)
         });
 
         marker.data = data;
         marker.on("dragend", () => this.saveMarkers());
 
-        const handler = () => {
+        marker.on("click", () => {
           this.selectedMarker = marker;
           if (this.editMode) {
             this.cycleMarkerColor(marker);
@@ -343,9 +322,7 @@
           } else {
             this.updateInfoPanel(marker.data);
           }
-        };
-
-        marker.on("click", handler);
+        });
 
         marker.addTo(this.markers);
         this.saveMarkers();
@@ -357,12 +334,20 @@
         this.saveMarkers();
       }
 
+      updateInfoPanel(data) {
+        document.getElementById("panelContent").innerHTML = `
+          <p><strong>${data.name}</strong></p>
+          <p>時間：${data.time}</p>
+          <p>類型：${markerColors[data.type] || "原始"}</p>
+          <p>備註：${data.remark}</p>
+        `;
+      }
+
       deleteSelectedMarker() {
         if (this.selectedMarker) {
           this.markers.removeLayer(this.selectedMarker);
           this.selectedMarker = null;
-          document.getElementById("panelContent").innerHTML =
-            "請點選地圖上的標記";
+          document.getElementById("panelContent").innerHTML = "請點選地圖上的標記";
           this.saveMarkers();
         } else {
           alert("請先選取標記再刪除");
@@ -370,9 +355,7 @@
       }
 
       confirmResetColors() {
-        if (
-          confirm("你確定要將所有標記顏色還原為原始色嗎？此動作無法復原。")
-        ) {
+        if (confirm("你確定要將所有標記顏色還原為原始色嗎？此動作無法復原。")) {
           this.resetColors();
         }
       }
@@ -387,11 +370,8 @@
 
       filterMarkersByTypes() {
         const select = document.getElementById("filterSelect");
-        this.filteredTypes = Array.from(select.selectedOptions).map((o) =>
-          parseInt(o.value)
-        );
+        this.filteredTypes = Array.from(select.selectedOptions).map((o) => parseInt(o.value));
         if (this.filteredTypes.length === 0) {
-          // 顯示全部
           this.markers.eachLayer((marker) => marker.addTo(this.map));
         } else {
           this.markers.eachLayer((marker) => {
@@ -405,18 +385,12 @@
       }
 
       backupMarkers() {
-        const data = this.markers
-          .getLayers()
-          .map((m) => m.data)
-          .filter(Boolean);
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: "application/json" });
+        const data = this.markers.getLayers().map((m) => m.data).filter(Boolean);
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `mhnow_markers_backup_${new Date()
-          .toISOString()
-          .slice(0, 10)}.json`;
+        a.download = `mhnow_markers_backup_${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -426,19 +400,14 @@
       }
 
       confirmImportFromGitHub() {
-        if (
-          confirm(
-            "將從 GitHub 載入最新標記資料，是否確定？\n(可能會覆蓋當前資料)"
-          )
-        ) {
+        if (confirm("將從 GitHub 載入最新標記資料，是否確定？\n(可能會覆蓋當前資料)")) {
           this.importFromGitHub();
         }
       }
 
       async importFromGitHub() {
         try {
-          const url =
-            "https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_gh.json";
+          const url = "https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_gh.json";
           const res = await fetch(url);
           if (!res.ok) throw new Error("載入失敗");
           const json = await res.json();
@@ -467,18 +436,13 @@
           alert("請先選擇至少兩個標記以建立路線");
           return;
         }
-        const waypoints = this.selectedMarkers
-          .map((m) => `${m.data.lat},${m.data.lng}`)
-          .join("/");
+        const waypoints = this.selectedMarkers.map((m) => `${m.data.lat},${m.data.lng}`).join("/");
         const url = `https://www.google.com/maps/dir/${waypoints}`;
         window.open(url, "_blank");
       }
 
       saveMarkers() {
-        const data = this.markers
-          .getLayers()
-          .map((marker) => marker.data)
-          .filter(Boolean);
+        const data = this.markers.getLayers().map((m) => m.data).filter(Boolean);
         localStorage.setItem("mhnow_markers", JSON.stringify(data));
       }
 
@@ -490,21 +454,16 @@
             this.addMarker(L.latLng(item.lat, item.lng), item);
           }
         } catch {
-          // 不做任何處理
+          // ignore
         }
       }
 
       toggleEditMode() {
         this.editMode = !this.editMode;
-        document.getElementById("editBtn").textContent = this.editMode
-          ? "結束編輯"
-          : "編輯標記";
-
+        document.getElementById("editBtn").textContent = this.editMode ? "結束編輯" : "編輯標記";
         this.markers.eachLayer((marker) => {
           marker.dragging[this.editMode ? "enable" : "disable"]();
-          if (!this.editMode) {
-            marker.setOpacity(1);
-          }
+          if (!this.editMode) marker.setOpacity(1);
         });
       }
     }
