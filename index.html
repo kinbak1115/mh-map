@@ -68,16 +68,14 @@
     #zoomDisplay {
       bottom: 40px;
     }
-
-    /* 增加標記彈出視窗字體大小 */
     .leaflet-popup-content {
-      font-size: 18px; /* 調整字體大小 */
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 1.2.0</div>
+  <div id="version">版本 2.0.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -141,6 +139,7 @@
             </select><br><br>
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
+            <button onclick="app.openGoogleMapsRoute()">🗺️ Google 地圖路線</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
             <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
@@ -220,7 +219,7 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
-            background-size: contain; 
+            background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             border-color: ${borderColor};
@@ -357,6 +356,25 @@
 
       restoreMarkers() {
         document.getElementById('restoreFile').click();
+      }
+
+      openGoogleMapsRoute() {
+        const visibleMarkers = [];
+        this.markers.eachLayer(marker => {
+          if (marker.options.opacity !== 0) {
+            visibleMarkers.push(marker.getLatLng());
+          }
+        });
+
+        if (visibleMarkers.length < 2) {
+          alert('請至少選擇兩個可見標記來規劃路線。');
+          return;
+        }
+
+        const base = 'https://www.google.com/maps/dir/';
+        const path = visibleMarkers.map(p => `${p.lat},${p.lng}`).join('/');
+        const url = `${base}${path}`;
+        window.open(url, '_blank');
       }
     }
 
