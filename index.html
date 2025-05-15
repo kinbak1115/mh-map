@@ -2,34 +2,11 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>MH Now 古龍記錄地圖 - 測試點擊範圍</title>
+  <title>MH Now 古龍記錄地圖 - 蒲种</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <style>
     body, html { margin: 0; padding: 0; }
     #map { height: 100vh; }
-
-    .marker-hitbox {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border: 2px dashed rgba(255, 0, 0, 0.6); /* hitbox 可視化 */
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: auto;
-    }
-
-    .marker-border {
-      border-radius: 50%;
-      border: 4px solid transparent;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-      clip-path: circle(50% at 50% 50%);
-      pointer-events: none; /* 讓點擊穿透到 hitbox */
-    }
 
     .leaflet-control-custom {
       background: white;
@@ -411,32 +388,18 @@
         }
       }
 
-importFromGitHub() {
-  const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      if (!Array.isArray(data)) {
-        alert('GitHub 資料格式錯誤。');
-        return;
+      importFromGitHub() {
+        const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            if (!Array.isArray(data)) throw new Error();
+            localStorage.setItem('mhnow_markers', JSON.stringify(data));
+            alert('成功從 GitHub 匯入標記，重新載入地圖。');
+            location.reload();
+          })
+          .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
-      // 移除現有標記
-      this.markers.clearLayers();
-
-      // 存新資料到 localStorage 並重建標記
-      localStorage.setItem('mhnow_markers', JSON.stringify(data));
-      data.forEach(item => {
-        this.addMarker(L.latLng(item.lat, item.lng), item);
-      });
-
-      alert('成功從 GitHub 匯入標記！');
-    })
-    .catch(err => {
-      console.error(err);
-      alert('匯入失敗，無法從 GitHub 取得資料。');
-    });
-}
-
 
       toggleEditMode() {
         this.editMode = !this.editMode;
