@@ -101,14 +101,16 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.4</div>
+  <div id="version">版本 2.1.5</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const app = new MapApp();
 
-    L.control({ position: 'topright' }).onAdd = () => {
+    // 這裡修正錯誤，改成正確寫法
+    const control = L.control({ position: 'topright' });
+    control.onAdd = () => {
       const div = L.DomUtil.create('div', 'leaflet-control-custom');
       div.innerHTML = `
         <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
@@ -130,7 +132,8 @@
       `;
       L.DomEvent.disableClickPropagation(div);
       return div;
-    }.addTo(app.map);
+    };
+    control.addTo(app.map);
   </script>
 </body>
 </html>
