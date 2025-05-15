@@ -52,6 +52,9 @@
       transform: scale(1);
       transition: transform 0.2s ease;
     }
+    .selected-marker {
+      box-shadow: 0 0 0 4px yellow;
+    }
     #version, #zoomDisplay {
       position: absolute;
       right: 10px;
@@ -62,12 +65,9 @@
       border-radius: 5px;
       z-index: 1000;
     }
-    #version {
-      bottom: 10px;
-    }
-    #zoomDisplay {
-      bottom: 40px;
-    }
+    #version { bottom: 10px; }
+    #zoomDisplay { bottom: 40px; }
+
     .leaflet-popup-content {
       font-size: 18px;
     }
@@ -75,7 +75,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 2.0.0</div>
+  <div id="version">版本 2.0.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -108,6 +108,7 @@
         });
 
         this.markers = new L.FeatureGroup();
+        this.selectedMarkers = new Set();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
 
@@ -139,10 +140,10 @@
             </select><br><br>
             <button onclick="app.confirmResetColors()">全部還原原始色</button><br><br>
             <button onclick="app.backupMarkers()">📤 備份</button>
-            <button onclick="app.openGoogleMapsRoute()">🗺️ Google 地圖路線</button>
             <button onclick="app.restoreMarkers()">📥 還原</button>
             <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
-            <input type="file" id="restoreFile" style="display:none" accept=".json">
+            <input type="file" id="restoreFile" style="display:none" accept=".json"><br><br>
+            <button onclick="app.planRouteWithSelected()">🗺️ Google 地圖路線</button>
           `;
           L.DomEvent.disableClickPropagation(div);
           return div;
@@ -202,19 +203,19 @@
         this.editMode = !this.editMode;
         document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '新增標記';
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
+        if (!this.editMode) this.clearSelectedMarkers();
       }
 
       initEventListeners() {
         this.map.on('click', (e) => {
-          if (this.editMode) {
-            this.showMarkerForm(e.latlng);
-          }
+          if (this.editMode) this.showMarkerForm(e.latlng);
         });
       }
 
-      getCustomIcon(type = 0, scale = 1) {
+      getCustomIcon(type = 0, scale = 1, selected = false) {
         const borderColor = markerColors[type] || 'transparent';
         const size = 40 * scale;
+        const shadowStyle = selected ? 'box-shadow: 0 0 0 4px yellow;' : '';
         return L.divIcon({
           className: '',
           html: `<div class="marker-border" style="
@@ -226,6 +227,7 @@
             width: ${size}px;
             height: ${size}px;
             clip-path: circle(48% at 50% 50%);
+            ${shadowStyle}
           "></div>`,
           iconSize: [size, size],
           iconAnchor: [size / 2, size],
@@ -243,7 +245,8 @@
         else scale = 0.3;
 
         this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+          const isSelected = this.selectedMarkers.has(marker);
+          marker.setIcon(this.getCustomIcon(marker.data.type, scale, isSelected));
           marker.setPopupContent(this.getPopupContent(marker, marker.data));
         });
 
@@ -271,12 +274,30 @@
         marker.bindPopup(this.getPopupContent(marker, data));
         marker.on('dragend', () => this.saveMarkers());
         marker.on('click', () => {
-          if (this.editMode) this.cycleMarkerColor(marker);
+          if (this.editMode) {
+            this.cycleMarkerColor(marker);
+          } else {
+            this.toggleMarkerSelection(marker);
+          }
         });
 
         this.markers.addLayer(marker);
         this.saveMarkers();
         this.filterMarkersByTypes();
+        this.updateMarkerScales();
+      }
+
+      toggleMarkerSelection(marker) {
+        if (this.selectedMarkers.has(marker)) {
+          this.selectedMarkers.delete(marker);
+        } else {
+          this.selectedMarkers.add(marker);
+        }
+        this.updateMarkerScales();
+      }
+
+      clearSelectedMarkers() {
+        this.selectedMarkers.clear();
         this.updateMarkerScales();
       }
 
@@ -358,23 +379,15 @@
         document.getElementById('restoreFile').click();
       }
 
-      openGoogleMapsRoute() {
-        const visibleMarkers = [];
-        this.markers.eachLayer(marker => {
-          if (marker.options.opacity !== 0) {
-            visibleMarkers.push(marker.getLatLng());
-          }
-        });
-
-        if (visibleMarkers.length < 2) {
-          alert('請至少選擇兩個可見標記來規劃路線。');
+      planRouteWithSelected() {
+        if (this.selectedMarkers.size < 2) {
+          alert('請選擇至少兩個標記來規劃路線');
           return;
         }
 
+        const coords = Array.from(this.selectedMarkers).map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
         const base = 'https://www.google.com/maps/dir/';
-        const path = visibleMarkers.map(p => `${p.lat},${p.lng}`).join('/');
-        const url = `${base}${path}`;
-        window.open(url, '_blank');
+        window.open(base + coords.join('/'), '_blank');
       }
     }
 
