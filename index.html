@@ -78,7 +78,7 @@
 </head>
 <body>
   <div id="map"></div>
-  <div id="version">版本 2.0.2</div>
+  <div id="version">版本 2.0.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -174,15 +174,26 @@
         }
       }
 
-      openGoogleRoute() {
-        if (this.selectedMarkers.length < 2) {
-          alert("請選擇至少兩個標記進行導航");
-          return;
-        }
-        const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
-        const url = `https://www.google.com/maps/dir/${waypoints.join('/')}`;
-        window.open(url, '_blank');
-      }
+openGoogleRoute() {
+  if (this.selectedMarkers.length < 1) {
+    alert("請選擇至少一個標記進行導航");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const currentLatLng = `${position.coords.latitude},${position.coords.longitude}`;
+      const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
+      const fullRoute = [currentLatLng, ...waypoints];
+      const url = `https://www.google.com/maps/dir/${fullRoute.join('/')}`;
+      window.open(url, '_blank');
+    },
+    () => {
+      alert("無法取得目前位置，請確保瀏覽器已開啟定位權限");
+    }
+  );
+}
+
 
       getCustomIcon(type = 0, scale = 1, isSelected = false) {
         const borderColor = isSelected ? 'yellow' : (markerColors[type] || 'transparent');
