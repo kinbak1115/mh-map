@@ -233,7 +233,7 @@
       }
 
       getCustomIcon(type = 0, scale = 1) {
-        const borderColor = markerColors[type] || 'transparent';
+        const borderColor = markerColors[type] || 'red';
         const size = 40 * scale;
         return L.divIcon({
           className: '',
@@ -247,7 +247,7 @@
             height: ${size}px;
           "></div>`,
           iconSize: [size, size],
-          iconAnchor: [size / 2, 1],
+          iconAnchor: [size / 2, size / 2],
           popupAnchor: [0, -size]
         });
       }
