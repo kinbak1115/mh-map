@@ -8,19 +8,16 @@
     button {
       font-size: 16px;
       padding: 10px 16px;
-      margin: 4px;
-      width: 48%; /* Two per row */
+      margin: 4px 2px;
+      width: calc(50% - 4px);
       box-sizing: border-box;
-      display: inline-block;
     }
-
     select[multiple] {
       font-size: 16px;
       padding: 6px;
       height: auto;
       width: 100%;
     }
-
     @media (max-width: 600px) {
       .leaflet-control-custom {
         font-size: 16px;
@@ -35,7 +32,6 @@
         font-size: 18px;
       }
     }
-
     #map { height: 100vh; }
 
     .leaflet-control-custom {
@@ -44,7 +40,7 @@
       box-shadow: 0 1px 5px rgba(0,0,0,0.4);
       font-size: 14px;
       line-height: 1.5;
-      width: 220px;
+      width: 240px;
     }
 
     .marker-border {
@@ -81,19 +77,19 @@
       padding: 10px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 18px; /* Increased font size */
+      font-size: 16px;
       z-index: 1000;
     }
 
     .info-panel h3 {
       margin: 0 0 8px;
-      font-size: 20px; /* Increased font size */
+      font-size: 18px;
       border-bottom: 1px solid #ccc;
     }
 
     .info-panel p {
       margin: 6px 0;
-      font-size: 18px; /* Increased font size */
+      line-height: 1.6;
     }
 
     .leaflet-popup-content { display: none; }
@@ -105,63 +101,36 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.3</div>
+  <div id="version">版本 2.1.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
-
-    class MapApp {
-      constructor() {
-        this.map = L.map('map');
-        this.map.locate({ setView: true, maxZoom: 16 });
-
-        this.map.on('locationfound', (e) => {
-          L.circle(e.latlng, {
-            radius: e.accuracy / 2,
-            color: 'blue',
-            fillOpacity: 0.2
-          }).addTo(this.map);
-        });
-
-        this.map.on('locationerror', () => {
-          alert("無法取得你的定位，使用預設地點。");
-          this.map.setView([3.0000, 101.6167], 14);
-        });
-
-        this.markers = new L.FeatureGroup();
-        this.markers.addTo(this.map);
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-        }).addTo(this.map);
-
-        this.initControls();
-      }
-
-      initControls() {
-        const control = L.control({ position: 'topright' });
-        control.onAdd = () => {
-          const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.innerHTML = `
-            <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
-            <button onclick="app.confirmResetColors()">還原原始色</button>
-            <button onclick="app.backupMarkers()">📤 備份</button>
-            <button onclick="app.restoreMarkers()">📥 還原</button>
-            <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub</button>
-            <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
-            <button onclick="app.openGoogleRoute()">🗺️ Google 路線</button>
-            <input type="file" id="restoreFile" style="display:none" accept=".json">
-          `;
-          L.DomEvent.disableClickPropagation(div);
-          return div;
-        };
-        control.addTo(this.map);
-      }
-    }
-
     const app = new MapApp();
+
+    L.control({ position: 'topright' }).onAdd = () => {
+      const div = L.DomUtil.create('div', 'leaflet-control-custom');
+      div.innerHTML = `
+        <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
+        <button onclick="app.confirmResetColors()">還原原始色</button><br>
+        <button onclick="app.backupMarkers()">📤 備份</button>
+        <button onclick="app.restoreMarkers()">📥 還原</button><br>
+        <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub</button>
+        <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button><br>
+        <button onclick="app.openGoogleRoute()">🗺️ Google 路線</button>
+        <input type="file" id="restoreFile" style="display:none" accept=".json">
+        <br><br>
+        <label>顯示顏色：</label><br>
+        <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
+          <option value="0">⚪ 原始</option>
+          <option value="1">🔴 紅</option>
+          <option value="2">🔵 藍</option>
+          <option value="3">🟢 綠</option>
+        </select>
+      `;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    }.addTo(app.map);
   </script>
 </body>
 </html>
