@@ -475,9 +475,6 @@ openGoogleRoute() {
     return;
   }
 
-  // 提前打開一個空白頁面
-  const newWindow = window.open('', '_blank');
-
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const current = `${position.coords.latitude},${position.coords.longitude}`;
@@ -485,16 +482,15 @@ openGoogleRoute() {
       const route = [current, ...waypoints];
       const url = `https://www.google.com/maps/dir/${route.join('/')}`;
 
-      // 更新新頁面的網址
-      newWindow.location.href = url;
+      // 用 <a> 模擬點擊，解決 Safari 的彈出限制
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.click();
     },
-    () => {
-      alert('無法取得你的位置，請開啟定位權限');
-      newWindow.close(); // 無法定位時關閉頁面
-    }
+    () => alert('無法取得你的位置，請開啟定位權限')
   );
 }
-
 
 
 
