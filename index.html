@@ -303,7 +303,11 @@ addMarker(latlng, data) {
     if (tapped) return;
     tapped = true;
     setTimeout(() => tapped = false, 300); // 300ms 內不接受第二次觸發
-
+// 清除所有 marker 的高亮樣式
+  this.markers.eachLayer(m => {
+    const el = m.getElement();
+    if (el) el.querySelector('.marker-border')?.classList.remove('highlighted');
+  });
     this.selectedMarker = marker;
     if (this.editMode) {
       this.cycleMarkerColor(marker);
@@ -316,8 +320,9 @@ addMarker(latlng, data) {
         marker.setOpacity(0.5);
       }
     } else {
+const el = marker.getElement();
+    if (el) el.querySelector('.marker-border')?.classList.add('highlighted');
     this.updateInfoPanel(marker.data);
-    marker.setOpacity(0.5);
     }
   };
 
