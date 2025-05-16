@@ -315,9 +315,6 @@ const handler = (e) => {
   // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
     if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-const el = marker.getElement();
-if (el) {
-  el.querySelector('.marker-border')?.classList.remove('marker-glow');
 }
 
     }
@@ -336,12 +333,6 @@ if (el) {
   } else {
     this.updateInfoPanel(marker.data);
     // 高亮當前標記
-marker.on('add', () => {
-  const el = marker.getElement();
-  if (el) {
-    el.querySelector('.marker-border')?.classList.add('marker-glow');
-  }
-});
   }
 };
 
