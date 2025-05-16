@@ -315,8 +315,11 @@ const handler = (e) => {
   // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
     if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-    const el = m.getElement();
-    if (el) el.querySelector('.marker-border')?.classList.remove('marker-glow');
+const el = marker.getElement();
+if (el) {
+  el.querySelector('.marker-border')?.classList.remove('marker-glow');
+}
+
     }
   });
 
@@ -333,8 +336,12 @@ const handler = (e) => {
   } else {
     this.updateInfoPanel(marker.data);
     // 高亮當前標記
-    const el = marker.getElement();
-    if (el) el.querySelector('.marker-border')?.classList.add('marker-glow');
+marker.on('add', () => {
+  const el = marker.getElement();
+  if (el) {
+    el.querySelector('.marker-border')?.classList.add('marker-glow');
+  }
+});
   }
 };
 
