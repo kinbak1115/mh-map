@@ -287,22 +287,21 @@
         marker.data = data;
         marker.on('dragend', () => this.saveMarkers());
 
-        const handler = () => {
-          this.selectedMarker = marker;
-          if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          } else if (this.routeSelecting) {
-            if (this.selectedMarkers.includes(marker)) {
-              this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-              marker.setOpacity(1);
-            } else {
-              this.selectedMarkers.push(marker);
-              marker.setOpacity(0.5);
-            }
-          } else {
-            this.updateInfoPanel(marker.data);
-          }
-        };
+const handler = () => {
+  this.selectedMarker = marker;
+
+  if (this.editMode && this.routeSelecting) {
+    // 兩種模式都開啟：先選擇路線，再切換顏色
+    this.toggleRouteMarker(marker);
+    this.cycleMarkerColor(marker);
+  } else if (this.routeSelecting) {
+    this.toggleRouteMarker(marker);
+  } else if (this.editMode) {
+    this.cycleMarkerColor(marker);
+  } else {
+    this.updateInfoPanel(marker.data);
+  }
+};
 
         marker.on('click', handler);
         marker.on('touchstart', handler); // 手機支援
@@ -321,6 +320,16 @@
         this.filterMarkersByTypes();
         this.updateMarkerScales();
       }
+
+toggleRouteMarker(marker) {
+  if (this.selectedMarkers.includes(marker)) {
+    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+    marker.setOpacity(1);
+  } else {
+    this.selectedMarkers.push(marker);
+    marker.setOpacity(0.5);
+  }
+}
 
       deleteSelectedMarker() {
         if (!this.selectedMarker) {
