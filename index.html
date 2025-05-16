@@ -59,11 +59,6 @@
       background-size: cover;
       background-position: center;
       clip-path: circle(50% at 50% 50%);
-      transition: box-shadow 0.2s ease;
-    }
-
-    .marker-border.highlighted {
-      box-shadow: 0 0 8px 4px yellow;
     }
 
     #version, #zoomDisplay {
@@ -109,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.3.1</div>
+  <div id="version">版本 2.3.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -154,7 +149,7 @@
         this.updateMarkerScales();
       }
 
-    initControls() {
+      initControls() {
         const control = L.control({ position: 'topright' });
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
@@ -219,7 +214,6 @@
         });
       }
 
-
       updateInfoPanel(data) {
         const content = `
           <p><strong>${data.name}</strong></p>
@@ -231,15 +225,21 @@
       }
 
       initEventListeners() {
-        let mapTapped = false;
-        const handleMapTap = (e) => {
-          if (mapTapped) return;
-          mapTapped = true;
-          setTimeout(() => mapTapped = false, 300);
-          if (this.editMode) this.showMarkerForm(e.latlng);
-        };
-        this.map.on('click', handleMapTap);
-        this.map.on('touchstart', handleMapTap);
+      let mapTapped = false;
+
+const handleMapTap = (e) => {
+  if (mapTapped) return;
+  mapTapped = true;
+  setTimeout(() => mapTapped = false, 300);
+
+  if (this.editMode) {
+    this.showMarkerForm(e.latlng);
+  }
+};
+
+this.map.on('click', handleMapTap);
+this.map.on('touchstart', handleMapTap);
+
       }
 
       getCustomIcon(type = 0, scale = 1) {
@@ -249,6 +249,9 @@
           className: '',
           html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             border-color: ${borderColor};
             width: ${size}px;
             height: ${size}px;
@@ -267,10 +270,12 @@
         else if (zoom === 16) scale = 0.8;
         else if (zoom === 15) scale = 0.5;
         else scale = 0.3;
-
-        this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-        });
+marker.setIcon(this.getCustomIcon(marker.data.type, baseScale * 1.5));
+     this.markers.eachLayer(m => {
+  if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
+    m.setIcon(this.getCustomIcon(m.data.type));
+  }
+});
 
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
@@ -285,57 +290,59 @@
         }
       }
 
-      addMarker(latlng, data) {
-        const marker = L.marker(latlng, {
-          draggable: this.editMode,
-          icon: this.getCustomIcon(data.type)
-        });
+addMarker(latlng, data) {
+  const marker = L.marker(latlng, {
+    draggable: this.editMode,
+    icon: this.getCustomIcon(data.type)
+  });
 
-        marker.data = data;
-        marker.on('dragend', () => this.saveMarkers());
+  marker.data = data;
+  marker.on('dragend', () => this.saveMarkers());
 
-        let tapped = false;
-        const handler = (e) => {
-          if (tapped) return;
-          tapped = true;
-          setTimeout(() => tapped = false, 300);
-          this.selectedMarker = marker;
+  let tapped = false; // 防止雙觸發
 
-          // 移除所有標記高亮 class
-          this.markers.eachLayer(m => {
-            const el = m.getElement();
-            if (el) el.classList.remove('highlighted');
-            if (!this.routeSelecting || !this.selectedMarkers.includes(m)) m.setOpacity(1);
-          });
+const handler = (e) => {
+  if (tapped) return;
+  tapped = true;
+  setTimeout(() => tapped = false, 300); // 防抖動
 
-          const el = marker.getElement();
-          if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          } else if (this.routeSelecting) {
-            if (this.selectedMarkers.includes(marker)) {
-              this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-              if (el) el.classList.remove('highlighted');
-              marker.setOpacity(1);
-            } else {
-              this.selectedMarkers.push(marker);
-              marker.setOpacity(0.5);
-              if (el) el.classList.add('highlighted');
-            }
-          } else {
-            this.updateInfoPanel(marker.data);
-            marker.setOpacity(0.6);
-            if (el) el.classList.add('highlighted');
-          }
-        };
+  this.selectedMarker = marker;
 
-        marker.on('click', handler);
-        marker.on('touchstart', handler);
+  // 清除所有標記的高亮（恢復 opacity）
+  this.markers.eachLayer(m => {
+    if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
+      m.setOpacity(1);
+    }
+  });
 
-        this.markers.addLayer(marker);
-        this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
-      }
+  if (this.editMode) {
+    this.cycleMarkerColor(marker);
+  } else if (this.routeSelecting) {
+    if (this.selectedMarkers.includes(marker)) {
+      this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+      marker.setOpacity(1);
+    } else {
+      this.selectedMarkers.push(marker);
+      marker.setOpacity(0.5);
+    }
+  } else {
+    this.updateInfoPanel(marker.data);
+    // 高亮當前標記
+    marker.setIcon(this.getCustomIcon(marker.data.type, 1.6));
+  }
+};
+
+
+  // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
+  marker.on('click', handler);
+  marker.on('touchstart', handler);
+
+  this.markers.addLayer(marker);
+  this.saveMarkers();
+  this.filterMarkersByTypes();
+  this.updateMarkerScales();
+}
+
 
       cycleMarkerColor(marker) {
         const nextType = (marker.data.type + 1) % 4;
