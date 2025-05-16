@@ -284,9 +284,7 @@
           icon: this.getCustomIcon(data.type)
         });
 
-// ✅ 這裡改成只註冊一次事件（根據裝置類型）
-const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
+
 
         const handler = () => {
           this.selectedMarker = marker;
@@ -305,8 +303,9 @@ marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
           }
         };
 
-        marker.on('click', handler);
-        marker.on('pointerdown', handler); 
+// ✅ 這裡改成只註冊一次事件（根據裝置類型）
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
 
 
         this.markers.addLayer(marker);
