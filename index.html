@@ -406,6 +406,16 @@
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
       }
 
+toggleSelectingRoute() {
+  this.selectingRoute = !this.selectingRoute;
+  document.getElementById('routeBtn').textContent = this.selectingRoute ? '結束選擇路線' : '開始選擇路線';
+  if (!this.selectingRoute) {
+    // 清除選擇狀態
+    this.selectedMarkers.forEach(m => m.setOpacity(1));
+    this.selectedMarkers = [];
+  }
+}
+
       openGoogleRoute() {
         if (!this.selectedMarkers.length) {
           alert("請先選擇至少一個標記");
