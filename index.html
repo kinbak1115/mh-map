@@ -304,20 +304,18 @@ addMarker(latlng, data) {
     tapped = true;
     setTimeout(() => tapped = false, 300); // 300ms 內不接受第二次觸發
 
-marker.on('click', () => {
-  this.selectedMarker = marker;
-
-  if (this.editMode) {
-    this.cycleMarkerColor(marker);
-  } else if (this.routeSelecting) {
-    if (this.selectedMarkers.includes(marker)) {
-      this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-      marker.setOpacity(1);
+    this.selectedMarker = marker;
+    if (this.editMode) {
+      this.cycleMarkerColor(marker);
+    } else if (this.routeSelecting) {
+      if (this.selectedMarkers.includes(marker)) {
+        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+        marker.setOpacity(1);
+      } else {
+        this.selectedMarkers.push(marker);
+        marker.setOpacity(0.5);
+      }
     } else {
-      this.selectedMarkers.push(marker);
-      marker.setOpacity(0.5);
-    }
-  } else {
     // 清除所有標記高亮
     this.markers.forEach(m => m.setIcon(this.defaultIcon));
 
@@ -329,8 +327,8 @@ marker.on('click', () => {
 
     // 更新右側資訊
     this.updateInfoPanel(marker.data);
-  }
-});
+    }
+  };
 
 
   // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
