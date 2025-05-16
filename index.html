@@ -483,16 +483,19 @@ openGoogleRoute() {
       const route = [current, ...waypoints];
       const url = `https://www.google.com/maps/dir/${route.join('/')}`;
 
-      // 用 <a> 模擬點擊，解決 Safari 的彈出限制
+      // === 修正後的部分 ===
       const link = document.createElement('a');
       link.href = url;
       link.target = '_blank';
-      link.click();
+      link.rel = 'noopener noreferrer'; // 安全考量，防止新窗口訪問原頁面
+      link.style.display = 'none'; // 隱藏這個元素
+      document.body.appendChild(link); // 加入到 DOM
+      link.click(); // 模擬點擊
+      document.body.removeChild(link); // 點擊後移除
     },
     () => alert('無法取得你的位置，請開啟定位權限')
   );
 }
-
 
 
 
