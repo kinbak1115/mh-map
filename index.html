@@ -287,9 +287,9 @@
 
         const handler = () => {
           this.selectedMarker = marker;
-         if (this.editMode) {
+         if (this.selectingRoute) {
   this.cycleMarkerColor(marker);
-} else if (this.selectingRoute) {
+} else if (this.editMode) {
   if (!this.selectedMarkers) this.selectedMarkers = [];
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
