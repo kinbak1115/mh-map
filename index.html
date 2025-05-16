@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.4.2</div>
+  <div id="version">版本 2.4.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -470,24 +470,32 @@ const handler = (e) => {
         }
       }
 
-      openGoogleRoute() {
-        if (!this.selectedMarkers.length) {
-          alert("請先選擇至少一個標記");
-          return;
-        }
+     openGoogleRoute() {
+  if (!this.selectedMarkers.length) {
+    alert("請先選擇至少一個標記");
+    return;
+  }
 
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const current = `${position.coords.latitude},${position.coords.longitude}`;
-            const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
-            const route = [current, ...waypoints];
-            const url = `https://www.google.com/maps/dir/${route.join('/')}`;
-            window.open(url, '_blank');
-          },
-          () => alert('無法取得你的位置，請開啟定位權限')
-        );
-      }
-    }
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const current = `${position.coords.latitude},${position.coords.longitude}`;
+      const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
+      const route = [current, ...waypoints];
+
+      // 檢測是否是 Safari
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      // 如果是 Safari 用 URL Scheme，否則用一般的 Google Maps 網址
+      const url = isSafari 
+        ? `comgooglemaps://?saddr=${current}&daddr=${waypoints.join('+to:')}`
+        : `https://www.google.com/maps/dir/${route.join('/')}`;
+
+      window.open(url, '_blank');
+    },
+    () => alert('無法取得你的位置，請開啟定位權限')
+  );
+}
+
 
     const app = new MapApp();
   </script>
