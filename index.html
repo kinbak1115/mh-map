@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.2</div>
+  <div id="version">版本 2.1.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -287,29 +287,37 @@
         marker.data = data;
         marker.on('dragend', () => this.saveMarkers());
 
-const handler = () => {
-  this.selectedMarker = marker;
+        marker.on('click', () => {
+          this.selectedMarker = marker;
 
-  if (this.editMode && this.routeSelecting) {
-    // 兩種模式都開啟：先選擇路線，再切換顏色
-    this.toggleRouteMarker(marker);
-    this.cycleMarkerColor(marker);
-  } else if (this.routeSelecting) {
-    this.toggleRouteMarker(marker);
-  } else if (this.editMode) {
-    this.cycleMarkerColor(marker);
-  } else {
-    this.updateInfoPanel(marker.data);
-  }
-};
+          if (this.editMode && this.routeSelecting) {
+            this.toggleRouteMarker(marker);
+            this.cycleMarkerColor(marker);
+          } else if (this.routeSelecting) {
+            this.toggleRouteMarker(marker);
+          } else if (this.editMode) {
+            this.cycleMarkerColor(marker);
+          } else {
+            this.updateInfoPanel(marker.data);
+          }
+        });
 
-        marker.on('click', handler);
-        marker.on('touchstart', handler); // 手機支援
+        marker.on('touchstart', () => marker.fire('click')); // 手機支援
 
         this.markers.addLayer(marker);
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
+      }
+
+      toggleRouteMarker(marker) {
+        if (this.selectedMarkers.includes(marker)) {
+          this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+          marker.setOpacity(1);
+        } else {
+          this.selectedMarkers.push(marker);
+          marker.setOpacity(0.5);
+        }
       }
 
       cycleMarkerColor(marker) {
@@ -320,16 +328,6 @@ const handler = () => {
         this.filterMarkersByTypes();
         this.updateMarkerScales();
       }
-
-toggleRouteMarker(marker) {
-  if (this.selectedMarkers.includes(marker)) {
-    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-    marker.setOpacity(1);
-  } else {
-    this.selectedMarkers.push(marker);
-    marker.setOpacity(0.5);
-  }
-}
 
       deleteSelectedMarker() {
         if (!this.selectedMarker) {
