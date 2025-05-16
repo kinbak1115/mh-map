@@ -287,9 +287,6 @@
         marker.data = data;
         marker.on('dragend', () => this.saveMarkers());
 	
-        marker.on('click', handler);
-        marker.on('touchstart', handler); // 手機支援
-
 
         const handler = () => {
           this.selectedMarker = marker;
@@ -307,6 +304,8 @@
             this.updateInfoPanel(marker.data);
           }
         };
+        marker.on('click', handler);
+        marker.on('touchstart', handler); // 手機支援
 
 
         this.markers.addLayer(marker);
