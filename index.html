@@ -62,7 +62,7 @@
     }
 
 .marker-glow {
-  box-shadow: 0 0 10px 5px rgba(255, 215, 0, 0.8); /* 黃色光暈 */
+  box-shadow: 0 0 10px 5px rgba(255, 215, 0, 0.8); 
   border-color: gold !important;
 }
 
@@ -110,7 +110,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.3.4</div>
+  <div id="version">版本 2.3.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -308,15 +308,15 @@ addMarker(latlng, data) {
 const handler = (e) => {
   if (tapped) return;
   tapped = true;
-  setTimeout(() => tapped = false, 300);
+  setTimeout(() => tapped = false, 300); // 防抖動
 
   this.selectedMarker = marker;
 
-  // 清除所有標記的光暈
+  // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
     if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-      const el = m.getElement();
-      if (el) el.querySelector('.marker-border')?.classList.remove('marker-glow');
+    const el = m.getElement();
+    if (el) el.querySelector('.marker-border')?.classList.remove('marker-glow');
     }
   });
 
@@ -325,21 +325,18 @@ const handler = (e) => {
   } else if (this.routeSelecting) {
     if (this.selectedMarkers.includes(marker)) {
       this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-      const el = marker.getElement();
-      if (el) el.querySelector('.marker-border')?.classList.remove('marker-glow');
+      marker.setOpacity(1);
     } else {
       this.selectedMarkers.push(marker);
-      const el = marker.getElement();
-      if (el) el.querySelector('.marker-border')?.classList.add('marker-glow');
+      marker.setOpacity(0.5);
     }
   } else {
     this.updateInfoPanel(marker.data);
-    // 高亮當前標記 加光暈效果
+    // 高亮當前標記
     const el = marker.getElement();
     if (el) el.querySelector('.marker-border')?.classList.add('marker-glow');
   }
 };
-
 
 
   // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
