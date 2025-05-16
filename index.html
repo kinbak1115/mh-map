@@ -304,7 +304,17 @@
           }
         };
 
-      marker.on('pointerdown', handler); // 手機支援
+let touched = false;
+marker.on('touchstart', () => {
+  if (touched) return;
+  touched = true;
+  handler();
+  setTimeout(() => touched = false, 500); // 防止連點
+});
+marker.on('click', (e) => {
+  if (!touched) handler();
+});
+
 
         this.markers.addLayer(marker);
         this.saveMarkers();
