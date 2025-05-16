@@ -287,24 +287,38 @@
         marker.data = data;
         marker.on('dragend', () => this.saveMarkers());
 
-        const handler = () => {
-          this.selectedMarker = marker;
-          if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          } else if (this.routeSelecting) {
-            if (this.selectedMarkers.includes(marker)) {
-              this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-              marker.setOpacity(1);
-            } else {
-              this.selectedMarkers.push(marker);
-              marker.setOpacity(0.5);
-            }
-          } else {
-            this.updateInfoPanel(marker.data);
-          }
-        };
-const eventName = 'ontouchstart' in window ? 'touchstart' : 'click';
-marker.on(eventName, handler);
+let lastTouch = 0;
+
+const handler = (e) => {
+  const now = new Date().getTime();
+  if (e.type === 'touchstart') {
+    lastTouch = now;
+    e.preventDefault();  // 阻止後續 click
+  }
+  if (e.type === 'click' && now - lastTouch < 700) {
+    // 若在短時間內已觸發 touchstart，則跳過 click
+    return;
+  }
+
+  this.selectedMarker = marker;
+  if (this.editMode) {
+    this.cycleMarkerColor(marker);
+  } else if (this.routeSelecting) {
+    if (this.selectedMarkers.includes(marker)) {
+      this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+      marker.setOpacity(1);
+    } else {
+      this.selectedMarkers.push(marker);
+      marker.setOpacity(0.5);
+    }
+  } else {
+    this.updateInfoPanel(marker.data);
+  }
+};
+
+marker.on('click', handler);
+marker.on('touchstart', handler);
+
 
         this.markers.addLayer(marker);
         this.saveMarkers();
