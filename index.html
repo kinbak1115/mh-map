@@ -303,8 +303,8 @@
             this.updateInfoPanel(marker.data);
           }
         };
-      marker.on('click', handler);
-      marker.on('touchstart', handler);
+const eventName = 'ontouchstart' in window ? 'touchstart' : 'click';
+marker.on(eventName, handler);
 
         this.markers.addLayer(marker);
         this.saveMarkers();
