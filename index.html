@@ -322,9 +322,6 @@ addMarker(latlng, data) {
     // 設定當前標記為高亮
     marker.setIcon(this.highlightIcon);
 
-    // 儲存目前選取的標記
-    this.selectedMarker = marker;
-
     // 更新右側資訊
     this.updateInfoPanel(marker.data);
     }
