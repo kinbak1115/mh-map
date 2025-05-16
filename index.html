@@ -303,8 +303,8 @@
             this.updateInfoPanel(marker.data);
           }
         };
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
+      marker.on('click', handler);
+      marker.on('touchstart', handler);
 
         this.markers.addLayer(marker);
         this.saveMarkers();
