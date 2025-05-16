@@ -475,6 +475,9 @@ openGoogleRoute() {
     return;
   }
 
+  // 提前打開一個空白頁面
+  const newWindow = window.open('', '_blank');
+
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const current = `${position.coords.latitude},${position.coords.longitude}`;
@@ -482,16 +485,13 @@ openGoogleRoute() {
       const route = [current, ...waypoints];
       const url = `https://www.google.com/maps/dir/${route.join('/')}`;
 
-      // 使用 form 來觸發同步導航
-      const form = document.createElement('form');
-      form.action = url;
-      form.method = 'GET';
-      form.target = '_blank';
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
+      // 更新新頁面的網址
+      newWindow.location.href = url;
     },
-    () => alert('無法取得你的位置，請開啟定位權限')
+    () => {
+      alert('無法取得你的位置，請開啟定位權限');
+      newWindow.close(); // 無法定位時關閉頁面
+    }
   );
 }
 
