@@ -397,6 +397,11 @@
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
       }
 
+      toggleSelectingRoute() {
+        this.editMode = !this.editMode;
+        document.getElementById('editBtn').textContent = this.editMode ? '結束路線' : '開始選擇路線';
+      }
+
       openGoogleRoute() {
         if (!this.selectedMarkers.length) {
           alert("請先選擇至少一個標記");
