@@ -470,7 +470,7 @@ const handler = (e) => {
         }
       }
 
-     openGoogleRoute() {
+openGoogleRoute() {
   if (!this.selectedMarkers.length) {
     alert("請先選擇至少一個標記");
     return;
@@ -482,19 +482,27 @@ const handler = (e) => {
       const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
       const route = [current, ...waypoints];
 
-      // 檢測是否是 Safari
+      // 檢測是否是 Safari 瀏覽器
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-      // 如果是 Safari 用 URL Scheme，否則用一般的 Google Maps 網址
-      const url = isSafari 
-        ? `comgooglemaps://?saddr=${current}&daddr=${waypoints.join('+to:')}`
-        : `https://www.google.com/maps/dir/${route.join('/')}`;
+      if (isSafari) {
+        // 嘗試打開 Google Maps App
+        window.location.href = `comgooglemaps://?saddr=${current}&daddr=${waypoints.join('+to:')}`;
 
-      window.open(url, '_blank');
+        // 延遲 2 秒後，如果沒有打開 App，自動打開網頁版
+        setTimeout(() => {
+          window.open(`https://maps.google.com/?saddr=${current}&daddr=${waypoints.join('+to:')}`, '_blank');
+        }, 2000);
+      } else {
+        // 非 Safari 的情況下，直接打開網頁版
+        const url = `https://www.google.com/maps/dir/${route.join('/')}`;
+        window.open(url, '_blank');
+      }
     },
     () => alert('無法取得你的位置，請開啟定位權限')
   );
 }
+
 
 
     const app = new MapApp();
