@@ -477,20 +477,20 @@ const handler = (e) => {
 
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const current = ${position.coords.latitude},${position.coords.longitude};
-            const waypoints = this.selectedMarkers.map(m => ${m.getLatLng().lat},${m.getLatLng().lng});
+            const current = `${position.coords.latitude},${position.coords.longitude}`;
+            const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
             const route = [current, ...waypoints];
-            const url = https://www.google.com/maps/dir/${route.join('/')};
-            window.open('about:blank', '_blank');
+            const url = `https://www.google.com/maps/dir/${route.join('/')}`;
+            window.open(url, '_blank');
           },
           () => alert('無法取得你的位置，請開啟定位權限')
         );
       }
+
+
+
+      
     }
-
-
-
-
 
     const app = new MapApp();
   </script>
