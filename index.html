@@ -482,26 +482,24 @@ openGoogleRoute() {
       const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
       const route = [current, ...waypoints];
 
-      // 檢測是否是 Safari 瀏覽器
+      // 檢測是否是 Safari
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-      if (isSafari) {
-        // 嘗試打開 Google Maps App
-        window.location.href = `comgooglemaps://?saddr=${current}&daddr=${waypoints.join('+to:')}`;
+      // 如果是 Safari，用 Google Maps URL Scheme，否則用一般 URL
+      const url = isSafari
+        ? `https://maps.apple.com/?saddr=${current}&daddr=${waypoints.join('+to:')}`
+        : `https://www.google.com/maps/dir/${route.join('/')}`;
 
-        // 延遲 2 秒後，如果沒有打開 App，自動打開網頁版
-        setTimeout(() => {
-          window.open(`https://maps.google.com/?saddr=${current}&daddr=${waypoints.join('+to:')}`, '_blank');
-        }, 2000);
-      } else {
-        // 非 Safari 的情況下，直接打開網頁版
-        const url = `https://www.google.com/maps/dir/${route.join('/')}`;
-        window.open(url, '_blank');
-      }
+      // 開啟新頁面
+      window.open(url, '_blank');
     },
-    () => alert('無法取得你的位置，請開啟定位權限')
+    (error) => {
+      console.error("無法取得你的定位：", error.message);
+      alert('無法取得你的位置，請開啟定位權限');
+    }
   );
 }
+
 
 
 
