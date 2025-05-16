@@ -398,7 +398,7 @@
       }
 
       toggleSelectingRoute() {
-        this.editMode = !this.editMode;
+        this.SelectingRoute = !this.SelectingRoute;
         document.getElementById('routeBtn').textContent = this.editMode ? '結束路線' : '開始路線';
       }
 
