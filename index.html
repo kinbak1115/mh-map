@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.1.3</div>
+  <div id="version">版本 2.1.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -133,8 +133,6 @@
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
         this.lastMarkerType = 0;
-        this.routeSelecting = false;
-        this.selectedMarkers = [];
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -255,7 +253,11 @@
       updateMarkerScales() {
         const zoom = this.map.getZoom();
         let scale = 1.0;
-
+        if (zoom >= 18) scale = 2.0;
+        else if (zoom === 17) scale = 1.3;
+        else if (zoom === 16) scale = 0.8;
+        else if (zoom === 15) scale = 0.5;
+        else scale = 0.3;
 
         this.markers.eachLayer(marker => {
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
@@ -283,37 +285,22 @@
         marker.data = data;
         marker.on('dragend', () => this.saveMarkers());
 
-        marker.on('click', () => {
+        const handler = () => {
           this.selectedMarker = marker;
-
-          if (this.editMode && this.routeSelecting) {
-            this.toggleRouteMarker(marker);
+          if (this.editMode) {
             this.cycleMarkerColor(marker);
-          } else if (this.routeSelecting) {
-            this.toggleRouteMarker(marker);
-          } else if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          } else {
+          }  else {
             this.updateInfoPanel(marker.data);
           }
-        });
+        };
 
-        marker.on('touchstart', () => marker.fire('click')); // 手機支援
+        marker.on('click', handler);
+        marker.on('touchstart', handler); // 手機支援
 
         this.markers.addLayer(marker);
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
-      }
-
-      toggleRouteMarker(marker) {
-        if (this.selectedMarkers.includes(marker)) {
-          this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-          marker.setOpacity(1);
-        } else {
-          this.selectedMarkers.push(marker);
-          marker.setOpacity(0.5);
-        }
       }
 
       cycleMarkerColor(marker) {
@@ -408,19 +395,6 @@
         this.editMode = !this.editMode;
         document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '編輯標記';
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
-      }
-
-      toggleSelectingRoute() {
-        this.routeSelecting = !this.routeSelecting;
-        const button = document.getElementById('routeBtn');
-        if (this.routeSelecting) {
-          this.selectedMarkers = [];
-          alert('請點選標記以加入路線（再次點擊可取消）');
-          button.textContent = '完成選擇';
-        } else {
-          this.markers.eachLayer(marker => marker.setOpacity(1));
-          button.textContent = '開始選擇路線';
-        }
       }
 
       openGoogleRoute() {
