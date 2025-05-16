@@ -469,10 +469,17 @@ const handler = (e) => {
           button.textContent = '選擇路線';
         }
       }
-
 openGoogleRoute() {
   if (!this.selectedMarkers.length) {
     alert("請先選擇至少一個標記");
+    return;
+  }
+
+  // 提前打開一個空白標籤頁
+  const newWindow = window.open('about:blank', '_blank');
+
+  if (!newWindow) {
+    alert("無法打開新標籤頁，請檢查彈出窗口設置。");
     return;
   }
 
@@ -483,19 +490,16 @@ openGoogleRoute() {
       const route = [current, ...waypoints];
       const url = `https://www.google.com/maps/dir/${route.join('/')}`;
 
-      // === 修正後的部分 ===
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer'; // 安全考量，防止新窗口訪問原頁面
-      link.style.display = 'none'; // 隱藏這個元素
-      document.body.appendChild(link); // 加入到 DOM
-      link.click(); // 模擬點擊
-      document.body.removeChild(link); // 點擊後移除
+      // 在新標籤頁更新 URL
+      newWindow.location.href = url;
     },
-    () => alert('無法取得你的位置，請開啟定位權限')
+    () => {
+      alert('無法取得你的位置，請開啟定位權限');
+      newWindow.close(); // 定位失敗就關閉空白頁面
+    }
   );
 }
+
 
 
 
