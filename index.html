@@ -174,7 +174,7 @@
               <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
             </div>
             <div class="btn-row">
-              <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始選擇路線</button>
+              <button onclick="app.toggleSelectingRoute()" id="routeBtn">開始路線</button>
               <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
             </div>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
@@ -399,7 +399,7 @@
 
       toggleSelectingRoute() {
         this.editMode = !this.editMode;
-        document.getElementById('routeBtn').textContent = this.editMode ? '結束路線' : '開始選擇路線';
+        document.getElementById('routeBtn').textContent = this.editMode ? '結束路線' : '開始路線';
       }
 
       openGoogleRoute() {
