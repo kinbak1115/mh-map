@@ -316,8 +316,6 @@ addMarker(latlng, data) {
         marker.setOpacity(0.5);
       }
     } else {
-    // 清除所有標記高亮
-    this.markers.forEach(m => m.setIcon(this.defaultIcon));
 
     // 設定當前標記為高亮
     marker.setIcon(this.highlightIcon);
