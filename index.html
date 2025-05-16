@@ -270,7 +270,7 @@ this.map.on('touchstart', handleMapTap);
         else if (zoom === 16) scale = 0.8;
         else if (zoom === 15) scale = 0.5;
         else scale = 0.3;
-marker.setIcon(this.getCustomIcon(marker.data.type, baseScale * 1.5));
+
      this.markers.eachLayer(m => {
   if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
     m.setIcon(this.getCustomIcon(m.data.type));
