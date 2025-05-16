@@ -475,30 +475,23 @@ openGoogleRoute() {
     return;
   }
 
-  // 提前打開一個空白標籤頁
-  const newWindow = window.open('about:blank', '_blank');
-
-  if (!newWindow) {
-    alert("無法打開新標籤頁，請檢查彈出窗口設置。");
-    return;
-  }
-
   navigator.geolocation.getCurrentPosition(
     (position) => {
       const current = `${position.coords.latitude},${position.coords.longitude}`;
       const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
       const route = [current, ...waypoints];
       const url = `https://www.google.com/maps/dir/${route.join('/')}`;
-
-      // 在新標籤頁更新 URL
-      newWindow.location.href = url;
+      
+      // === 修正部分 ===
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow) {
+        alert('彈出視窗被阻擋，請允許彈出視窗後重試');
+      }
     },
-    () => {
-      alert('無法取得你的位置，請開啟定位權限');
-      newWindow.close(); // 定位失敗就關閉空白頁面
-    }
+    () => alert('無法取得你的位置，請開啟定位權限')
   );
 }
+
 
 
 
