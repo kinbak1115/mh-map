@@ -470,36 +470,24 @@ const handler = (e) => {
         }
       }
 
-openGoogleRoute() {
-  if (!this.selectedMarkers.length) {
-    alert("請先選擇至少一個標記");
-    return;
-  }
+      openGoogleRoute() {
+        if (!this.selectedMarkers.length) {
+          alert("請先選擇至少一個標記");
+          return;
+        }
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const current = `${position.coords.latitude},${position.coords.longitude}`;
-      const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
-      const route = [current, ...waypoints];
-
-      // 檢測是否是 Safari
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-      // 如果是 Safari，用 Google Maps URL Scheme，否則用一般 URL
-      const url = isSafari
-        ? `https://maps.apple.com/?saddr=${current}&daddr=${waypoints.join('+to:')}`
-        : `https://www.google.com/maps/dir/${route.join('/')}`;
-
-      // 開啟新頁面
-      window.open(url, '_blank');
-    },
-    (error) => {
-      console.error("無法取得你的定位：", error.message);
-      alert('無法取得你的位置，請開啟定位權限');
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const current = `${position.coords.latitude},${position.coords.longitude}`;
+            const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
+            const route = [current, ...waypoints];
+            const url = `https://www.google.com/maps/dir/${route.join('/')}`;
+            window.open(url, '_blank');
+          },
+          () => alert('無法取得你的位置，請開啟定位權限')
+        );
+      }
     }
-  );
-}
-
 
 
 
