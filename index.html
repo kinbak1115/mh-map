@@ -304,8 +304,7 @@
           }
         };
 
-        marker.on('click', handler);
-        marker.on('touchstart', handler); // 手機支援
+      marker.on('pointerdown', handler); // 手機支援
 
         this.markers.addLayer(marker);
         this.saveMarkers();
