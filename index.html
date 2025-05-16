@@ -469,28 +469,24 @@ const handler = (e) => {
           button.textContent = '選擇路線';
         }
       }
-openGoogleRoute() {
-  if (!this.selectedMarkers.length) {
-    alert("請先選擇至少一個標記");
-    return;
-  }
+      openGoogleRoute() {
+        if (!this.selectedMarkers.length) {
+          alert("請先選擇至少一個標記");
+          return;
+        }
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const current = `${position.coords.latitude},${position.coords.longitude}`;
-      const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
-      const route = [current, ...waypoints];
-      const url = `https://www.google.com/maps/dir/${route.join('/')}`;
-      
-      // === 修正部分 ===
-      const newWindow = window.open(url, '_blank');
-      if (!newWindow) {
-        alert('彈出視窗被阻擋，請允許彈出視窗後重試');
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const current = ${position.coords.latitude},${position.coords.longitude};
+            const waypoints = this.selectedMarkers.map(m => ${m.getLatLng().lat},${m.getLatLng().lng});
+            const route = [current, ...waypoints];
+            const url = https://www.google.com/maps/dir/${route.join('/')};
+            window.open('about:blank', '_blank');
+          },
+          () => alert('無法取得你的位置，請開啟定位權限')
+        );
       }
-    },
-    () => alert('無法取得你的位置，請開啟定位權限')
-  );
-}
+    }
 
 
 
