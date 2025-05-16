@@ -287,11 +287,20 @@
 
         const handler = () => {
           this.selectedMarker = marker;
-          if (this.editMode) {
-            this.cycleMarkerColor(marker);
-          }  else {
-            this.updateInfoPanel(marker.data);
-          }
+         if (this.editMode) {
+  this.cycleMarkerColor(marker);
+} else if (this.selectingRoute) {
+  if (!this.selectedMarkers) this.selectedMarkers = [];
+  if (this.selectedMarkers.includes(marker)) {
+    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+    marker.setOpacity(1); // 取消選擇時恢復原狀
+  } else {
+    this.selectedMarkers.push(marker);
+    marker.setOpacity(0.5); // 用不透明度表示選擇
+  }
+} else {
+  this.updateInfoPanel(marker.data);
+}
         };
 
         marker.on('click', handler);
