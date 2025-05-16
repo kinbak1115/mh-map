@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.3.7</div>
+  <div id="version">版本 2.3.8</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -153,7 +153,7 @@
         const control = L.control({ position: 'topright' });
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.innerHTML = 
+          div.innerHTML = `
             <div class="btn-row">
               <button onclick="app.toggleEditMode()" id="editBtn">編輯標記</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
@@ -180,7 +180,7 @@
               <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
             </div>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
-          ;
+          `;
           L.DomEvent.disableClickPropagation(div);
           return div;
         };
@@ -215,12 +215,12 @@
       }
 
       updateInfoPanel(data) {
-        const content = 
+        const content = `
           <p><strong>${data.name}</strong></p>
           <p>時間：${data.time}</p>
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
-        ;
+        `;
         document.getElementById('panelContent').innerHTML = content;
       }
 
@@ -247,7 +247,7 @@ this.map.on('touchstart', handleMapTap);
         const size = 40 * scale;
         return L.divIcon({
           className: '',
-          html: <div class="marker-border" style="
+          html: `<div class="marker-border" style="
             background-image: url('${iconUrl}');
             background-size: contain;
             background-repeat: no-repeat;
@@ -255,7 +255,7 @@ this.map.on('touchstart', handleMapTap);
             border-color: ${borderColor};
             width: ${size}px;
             height: ${size}px;
-          "></div>,
+          "></div>`,
           iconSize: [size, size],
           iconAnchor: [size / 2, size],
           popupAnchor: [0, -size]
@@ -275,11 +275,11 @@ this.map.on('touchstart', handleMapTap);
           marker.setIcon(this.getCustomIcon(marker.data.type, scale));
         });
 
-        document.getElementById('zoomDisplay').textContent = Zoom: ${zoom};
+        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('輸入古龍資訊（名稱, 時間, 顏色(0-3), 備註）', 古龍種, 現在, ${this.lastMarkerType}, 重要出沒點);
+        const input = prompt('輸入古龍資訊（名稱, 時間, 顏色(0-3), 備註）', `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`);
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -326,7 +326,7 @@ const handler = (e) => {
   } else {
     this.updateInfoPanel(marker.data);
     // 高亮當前標記
-    marker.setOpacity(1);   
+    marker.setOpacity(1);  // 你可以改用其他方式如加入 CSS class
   }
 };
 
@@ -456,10 +456,10 @@ const handler = (e) => {
 
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const current = ${position.coords.latitude},${position.coords.longitude};
-            const waypoints = this.selectedMarkers.map(m => ${m.getLatLng().lat},${m.getLatLng().lng});
+            const current = `${position.coords.latitude},${position.coords.longitude}`;
+            const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
             const route = [current, ...waypoints];
-            const url = https://www.google.com/maps/dir/${route.join('/')};
+            const url = `https://www.google.com/maps/dir/${route.join('/')}`;
             window.open(url, '_blank');
           },
           () => alert('無法取得你的位置，請開啟定位權限')
