@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.3.8</div>
+  <div id="version">版本 2.4.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -309,7 +309,7 @@ const handler = (e) => {
   // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
     if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-      m.setOpacity(0.8);
+      m.setOpacity(0.6);
     }
   });
 
@@ -318,7 +318,7 @@ const handler = (e) => {
   } else if (this.routeSelecting) {
     if (this.selectedMarkers.includes(marker)) {
       this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-      marker.setOpacity(0.8);
+      marker.setOpacity(0.6);
     } else {
       this.selectedMarkers.push(marker);
       marker.setOpacity(1);
@@ -376,13 +376,18 @@ const handler = (e) => {
       }
 
       filterMarkersByTypes() {
-        const selected = Array.from(document.getElementById('filterSelect').selectedOptions).map(opt => parseInt(opt.value));
-        const types = selected.length ? selected : [0, 1, 2, 3];
-        this.markers.eachLayer(marker => {
-          marker.setOpacity(types.includes(marker.data.type) ? 1 : 0);
-        });
-        this.filteredTypes = types;
-      }
+  const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
+                        .map(opt => parseInt(opt.value));
+  const types = selected.length ? selected : [0, 1, 2, 3];
+
+  this.markers.eachLayer(marker => {
+    // 如果 marker 的類型在選中的類型陣列內，則顯示；否則隱藏
+    marker._icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
+  });
+
+  this.filteredTypes = types;
+}
+
 
       confirmResetColors() {
         if (confirm('確定要將所有標記顏色還原為原始嗎？')) {
