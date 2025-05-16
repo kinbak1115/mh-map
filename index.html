@@ -287,12 +287,20 @@
 
         const handler = () => {
           this.selectedMarker = marker;
-         if (this.editMode) {
-  this.cycleMarkerColor(marker);
+if (this.editMode) {
+  if (this.SelectingRoute) {
+    // 狀況 4: edit mode ON, SelectingRoute ON
+    // 你可以選擇優先編輯或提示不能同時進行
+  } else {
+    // 狀況 1: edit mode ON, SelectingRoute OFF
+    this.cycleMarkerColor(marker); // 原本的編輯功能
+  }
 } else if (this.SelectingRoute) {
- this.cycleMarkerColor(marker);
+  // 狀況 3: edit mode OFF, SelectingRoute ON
+  this.cycleMarkerColor(marker);
 } else {
-  this.updateInfoPanel(marker.data);
+  // 狀況 2: edit mode OFF, SelectingRoute OFF
+  this.updateInfoPanel(marker.data); // 原本的查看資訊功能
 }
         };
 
