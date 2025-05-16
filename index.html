@@ -399,7 +399,7 @@
 
       toggleSelectingRoute() {
         this.SelectingRoute = !this.SelectingRoute;
-        document.getElementById('routeBtn').textContent = this.editMode ? '結束路線' : '開始路線';
+        document.getElementById('routeBtn').textContent = this.SelectingRoute ? '結束路線' : '開始路線';
       }
 
       openGoogleRoute() {
