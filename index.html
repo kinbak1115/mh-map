@@ -287,7 +287,13 @@ addMarker(latlng, data) {
   marker.data = data;
   marker.on('dragend', () => this.saveMarkers());
 
-  const handler = () => {
+  let tapped = false; // 防止雙觸發
+
+  const handler = (e) => {
+    if (tapped) return;
+    tapped = true;
+    setTimeout(() => tapped = false, 300); // 300ms 內不接受第二次觸發
+
     this.selectedMarker = marker;
     if (this.editMode) {
       this.cycleMarkerColor(marker);
@@ -304,13 +310,16 @@ addMarker(latlng, data) {
     }
   };
 
+  // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
   marker.on('click', handler);
+  marker.on('touchstart', handler);
 
   this.markers.addLayer(marker);
   this.saveMarkers();
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
       cycleMarkerColor(marker) {
         const nextType = (marker.data.type + 1) % 4;
