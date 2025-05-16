@@ -284,7 +284,8 @@
           icon: this.getCustomIcon(data.type)
         });
 
-
+        marker.data = data;
+        marker.on('dragend', () => this.saveMarkers());
 
         const handler = () => {
           this.selectedMarker = marker;
@@ -302,11 +303,8 @@
             this.updateInfoPanel(marker.data);
           }
         };
-
-// ✅ 這裡改成只註冊一次事件（根據裝置類型）
-const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
-
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  marker.on(isTouchDevice ? 'touchstart' : 'click', handler);
 
         this.markers.addLayer(marker);
         this.saveMarkers();
