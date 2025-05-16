@@ -304,16 +304,7 @@
           }
         };
 
-let touched = false;
-marker.on('touchstart', () => {
-  if (touched) return;
-  touched = true;
-  handler();
-  setTimeout(() => touched = false, 500); // 防止連點
-});
-marker.on('click', (e) => {
-  if (!touched) handler();
-});
+marker.on('touchstart', handler);
 
 
         this.markers.addLayer(marker);
