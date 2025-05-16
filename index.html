@@ -60,9 +60,6 @@
       background-position: center;
       clip-path: circle(50% at 50% 50%);
     }
-.marker-border.highlighted {
-  box-shadow: 0 0 10px 3px yellow;
-}
 
     #version, #zoomDisplay {
       position: absolute;
@@ -302,32 +299,36 @@ addMarker(latlng, data) {
 
   let tapped = false; // 防止雙觸發
 
-  const handler = (e) => {
-    if (tapped) return;
-    tapped = true;
-    setTimeout(() => tapped = false, 300); // 300ms 內不接受第二次觸發
-// 清除所有 marker 的高亮樣式
+const handler = (e) => {
+  if (tapped) return;
+  tapped = true;
+  setTimeout(() => tapped = false, 300); // 防抖動
+
+  this.selectedMarker = marker;
+
+  // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
-    const el = m.getElement();
-    if (el) el.querySelector('.marker-border')?.classList.remove('highlighted');
-  });
-    this.selectedMarker = marker;
-    if (this.editMode) {
-      this.cycleMarkerColor(marker);
-    } else if (this.routeSelecting) {
-      if (this.selectedMarkers.includes(marker)) {
-        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-        marker.setOpacity(1);
-      } else {
-        this.selectedMarkers.push(marker);
-        marker.setOpacity(0.5);
-      }
-    } else {
-const el = marker.getElement();
-    if (el) el.querySelector('.marker-border')?.classList.add('highlighted');
-    this.updateInfoPanel(marker.data);
+    if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
+      m.setOpacity(1);
     }
-  };
+  });
+
+  if (this.editMode) {
+    this.cycleMarkerColor(marker);
+  } else if (this.routeSelecting) {
+    if (this.selectedMarkers.includes(marker)) {
+      this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+      marker.setOpacity(1);
+    } else {
+      this.selectedMarkers.push(marker);
+      marker.setOpacity(0.5);
+    }
+  } else {
+    this.updateInfoPanel(marker.data);
+    // 高亮當前標記
+    marker.setOpacity(0.6);  // 你可以改用其他方式如加入 CSS class
+  }
+};
 
 
   // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
