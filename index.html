@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.4.0</div>
+  <div id="version">版本 2.4.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -295,6 +295,7 @@ addMarker(latlng, data) {
   });
 
   marker.data = data;
+marker.setOpacity(0.6);  // 預設透明度設為 0.6
   marker.on('dragend', () => this.saveMarkers());
 
   let tapped = false; // 防止雙觸發
