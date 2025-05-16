@@ -110,7 +110,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.3.0</div>
+  <div id="version">版本 2.3.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -315,9 +315,8 @@ const handler = (e) => {
   // 清除所有標記的高亮（恢復 opacity）
   this.markers.eachLayer(m => {
     if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-}
-
-    }
+      marker.setOpacity(0.8)
+}}
   });
 
   if (this.editMode) {
@@ -325,13 +324,14 @@ const handler = (e) => {
   } else if (this.routeSelecting) {
     if (this.selectedMarkers.includes(marker)) {
       this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-      marker.setOpacity(1);
+      marker.setOpacity(0.8);
     } else {
       this.selectedMarkers.push(marker);
-      marker.setOpacity(0.5);
+      marker.setOpacity(1);
     }
   } else {
     this.updateInfoPanel(marker.data);
+    marker.setOpacity(1);
     // 高亮當前標記
   }
 };
