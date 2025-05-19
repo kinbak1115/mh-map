@@ -367,6 +367,9 @@ if (this.selectedMarkers.includes(marker)) {
   }, 0); // ✅ 讓出執行權，讓 UI 有機會重繪
 }
  else {
+this.markers.eachLayer(m => m.setOpacity(0.6));
+    // 將被點選的標記設為 1.0
+    marker.setOpacity(1.0);
     this.updateInfoPanel(marker.data);
   }
 };
