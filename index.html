@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.4.3</div>
+  <div id="version">版本 2.5.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -301,44 +301,53 @@ addMarker(latlng, data) {
   });
 
   marker.data = data;
-marker.setOpacity(0.6);  // 預設透明度設為 0.6
-  marker.on('dragend', () => this.saveMarkers());
+  marker.setOpacity(0.6);
 
-  let tapped = false; // 防止雙觸發
+  let tapped = false;
 
-const handler = (e) => {
-  if (tapped) return;
-  tapped = true;
-  setTimeout(() => tapped = false, 300); // 防抖動
+  const handler = (e) => {
+    if (tapped) return;
+    tapped = true;
+    setTimeout(() => tapped = false, 300);
 
-  this.selectedMarker = marker;
+    this.selectedMarker = marker;
 
-  // 清除所有標記的高亮（恢復 opacity）
-  this.markers.eachLayer(m => {
-    if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-      m.setOpacity(0.6);
-    }
-  });
+    // 清除所有標記的高亮（恢復 opacity）
+    this.markers.eachLayer(m => {
+      if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
+        m.setOpacity(0.6);
+      }
+    });
 
-  if (this.editMode) {
-    this.cycleMarkerColor(marker);
-  } else if (this.routeSelecting) {
-    if (this.selectedMarkers.includes(marker)) {
-      this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-      marker.setOpacity(0.6);
+    if (this.editMode) {
+      this.cycleMarkerColor(marker);
+    } else if (this.routeSelecting) {
+      if (this.selectedMarkers.includes(marker)) {
+        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+        marker.setOpacity(0.6);
+      } else {
+        this.selectedMarkers.push(marker);
+        marker.setOpacity(1);
+      }
     } else {
-      this.selectedMarkers.push(marker);
+      // 編輯標記資訊
+      const input = prompt('編輯標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+                           `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+      if (input) {
+        const [name, time, type, remark] = input.split(',').map(s => s.trim());
+        const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+        marker.data.name = name;
+        marker.data.time = time;
+        marker.data.type = markerType;
+        marker.data.remark = remark;
+        marker.setIcon(this.getCustomIcon(markerType));
+        this.saveMarkers();
+        this.updateInfoPanel(marker.data);
+      }
       marker.setOpacity(1);
     }
-  } else {
-    this.updateInfoPanel(marker.data);
-    // 高亮當前標記
-    marker.setOpacity(1);  // 你可以改用其他方式如加入 CSS class
-  }
-};
+  };
 
-
-  // 同時綁定 click 和 touchstart，但用旗標確保只觸發一次
   marker.on('click', handler);
   marker.on('touchstart', handler);
 
