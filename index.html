@@ -322,10 +322,10 @@ const handler = (e) => {
   if (this.routeSelecting) {
 if (this.selectedMarkers.includes(marker)) {
   this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-  marker.setIcon(this.getCustomIcon(0));
+  marker.setStyle({ color: '#3388ff', weight: 1 });
 } else {
   this.selectedMarkers.push(marker);
-  marker.setIcon(this.getCustomIcon(3));
+  marker.setStyle({ color: 'yellow', weight: 3 });
 }
 
     return; // 不進入其他模式
