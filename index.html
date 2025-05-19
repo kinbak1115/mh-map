@@ -322,10 +322,10 @@ const handler = (e) => {
   if (this.routeSelecting) {
 if (this.selectedMarkers.includes(marker)) {
   this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-  marker._icon.style.border = 'none';
+  marker.setStyle({ color: '#3388ff', weight: 1 });
 } else {
   this.selectedMarkers.push(marker);
-  marker._icon.style.border = '3px solid yellow';
+  marker.setStyle({ color: 'yellow', weight: 3 });
 }
 
 
