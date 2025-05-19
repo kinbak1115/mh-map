@@ -60,12 +60,14 @@
       background-position: center;
       clip-path: circle(50% at 50% 50%);
     }
-    
-.selected-route {
-  filter: drop-shadow(0 0 5px yellow);
-  transform: scale(1.3);
-  transition: transform 0.2s ease, filter 0.2s ease;
+
+.markerBorder {
+  box-shadow: 0 0 0 3px yellow; /* 黄色外框圈圈 */
+  border-radius: 50%;           /* 圆形外框，配合圆形 marker */
+  transition: box-shadow 0.2s;
 }
+
+
     #version, #zoomDisplay {
       position: absolute;
       right: 10px;
@@ -324,22 +326,23 @@ const handler = (e) => {
   this.selectedMarker = marker;
 
   // 👉 路線選擇模式處理
-  if (this.routeSelecting) {
-if (this.selectedMarkers.includes(marker)) {
-  this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-const el = marker.getElement();
-if (el) {
-  el.classList.remove('selected-route');
-}
-} else {
-  this.selectedMarkers.push(marker);
-  const el = marker.getElement();
-  if (el) {
-    el.classList.add('selected-route');
+if (this.routeSelecting) {
+  const markerElement = marker.getElement();
+
+  if (this.selectedMarkers.includes(marker)) {
+    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+    if (markerElement) {
+      markerElement.classList.remove('markerBorder');
+    }
+  } else {
+    this.selectedMarkers.push(marker);
+    if (markerElement) {
+      markerElement.classList.add('markerBorder');
+    }
+  }
+  return; // 不進入其他模式
 }
 
-    return; // 不進入其他模式
-  }
 
   if (this.currentMode === "editColor") {
 
