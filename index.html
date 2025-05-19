@@ -325,24 +325,30 @@ addMarker(latlng, data) {
       this.markers.eachLayer(m => m.setOpacity(0.6));
       marker.setOpacity(1)
     } else if (this.currentMode === "editMarker") {
-      // 如果是標記編輯模式
-      this.markers.eachLayer(m => m.setOpacity(0.6));
-      marker.setOpacity(1)
-      const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
-                           `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
-      if (input) {
-        const [name, time, type, remark] = input.split(',').map(s => s.trim());
-        const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-        marker.data.name = name;
-        marker.data.time = time;
-        marker.data.type = markerType;
-        marker.data.remark = remark;
-        marker.setIcon(this.getCustomIcon(markerType));
-        this.saveMarkers();
-        this.markers.eachLayer(m => m.setOpacity(0.6));
-        marker.setOpacity(1)
-        this.updateInfoPanel(marker.data); // 更新資訊面板
-      }
+  // 先將所有標記設為半透明
+    this.markers.eachLayer(m => m.setOpacity(0.6));
+    // 將當前標記設為不透明
+    marker.setOpacity(1);
+
+    // 使用 requestAnimationFrame 等待瀏覽器刷新畫面
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+                             `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+        if (input) {
+          const [name, time, type, remark] = input.split(',').map(s => s.trim());
+          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+          marker.data.name = name;
+          marker.data.time = time;
+          marker.data.type = markerType;
+          marker.data.remark = remark;
+          marker.setIcon(this.getCustomIcon(markerType));
+          this.saveMarkers();
+          this.updateInfoPanel(marker.data);
+        }
+      }, 50); // 延遲一點時間讓畫面刷新
+    });
+
     } else {
       // 完成編輯模式下顯示資訊
       this.markers.eachLayer(m => m.setOpacity(0.6));
