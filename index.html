@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.1</div>
+  <div id="version">版本 2.5.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -149,6 +149,7 @@
         this.updateMarkerScales();
       }
 
+
       initControls() {
         const control = L.control({ position: 'topright' });
         control.onAdd = () => {
@@ -185,7 +186,7 @@
           return div;
         };
         control.addTo(this.map);
-
+        this.currentMode = "done";
         document.getElementById('restoreFile').addEventListener('change', (e) => {
           const file = e.target.files[0];
           if (!file) return;
@@ -296,7 +297,7 @@ getCustomIcon(type = 0, scale = 1) {
 
 addMarker(latlng, data) {
   const marker = L.marker(latlng, {
-    draggable: this.editMode,
+    draggable: this.currentMode === 'editMarker',
     icon: this.getCustomIcon(data.type)
   });
 
@@ -312,44 +313,27 @@ addMarker(latlng, data) {
 
     this.selectedMarker = marker;
 
-    // 清除所有標記的高亮（恢復 opacity）
-    this.markers.eachLayer(m => {
-      if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
-        m.setOpacity(0.6);
-      }
-    });
-
-    if (this.editMode) {
+    if (this.currentMode === "editColor") {
+      // 如果是顏色編輯模式
       this.cycleMarkerColor(marker);
-    } else if (this.routeSelecting) {
-      if (this.selectedMarkers.includes(marker)) {
-        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-        marker.setOpacity(0.6);
-      } else {
-        this.selectedMarkers.push(marker);
-        marker.setOpacity(1);
+    } else if (this.currentMode === "editMarker") {
+      // 如果是標記編輯模式
+      const input = prompt('編輯標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+                           `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+      if (input) {
+        const [name, time, type, remark] = input.split(',').map(s => s.trim());
+        const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+        marker.data.name = name;
+        marker.data.time = time;
+        marker.data.type = markerType;
+        marker.data.remark = remark;
+        marker.setIcon(this.getCustomIcon(markerType));
+        this.saveMarkers();
+        this.updateInfoPanel(marker.data); // 更新資訊面板
       }
     } else {
-      // 顯示資訊面板
+      // 完成編輯模式下顯示資訊
       this.updateInfoPanel(marker.data);
-
-      // 編輯標記資訊
-      if (confirm("是否要編輯這個標記的資訊？")) {
-        const input = prompt('編輯標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
-                             `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
-        if (input) {
-          const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          marker.data.name = name;
-          marker.data.time = time;
-          marker.data.type = markerType;
-          marker.data.remark = remark;
-          marker.setIcon(this.getCustomIcon(markerType));
-          this.saveMarkers();
-          this.updateInfoPanel(marker.data); // 🔄 更新資訊面板
-        }
-      }
-      marker.setOpacity(1);
     }
   };
 
@@ -361,6 +345,7 @@ addMarker(latlng, data) {
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
 
 
@@ -473,11 +458,22 @@ addMarker(latlng, data) {
           .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
 
-      toggleEditMode() {
-        this.editMode = !this.editMode;
-        document.getElementById('editBtn').textContent = this.editMode ? '完成編輯' : '編輯標記';
-        this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
-      }
+toggleEditMode() {
+  if (this.currentMode === "done") {
+    this.currentMode = "editMarker";
+    document.getElementById('editModeBtn').textContent = "編輯標記";
+    this.markers.eachLayer(marker => marker.dragging.enable());
+  } else if (this.currentMode === "editMarker") {
+    this.currentMode = "editColor";
+    document.getElementById('editModeBtn').textContent = "編輯顏色";
+    this.markers.eachLayer(marker => marker.dragging.disable());
+  } else {
+    this.currentMode = "done";
+    document.getElementById('editModeBtn').textContent = "完成編輯";
+    this.markers.eachLayer(marker => marker.dragging.disable());
+    this.saveMarkers(); // 儲存所有變更
+  }
+}
 
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
