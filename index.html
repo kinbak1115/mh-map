@@ -458,17 +458,19 @@ const handler = (e) => {
         this.markers.eachLayer(marker => marker.dragging[this.editMode ? 'enable' : 'disable']());
       }
 
-      toggleSelectingRoute() {
-        this.routeSelecting = !this.routeSelecting;
-        const button = document.getElementById('routeBtn');
-        if (this.routeSelecting) {
-          this.selectedMarkers = [];
-          button.textContent = '完成選擇';
-        } else {
-          this.markers.eachLayer(marker => marker.setOpacity(0.6));
-          button.textContent = '選擇路線';
-        }
-      }
+toggleSelectingRoute() {
+  this.routeSelecting = !this.routeSelecting;
+  const button = document.getElementById('routeBtn');
+  if (this.routeSelecting) {
+    this.selectedMarkers = [];
+    button.textContent = '完成選擇';
+  } else {
+    this.selectedMarkers = [];
+    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    button.textContent = '選擇路線';
+  }
+}
+
 openGoogleRoute() {
   if (!this.selectedMarkers.length) {
     alert("請先選擇至少一個標記");
