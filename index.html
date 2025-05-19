@@ -509,10 +509,11 @@ toggleEditMode() {
       const routeBtn = document.getElementById('routeBtn');
       if (routeBtn) routeBtn.textContent = '選擇路線';
 
-      // 恢復標記透明度
-    if (markerElement) {
-       markerElement.classList.remove('markerBorder');
-    }
+      // 恢復標記
+          this.selectedMarkers.forEach(marker => {
+      const el = marker.getElement();
+      if (el) el.classList.remove("markerBorder");}
+                                       
     }
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
