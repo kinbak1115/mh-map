@@ -336,6 +336,7 @@ if (this.routeSelecting) {
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     if (markerElement) {
+       markerElement.classList.remove('markerBorder');
       markerElement.classList.add('marker-border');
     }
   } else {
