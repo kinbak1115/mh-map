@@ -502,17 +502,11 @@ this.markers.eachLayer(m => m.setOpacity(0.6));
 
 toggleEditMode() {
     if (this.routeSelecting) {
+      app.clearAllMarkerBorders();
       this.routeSelecting = false;
 
-      // 重設選擇路線狀態
-      this.selectedMarkers = [];
       const routeBtn = document.getElementById('routeBtn');
       if (routeBtn) routeBtn.textContent = '選擇路線';
-
-      // 恢復標記透明度
-    if (markerElement) {
-       markerElement.classList.remove('markerBorder');
-    }
     }
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
