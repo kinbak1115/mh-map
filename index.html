@@ -491,23 +491,24 @@ toggleEditMode() {
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
   const button = document.getElementById('routeBtn');
+
   if (this.routeSelecting) {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
+
+    // 進入選擇路線模式時，初始化所有標記透明度
     this.markers.eachLayer(marker => {
-      marker.setOpacity(1.0);
-      marker.on('click', this.handleMarkerSelect, this); 
+      marker.setOpacity(0.6); // 預設透明度
     });
 
   } else {
+    // 結束選擇路線模式，重設所有標記透明度
+    this.markers.eachLayer(marker => marker.setOpacity(0.6));
     this.selectedMarkers = [];
-    this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6); 
-      marker.off('click', this.handleMarkerSelect, this); 
-    });
     button.textContent = '選擇路線';
   }
 }
+
 
 handleMarkerSelect(e) {
   const marker = e.target;
