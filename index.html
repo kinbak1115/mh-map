@@ -64,7 +64,7 @@
 }
 
 .marker-border.markerBorder {
-box-shadow: 0 0 0 4px yellow;
+  box-shadow: 0 0 0 4px yellow;
 }
 
 
@@ -112,7 +112,7 @@ box-shadow: 0 0 0 4px yellow;
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.7</div>
+  <div id="version">版本 2.5.8</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -333,14 +333,12 @@ if (this.routeSelecting) {
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     if (markerElement) {
-         const imgDiv = markerElement.querySelector('.marker-border');
-  if (imgDiv) imgDiv.classList.remove('markerBorder');
+       markerElement.classList.remove('markerBorder');
     }
   } else {
     this.selectedMarkers.push(marker);
     if (markerElement) {
-        const imgDiv = markerElement.querySelector('.marker-border');
-  if (imgDiv) imgDiv.classList.add('markerBorder');
+      markerElement.classList.add('markerBorder');
     }
   }
   return; // 不進入其他模式
