@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.0</div>
+  <div id="version">版本 2.5.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -330,19 +330,24 @@ addMarker(latlng, data) {
         marker.setOpacity(1);
       }
     } else {
+      // 顯示資訊面板
+      this.updateInfoPanel(marker.data);
+
       // 編輯標記資訊
-      const input = prompt('編輯標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
-                           `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
-      if (input) {
-        const [name, time, type, remark] = input.split(',').map(s => s.trim());
-        const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-        marker.data.name = name;
-        marker.data.time = time;
-        marker.data.type = markerType;
-        marker.data.remark = remark;
-        marker.setIcon(this.getCustomIcon(markerType));
-        this.saveMarkers();
-        this.updateInfoPanel(marker.data);
+      if (confirm("是否要編輯這個標記的資訊？")) {
+        const input = prompt('編輯標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+                             `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+        if (input) {
+          const [name, time, type, remark] = input.split(',').map(s => s.trim());
+          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+          marker.data.name = name;
+          marker.data.time = time;
+          marker.data.type = markerType;
+          marker.data.remark = remark;
+          marker.setIcon(this.getCustomIcon(markerType));
+          this.saveMarkers();
+          this.updateInfoPanel(marker.data); // 🔄 更新資訊面板
+        }
       }
       marker.setOpacity(1);
     }
@@ -356,6 +361,7 @@ addMarker(latlng, data) {
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
 
       cycleMarkerColor(marker) {
