@@ -329,6 +329,7 @@ addMarker(latlng, data) {
     this.markers.eachLayer(m => m.setOpacity(0.6));
     // 將當前標記設為不透明
     marker.setOpacity(1);
+    this.updateMarkerScales()
 
     // 使用 requestAnimationFrame 等待瀏覽器刷新畫面
     requestAnimationFrame(() => {
@@ -493,11 +494,32 @@ toggleSelectingRoute() {
   if (this.routeSelecting) {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
-    this.markers.eachLayer(marker => marker.setOpacity(1));
+    this.markers.eachLayer(marker => {
+      marker.setOpacity(0.6);
+      marker.on('click', this.handleMarkerSelect, this); 
+    });
+
   } else {
     this.selectedMarkers = [];
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    this.markers.eachLayer(marker => {
+      marker.setOpacity(0.6); 
+      marker.off('click', this.handleMarkerSelect, this); 
+    });
     button.textContent = '選擇路線';
+  }
+}
+
+handleMarkerSelect(e) {
+  const marker = e.target;
+
+  if (this.selectedMarkers.includes(marker)) {
+    // 如果已經選過，取消選擇
+    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+    marker.setOpacity(0.6);
+  } else {
+    // 如果尚未選過，設為選擇並調整透明度
+    this.selectedMarkers.push(marker);
+    marker.setOpacity(1);
   }
 }
 
