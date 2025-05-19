@@ -242,25 +242,31 @@ this.map.on('touchstart', handleMapTap);
 
       }
 
-      getCustomIcon(type = 0, scale = 1) {
-        const borderColor = markerColors[type] || 'transparent';
-        const size = 40 * scale;
-        return L.divIcon({
-          className: '',
-          html: `<div class="marker-border" style="
-            background-image: url('${iconUrl}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            border-color: ${borderColor};
-            width: ${size}px;
-            height: ${size}px;
-          "></div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size],
-          popupAnchor: [0, -size]
-        });
-      }
+getCustomIcon(type = 0, scale = 1) {
+  const iconUrls = {
+    0: iconUrl,
+    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png'
+  };
+
+  const size = 40 * scale;
+  return L.divIcon({
+    className: '',
+    html: `<div class="marker-border" style="
+      background-image: url('${iconUrls[type]}');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      width: ${size}px;
+      height: ${size}px;
+    "></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size]
+  });
+}
+
 
       updateMarkerScales() {
         const zoom = this.map.getZoom();
