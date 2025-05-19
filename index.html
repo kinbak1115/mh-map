@@ -322,10 +322,12 @@ const handler = (e) => {
   if (this.routeSelecting) {
 if (this.selectedMarkers.includes(marker)) {
   this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-  marker.setStyle({ color: '#3388ff', weight: 1 });
+  marker._icon.style.border = '';
+marker._icon.style.borderRadius = '';
 } else {
   this.selectedMarkers.push(marker);
-  marker.setStyle({ color: 'yellow', weight: 3 });
+  marker._icon.style.border = '3px solid yellow';
+marker._icon.style.borderRadius = '50%'; 
 }
 
     return; // 不進入其他模式
