@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.5</div>
+  <div id="version">版本 2.5.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -506,13 +506,30 @@ toggleSelectingRoute() {
   const button = document.getElementById('routeBtn');
 
   if (this.routeSelecting) {
+    // ✅ 自動退出編輯模式
+    if (this.currentMode !== 'done') {
+      this.currentMode = 'done';
+
+      // 更新「編輯」按鈕狀態
+      const editBtn = document.getElementById('editBtn');
+      if (editBtn) editBtn.textContent = '開始編輯';
+
+      // 更新「顏色」按鈕狀態
+      const colorBtn = document.getElementById('colorBtn');
+      if (colorBtn) colorBtn.textContent = '更改顏色';
+
+      // 禁用所有標記的拖拉
+      this.markers.eachLayer(marker => marker.dragging.disable());
+    }
+
+    // 進入選擇狀態
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
 
     // 降低所有標記透明度
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
   } else {
-    // 清除選擇並還原透明度
+    // 離開選擇狀態
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
     this.selectedMarkers = [];
     button.textContent = '選擇路線';
