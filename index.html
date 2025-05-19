@@ -334,7 +334,11 @@ if (this.selectedMarkers.includes(marker)) {
   if (this.currentMode === "editColor") {
     this.cycleMarkerColor(marker);
   } else if (this.currentMode === "editMarker") {
-    const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+  marker.setOpacity(1.0); // 先設為不透明
+
+  // 等待 UI 更新後再呼叫 prompt
+  setTimeout(() => {
+    const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
                          `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
     if (input) {
       const [name, time, type, remark] = input.split(',').map(s => s.trim());
@@ -347,7 +351,9 @@ if (this.selectedMarkers.includes(marker)) {
       this.saveMarkers();
       this.updateInfoPanel(marker.data);
     }
-  } else {
+  }, 0); // ✅ 讓出執行權，讓 UI 有機會重繪
+}
+ else {
     this.updateInfoPanel(marker.data);
   }
 };
@@ -398,16 +404,6 @@ if (this.selectedMarkers.includes(marker)) {
         saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
       }
 
-  
-
-     // filterMarkersByTypes() {
-      //  const selected = Array.from(document.getElementById('filterSelect').selectedOptions).map(opt => parseInt(opt.value));
-      //  const types = selected.length ? selected : [0, 1, 2, 3];
-       // this.markers.eachLayer(marker => {
-       //   marker.setOpacity(types.includes(marker.data.type) ? 1 : 0);
-       // });
-      //  this.filteredTypes = types;
-    //  }
 
 
       filterMarkersByTypes() {
