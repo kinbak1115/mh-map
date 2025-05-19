@@ -493,6 +493,7 @@ toggleSelectingRoute() {
   if (this.routeSelecting) {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
+    this.markers.eachLayer(marker => marker.setOpacity(1));
   } else {
     this.selectedMarkers = [];
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
