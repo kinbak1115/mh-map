@@ -161,7 +161,7 @@
           div.innerHTML = `
             <div class="btn-row">
               <button onclick="app.toggleEditMode()" id="editBtn">開始標記</button>
-              <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+              <button onclick="app.deleteSelectedMarker()">刪除標記</button>
             </div>
             <label>顯示顏色：</label>
             <select id="filterSelect" multiple onchange="app.filterMarkersByTypes()">
@@ -182,7 +182,7 @@
             </div>
             <div class="btn-row">
               <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
-              <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+              <button onclick="app.openGoogleRoute()">🗺️ Google路線</button>
             </div>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
           `;
