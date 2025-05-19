@@ -104,7 +104,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.7</div>
+  <div id="version">版本 2.5.8</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -322,11 +322,12 @@ const handler = (e) => {
   if (this.routeSelecting) {
 if (this.selectedMarkers.includes(marker)) {
   this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-  marker.setOpacity(0.6);
+  marker._icon.style.border = 'none';
 } else {
   this.selectedMarkers.push(marker);
-  marker.setOpacity(1.0);
+  marker._icon.style.border = '3px solid yellow';
 }
+
 
     return; // 不進入其他模式
   }
@@ -516,7 +517,6 @@ toggleEditMode() {
 
 
 
-
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
   const button = document.getElementById('routeBtn');
@@ -542,15 +542,21 @@ toggleSelectingRoute() {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
 
-    // 降低所有標記透明度
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    // 移除所有標記的邊框（清除殘留）
+    this.markers.eachLayer(marker => {
+      if (marker._icon) marker._icon.style.border = 'none';
+    });
   } else {
-    // 離開選擇狀態
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    // 離開選擇狀態，清除選取標記的邊框
+    this.selectedMarkers.forEach(marker => {
+      if (marker._icon) marker._icon.style.border = 'none';
+    });
+
     this.selectedMarkers = [];
     button.textContent = '選擇路線';
   }
 }
+
 
 
 openGoogleRoute() {
