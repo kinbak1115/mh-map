@@ -64,7 +64,7 @@
 }
 
 .marker-border.markerBorder {
-  border: 4px solid yellow;
+box-shadow: 0 0 0 4px yellow;
 }
 
 
@@ -333,12 +333,14 @@ if (this.routeSelecting) {
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     if (markerElement) {
-       markerElement.classList.remove('markerBorder');
+         const imgDiv = markerElement.querySelector('.marker-border');
+  if (imgDiv) imgDiv.classList.remove('markerBorder');
     }
   } else {
     this.selectedMarkers.push(marker);
     if (markerElement) {
-      markerElement.classList.add('markerBorder');
+        const imgDiv = markerElement.querySelector('.marker-border');
+  if (imgDiv) imgDiv.classList.add('markerBorder');
     }
   }
   return; // 不進入其他模式
