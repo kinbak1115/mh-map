@@ -344,6 +344,7 @@ addMarker(latlng, data) {
       }
     } else {
       // 完成編輯模式下顯示資訊
+marker.setOpacity(1)
       this.updateInfoPanel(marker.data);
     }
   };
@@ -393,16 +394,7 @@ addMarker(latlng, data) {
         saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
       }
 
-  
 
-     // filterMarkersByTypes() {
-      //  const selected = Array.from(document.getElementById('filterSelect').selectedOptions).map(opt => parseInt(opt.value));
-      //  const types = selected.length ? selected : [0, 1, 2, 3];
-       // this.markers.eachLayer(marker => {
-       //   marker.setOpacity(types.includes(marker.data.type) ? 1 : 0);
-       // });
-      //  this.filteredTypes = types;
-    //  }
 
 
       filterMarkersByTypes() {
