@@ -335,7 +335,16 @@ if (this.selectedMarkers.includes(marker)) {
     this.cycleMarkerColor(marker);
   } else if (this.currentMode === "editMarker") {
 
-  this.markers.forEach(m => m.setOpacity(0.6));
+
+
+    
+    this.markers.eachLayer(marker => {
+      marker.setOpacity(0.6);
+      marker.on('click', this.handleMarkerSelect, this); 
+    })
+
+
+    
   marker.setOpacity(1.0); // 先設為不透明
 
   // 等待 UI 更新後再呼叫 prompt
