@@ -318,6 +318,12 @@ addMarker(latlng, data) {
 
     this.selectedMarker = marker;
 
+// 清除所有標記的高亮（恢復 opacity）
+    this.markers.eachLayer(m => {
+      if (!this.routeSelecting || !this.selectedMarkers.includes(m)) {
+        m.setOpacity(0.6);
+      }
+
     if (this.currentMode === "editColor") {
       // 如果是顏色編輯模式
       this.cycleMarkerColor(marker);
