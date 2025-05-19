@@ -311,36 +311,47 @@ addMarker(latlng, data) {
 
   let tapped = false;
 
-  const handler = (e) => {
-    if (tapped) return;
-    tapped = true;
-    setTimeout(() => tapped = false, 300);
+const handler = (e) => {
+  if (tapped) return;
+  tapped = true;
+  setTimeout(() => tapped = false, 300);
 
-    this.selectedMarker = marker;
+  this.selectedMarker = marker;
 
-    if (this.currentMode === "editColor") {
-      // 如果是顏色編輯模式
-      this.cycleMarkerColor(marker);
-    } else if (this.currentMode === "editMarker") {
-      // 如果是標記編輯模式
-      const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
-                           `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
-      if (input) {
-        const [name, time, type, remark] = input.split(',').map(s => s.trim());
-        const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-        marker.data.name = name;
-        marker.data.time = time;
-        marker.data.type = markerType;
-        marker.data.remark = remark;
-        marker.setIcon(this.getCustomIcon(markerType));
-        this.saveMarkers();
-        this.updateInfoPanel(marker.data); // 更新資訊面板
-      }
-    } else {
-      // 完成編輯模式下顯示資訊
+  // 👉 路線選擇模式處理
+  if (this.routeSelecting) {
+if (this.selectedMarkers.includes(marker)) {
+  this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+  marker.setOpacity(0.6);
+} else {
+  this.selectedMarkers.push(marker);
+  marker.setOpacity(1.0);
+}
+
+    return; // 不進入其他模式
+  }
+
+  if (this.currentMode === "editColor") {
+    this.cycleMarkerColor(marker);
+  } else if (this.currentMode === "editMarker") {
+    const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
+                         `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+    if (input) {
+      const [name, time, type, remark] = input.split(',').map(s => s.trim());
+      const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+      marker.data.name = name;
+      marker.data.time = time;
+      marker.data.type = markerType;
+      marker.data.remark = remark;
+      marker.setIcon(this.getCustomIcon(markerType));
+      this.saveMarkers();
       this.updateInfoPanel(marker.data);
     }
-  };
+  } else {
+    this.updateInfoPanel(marker.data);
+  }
+};
+
 
   marker.on('click', handler);
   marker.on('touchstart', handler);
@@ -484,15 +495,21 @@ toggleEditMode() {
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
   const button = document.getElementById('routeBtn');
+
   if (this.routeSelecting) {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
-  } else {
-    this.selectedMarkers = [];
+
+    // 降低所有標記透明度
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
+  } else {
+    // 清除選擇並還原透明度
+    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    this.selectedMarkers = [];
     button.textContent = '選擇路線';
   }
 }
+
 
 openGoogleRoute() {
   if (!this.selectedMarkers.length) {
