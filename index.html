@@ -495,7 +495,7 @@ toggleSelectingRoute() {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
     this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
+      marker.setOpacity(1.0);
       marker.on('click', this.handleMarkerSelect, this); 
     });
 
