@@ -114,8 +114,12 @@
 
     class MapApp {
       constructor() {
-        this.map = L.map('map');
+          this.map = L.map('map', {
+    doubleClickZoom: false  // 關閉雙擊放大
+  });
         this.map.locate({ setView: true, maxZoom: 16 });
+
+
 
         this.map.on('locationfound', e => {
           L.circle(e.latlng, {
