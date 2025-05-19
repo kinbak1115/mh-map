@@ -510,7 +510,9 @@ toggleEditMode() {
       if (routeBtn) routeBtn.textContent = '選擇路線';
 
       // 恢復標記透明度
-      this.markers.eachLayer(marker => marker.setOpacity(0.6));
+    if (markerElement) {
+       markerElement.classList.remove('markerBorder');
+    }
     }
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
