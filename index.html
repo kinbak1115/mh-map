@@ -316,44 +316,46 @@ addMarker(latlng, data) {
     tapped = true;
     setTimeout(() => tapped = false, 300);
 
-    this.selectedMarker = marker;
-
-
-    if (this.currentMode === "editColor") {
-      // 如果是顏色編輯模式
+    if (this.currentMode === "routeSelecting") {
+      if (this.selectedMarkers.includes(marker)) {
+        // 移除選擇
+        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+        marker.setOpacity(0.6);
+      } else {
+        // 增加到選擇清單
+        this.selectedMarkers.push(marker);
+        marker.setOpacity(1.0);
+      }
+    } else if (this.currentMode === "editColor") {
       this.cycleMarkerColor(marker);
       this.markers.eachLayer(m => m.setOpacity(0.6));
-      marker.setOpacity(1)
+      marker.setOpacity(1);
     } else if (this.currentMode === "editMarker") {
-  // 先將所有標記設為半透明
-    this.markers.eachLayer(m => m.setOpacity(0.6));
-    // 將當前標記設為不透明
-    marker.setOpacity(1);
-    this.updateMarkerScales()
+      this.markers.eachLayer(m => m.setOpacity(0.6));
+      marker.setOpacity(1);
 
-    // 使用 requestAnimationFrame 等待瀏覽器刷新畫面
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
-                             `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
-        if (input) {
-          const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          marker.data.name = name;
-          marker.data.time = time;
-          marker.data.type = markerType;
-          marker.data.remark = remark;
-          marker.setIcon(this.getCustomIcon(markerType));
-          this.saveMarkers();
-          this.updateInfoPanel(marker.data);
-        }
-      }, 50); // 延遲一點時間讓畫面刷新
-    });
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
+                               `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+          if (input) {
+            const [name, time, type, remark] = input.split(',').map(s => s.trim());
+            const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+            marker.data.name = name;
+            marker.data.time = time;
+            marker.data.type = markerType;
+            marker.data.remark = remark;
+            marker.setIcon(this.getCustomIcon(markerType));
+            this.saveMarkers();
+            this.updateInfoPanel(marker.data);
+          }
+        }, 50);
+      });
 
     } else {
-      // 完成編輯模式下顯示資訊
+      // 顯示標記資訊
       this.markers.eachLayer(m => m.setOpacity(0.6));
-      marker.setOpacity(1)
+      marker.setOpacity(1);
       this.updateInfoPanel(marker.data);
     }
   };
@@ -366,6 +368,7 @@ addMarker(latlng, data) {
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
 
 
