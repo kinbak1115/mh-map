@@ -499,15 +499,19 @@ toggleSelectingRoute() {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
 
-    // 進入選擇路線模式時，初始化所有標記透明度
+    // 初始化所有標記透明度
     this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6); // 預設透明度
+      marker.setOpacity(0.6);
+      marker.isSelected = false; // 新增屬性來追蹤選擇狀態
     });
 
   } else {
-    // 結束選擇路線模式，重設所有標記透明度
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
-    this.selectedMarkers = [];
+    // 結束選擇模式時，僅重設未被選中的標記
+    this.markers.eachLayer(marker => {
+      if (!marker.isSelected) {
+        marker.setOpacity(0.6);
+      }
+    });
     button.textContent = '選擇路線';
   }
 }
@@ -520,10 +524,12 @@ handleMarkerSelect(e) {
     // 如果已經選過，取消選擇
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     marker.setOpacity(0.6);
+    marker.isSelected = false; // 更新狀態
   } else {
     // 如果尚未選過，設為選擇並調整透明度
     this.selectedMarkers.push(marker);
-    marker.setOpacity(1);
+    marker.setOpacity(1.0);
+    marker.isSelected = true; // 更新狀態
   }
 }
 
