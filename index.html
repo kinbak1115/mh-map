@@ -563,7 +563,6 @@ toggleSelectingRoute() {
   } else {
     // 離開選擇狀態
     app.clearAllMarkerBorders();
-    this.selectedMarkers = [];
     button.textContent = '選擇路線';
   }
 }
@@ -575,6 +574,11 @@ clearAllMarkerBorders() {
       markerElement.classList.remove('markerBorder');
     }
   });
+
+  // 同時清除選中的 marker 清單（若有）
+  this.selectedMarkers = [];
+}
+
 openGoogleRoute() {
   if (!this.selectedMarkers.length) {
     alert("請先選擇至少一個標記");
