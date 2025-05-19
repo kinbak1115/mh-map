@@ -322,6 +322,8 @@ addMarker(latlng, data) {
     if (this.currentMode === "editColor") {
       // 如果是顏色編輯模式
       this.cycleMarkerColor(marker);
+      this.markers.eachLayer(m => m.setOpacity(0.6));
+      marker.setOpacity(1)
     } else if (this.currentMode === "editMarker") {
       // 如果是標記編輯模式
       const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）', 
@@ -335,6 +337,8 @@ addMarker(latlng, data) {
         marker.data.remark = remark;
         marker.setIcon(this.getCustomIcon(markerType));
         this.saveMarkers();
+        this.markers.eachLayer(m => m.setOpacity(0.6));
+        marker.setOpacity(1)
         this.updateInfoPanel(marker.data); // 更新資訊面板
       }
     } else {
