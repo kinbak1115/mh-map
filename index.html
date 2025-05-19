@@ -461,19 +461,20 @@ addMarker(latlng, data) {
 toggleEditMode() {
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
-    document.getElementById('editModeBtn').textContent = "編輯標記";
+    document.getElementById('editBtn').textContent = "編輯標記";
     this.markers.eachLayer(marker => marker.dragging.enable());
   } else if (this.currentMode === "editMarker") {
     this.currentMode = "editColor";
-    document.getElementById('editModeBtn').textContent = "編輯顏色";
+    document.getElementById('editBtn').textContent = "編輯顏色";
     this.markers.eachLayer(marker => marker.dragging.disable());
   } else {
     this.currentMode = "done";
-    document.getElementById('editModeBtn').textContent = "完成編輯";
+    document.getElementById('editBtn').textContent = "完成編輯";
     this.markers.eachLayer(marker => marker.dragging.disable());
     this.saveMarkers(); // 儲存所有變更
   }
 }
+
 
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
