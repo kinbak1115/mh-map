@@ -510,9 +510,7 @@ toggleEditMode() {
       if (routeBtn) routeBtn.textContent = '選擇路線';
 
       // 恢復標記
-          this.selectedMarkers.forEach(marker => {
-      const el = marker.getElement();
-      if (el) el.classList.remove("markerBorder");}
+      this.markers.eachLayer(marker => marker.setOpacity(0.6));
                                        
     }
   if (this.currentMode === "done") {
@@ -563,7 +561,10 @@ toggleSelectingRoute() {
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
   } else {
     // 離開選擇狀態
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
+        this.selectedMarkers.forEach(marker => {
+      const el = marker.getElement();
+      if (el) el.classList.remove("markerBorder");
+    }
     this.selectedMarkers = [];
     button.textContent = '選擇路線';
   }
