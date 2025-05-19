@@ -62,9 +62,13 @@
     }
 
 .markerBorder {
-  box-shadow: 0 0 0 3px yellow; /* 黄色外框圈圈 */
-  border-radius: 50%;           /* 圆形外框，配合圆形 marker */
-  transition: box-shadow 0.2s;
+      border-radius: 50%;
+ border: 4px solid yellow;
+      width: 20px;
+      height: 20px;
+      background-size: cover;
+      background-position: center;
+      clip-path: circle(50% at 50% 50%);
 }
 
 
