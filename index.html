@@ -51,22 +51,22 @@
       }
     }
 
-    .marker-border {
-      border-radius: 50%;
-      border: 4px solid transparent;
-      width: 20px;
-      height: 20px;
-      background-size: cover;
-      background-position: center;
-      clip-path: circle(50% at 50% 50%);
-    }
-
-.markerBorder {
-  box-shadow: 0 0 0 4px yellow;  /* 黄色外框圈圈 */
+.marker-border {
   border-radius: 50%;
+  border: 4px solid transparent;
+  width: 40px;
+  height: 40px;
+  background-size: cover;
+  background-position: center;
+  clip-path: circle(50% at 50% 50%);
+  box-sizing: border-box;
   transition: box-shadow 0.2s;
-  box-sizing: border-box;        /* 确保 box-shadow 不撑大容器 */
 }
+
+.marker-border.markerBorder {
+  box-shadow: 0 0 0 4px yellow;
+}
+
 
 
     #version, #zoomDisplay {
@@ -267,7 +267,7 @@ getCustomIcon(type = 0, scale = 1) {
   const size = 40 * scale;
   return L.divIcon({
     className: '',
-    html: `<div class="marker-border" style="
+    html: `<div class="marker-border ${data && data.highlight ? 'markerBorder' : ''}" style="
       background-image: url('${iconUrls[type]}');
       background-size: contain;
       background-repeat: no-repeat;
