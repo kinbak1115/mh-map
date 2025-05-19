@@ -339,7 +339,8 @@ addMarker(latlng, data) {
       }
     } else {
       // 完成編輯模式下顯示資訊
-marker.setOpacity(1)
+      this.markers.eachLayer(m => m.setOpacity(0.6));
+      marker.setOpacity(1)
       this.updateInfoPanel(marker.data);
     }
   };
