@@ -316,11 +316,18 @@ addMarker(latlng, data) {
     tapped = true;
     setTimeout(() => tapped = false, 300);
 
+  this.selectedMarker = marker;
+
+
+    
     if (this.currentMode === "routeSelecting") {
       if (this.selectedMarkers.includes(marker)) {
-        // 移除選擇
         this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
         marker.setOpacity(0.6);
+      } else {
+        this.selectedMarkers.push(marker);
+        marker.setOpacity(1);
+      }
       } else {
         // 增加到選擇清單
         this.selectedMarkers.push(marker);
@@ -494,44 +501,16 @@ toggleEditMode() {
 toggleSelectingRoute() {
   this.routeSelecting = !this.routeSelecting;
   const button = document.getElementById('routeBtn');
-
   if (this.routeSelecting) {
     this.selectedMarkers = [];
     button.textContent = '完成選擇';
-
-    // 初始化所有標記透明度
-    this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
-      marker.isSelected = false; // 新增屬性來追蹤選擇狀態
-    });
-
   } else {
-    // 結束選擇模式時，僅重設未被選中的標記
-    this.markers.eachLayer(marker => {
-      if (!marker.isSelected) {
-        marker.setOpacity(0.6);
-      }
-    });
+    this.selectedMarkers = [];
+    this.markers.eachLayer(marker => marker.setOpacity(0.6));
     button.textContent = '選擇路線';
   }
 }
 
-
-handleMarkerSelect(e) {
-  const marker = e.target;
-
-  if (this.selectedMarkers.includes(marker)) {
-    // 如果已經選過，取消選擇
-    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-    marker.setOpacity(0.6);
-    marker.isSelected = false; // 更新狀態
-  } else {
-    // 如果尚未選過，設為選擇並調整透明度
-    this.selectedMarkers.push(marker);
-    marker.setOpacity(1.0);
-    marker.isSelected = true; // 更新狀態
-  }
-}
 
 openGoogleRoute() {
   if (!this.selectedMarkers.length) {
