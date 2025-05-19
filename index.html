@@ -112,7 +112,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.6.0</div>
+  <div id="version">版本 2.6.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -291,9 +291,16 @@ getCustomIcon(type = 0, scale = 1) {
         else if (zoom === 15) scale = 0.5;
         else scale = 0.3;
 
-        this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-        });
+this.markers.eachLayer(marker => {
+  marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+  
+  // 如果此 marker 是已選中的，重新加上 markerBorder class
+  const el = marker.getElement();
+  if (el && this.selectedMarkers.includes(marker)) {
+    el.classList.add('markerBorder');
+  }
+});
+
 
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
