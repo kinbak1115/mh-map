@@ -229,23 +229,24 @@
         document.getElementById('panelContent').innerHTML = content;
       }
 
-      initEventListeners() {
-      let mapTapped = false;
+initEventListeners() {
+  let mapTapped = false;
 
-const handleMapTap = (e) => {
-  if (mapTapped) return;
-  mapTapped = true;
-  setTimeout(() => mapTapped = false, 300);
+  const handleMapTap = (e) => {
+    if (mapTapped) return;
+    mapTapped = true;
+    setTimeout(() => (mapTapped = false), 300);
 
-  if (this.editMode) {
-    this.showMarkerForm(e.latlng);
-  }
-};
+    // 允許在 "editMarker" 模式下新增標記
+    if (this.currentMode === "editMarker") {
+      this.showMarkerForm(e.latlng);
+    }
+  };
 
-this.map.on('click', handleMapTap);
-this.map.on('touchstart', handleMapTap);
+  this.map.on("click", handleMapTap);
+  this.map.on("touchstart", handleMapTap);
+}
 
-      }
 
 getCustomIcon(type = 0, scale = 1) {
   const iconUrls = {
