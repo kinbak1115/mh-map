@@ -61,8 +61,10 @@
       clip-path: circle(50% at 50% 50%);
     }
     
-.marker-border.selected-route {
-  border-color: yellow;
+.selected-route {
+  filter: drop-shadow(0 0 5px yellow);
+  transform: scale(1.3);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
     #version, #zoomDisplay {
       position: absolute;
@@ -325,10 +327,15 @@ const handler = (e) => {
   if (this.routeSelecting) {
 if (this.selectedMarkers.includes(marker)) {
   this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-markerElement.classList.remove('selected-route');
+const el = marker.getElement();
+if (el) {
+  el.classList.remove('selected-route');
+}
 } else {
   this.selectedMarkers.push(marker);
-markerElement.classList.add('selected-route');
+  const el = marker.getElement();
+  if (el) {
+    el.classList.add('selected-route');
 }
 
     return; // 不進入其他模式
