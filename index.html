@@ -267,7 +267,7 @@ getCustomIcon(type = 0, scale = 1) {
   const size = 40 * scale;
   return L.divIcon({
     className: '',
-    html: `<div class="marker-border ${data && data.highlight ? 'markerBorder' : ''}" style="
+    html: `<div class="marker-border" style="..."></div>`
       background-image: url('${iconUrls[type]}');
       background-size: contain;
       background-repeat: no-repeat;
