@@ -469,7 +469,7 @@ toggleEditMode() {
     this.markers.eachLayer(marker => marker.dragging.disable());
   } else {
     this.currentMode = "done";
-    document.getElementById('editBtn').textContent = "完成編輯";
+    document.getElementById('editBtn').textContent = "開始編輯";
     this.markers.eachLayer(marker => marker.dragging.disable());
     this.saveMarkers(); // 儲存所有變更
   }
