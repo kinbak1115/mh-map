@@ -518,7 +518,7 @@ this.markers.eachLayer(m => {
   setTimeout(() => {
 this.map.on('click', e => {
   if (this.currentMode === "editMarker") {
-    this.showMarkerForm(e.latlng, e.originalEvent);
+     this.showMarkerForm(marker); 
   }
 });
 
