@@ -67,7 +67,6 @@
   outline: 6px solid red;
   border-radius: 50%;
   transition: outline 0.2s;
-  box-sizing: content-box; /* outline 不會佔用空間 */
 }
 
 
@@ -278,7 +277,8 @@ getCustomIcon(type = 0, scale = 1) {
       height: ${size}px;
     "></div>`,
     iconSize: [size, size],
-iconAnchor: [size / 2, size / 2], // 中心點
+iconAnchor: [size / 2 + 6, size / 2 + 6],
+
 
     popupAnchor: [0, -size]
   });
