@@ -373,7 +373,7 @@ showEditMarkerForm(marker) {
       remark: form.remark.value || ""
     };
 
-    marker.setIcon(this.getMarkerIcon(newType));
+    marker.setIcon(this.getCustomIcon(newType));
     this.saveMarkerData(marker, newData);
     this.renderInfoTable();
     this.map.closePopup();
@@ -493,40 +493,20 @@ this.markers.eachLayer(m => {
   marker.setOpacity(1.0);
   marker.setZIndexOffset(1000)
     this.cycleMarkerColor(marker);
-  } else if (this.currentMode === "editMarker") {
+} else if (this.currentMode === "editMarker") {
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+    m.off('click'); // 清除舊的事件監聽
+    m.on('click', () => {
+      m.setOpacity(1.0);
+      m.setZIndexOffset(1000);
+      this.showEditMarkerForm(m); // 立刻顯示編輯表單
+    });
+  });
+  return;
+}
 
-    this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
-      marker.on('click', this.handleMarkerSelect, this); 
-    })
-
-  marker.setOpacity(1.0); // 先設為不透明
-  marker.setZIndexOffset(1000)
-
-  // 等待 UI 更新後再呼叫 prompt
-  setTimeout(() => {
-this.map.on('click', e => {
-  if (this.currentMode === "editMarker") {
-    this.showEditMarkerForm(marker);
-  }
-});
-
-
-    if (input) {
-      const [name, time, type, remark] = input.split(',').map(s => s.trim());
-      const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-      marker.data.name = name;
-      marker.data.time = time;
-      marker.data.type = markerType;
-      marker.data.remark = remark;
-      marker.setIcon(this.getCustomIcon(markerType));
-      this.saveMarkers();
-      this.updateInfoPanel(marker.data);
-    }
-  }, 0); // ✅ 讓出執行權，讓 UI 有機會重繪
 }
  else {
 this.markers.eachLayer(m => m.setOpacity(0.6));
