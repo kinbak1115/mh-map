@@ -348,9 +348,10 @@ showEditMarkerForm(marker) {
     <label>時間：<input type="text" name="time" value="${data.time}"></label><br>
     <label>顏色：
       <select name="color">
-        <option value="red" ${data.type === 0 ? "selected" : ""}>紅</option>
-        <option value="blue" ${data.type === 1 ? "selected" : ""}>藍</option>
-        <option value="green" ${data.type === 2 ? "selected" : ""}>綠</option>
+        <option value="0" ${data.type === 0 ? "selected" : ""}>原始</option>
+        <option value="1" ${data.type === 1 ? "selected" : ""}>紅</option>
+        <option value="2" ${data.type === 2 ? "selected" : ""}>藍</option>
+        <option value="3" ${data.type === 3 ? "selected" : ""}>綠</option>
       </select>
     </label><br>
     <label>備註：<input type="text" name="remark" value="${data.remark || ""}"></label><br>
@@ -362,9 +363,8 @@ showEditMarkerForm(marker) {
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-    const colorMap = { red: 0, blue: 1, green: 2 };
-    const newColor = form.color.value;
-    const newType = colorMap[newColor];
+
+    const newType = parseInt(form.color.value); // 顏色值現在是數字字串
 
     const newData = {
       name: form.name.value,
@@ -384,6 +384,7 @@ showEditMarkerForm(marker) {
     this.map.closePopup();
   });
 }
+
 
 saveMarkerForm() {
   const form = document.getElementById('markerForm');
