@@ -421,28 +421,22 @@ saveMarkerForm() {
 showNewMarkerForm(latlng, event) {
   const form = document.getElementById("markerForm");
 
-  // 顯示表單
   form.style.display = "block";
-
-  // 定位表單位置到點擊處
   const point = this.map.latLngToContainerPoint(latlng);
   form.style.left = point.x + "px";
   form.style.top = point.y + "px";
 
-  // 清空表單
   document.getElementById("markerName").value = "";
   document.getElementById("markerTime").value = "";
   document.getElementById("markerType").value = "0";
   document.getElementById("markerRemark").value = "";
 
-  // 解除舊事件綁定
   const newSubmit = form.querySelector("#submitMarker").cloneNode(true);
   form.querySelector("#submitMarker").replaceWith(newSubmit);
 
   const newCancel = form.querySelector("#cancelMarker").cloneNode(true);
   form.querySelector("#cancelMarker").replaceWith(newCancel);
 
-  // 綁定「確定」按鈕
   newSubmit.addEventListener("click", () => {
     const data = {
       name: document.getElementById("markerName").value,
@@ -451,28 +445,42 @@ showNewMarkerForm(latlng, event) {
       remark: document.getElementById("markerRemark").value || ""
     };
 
-    this.addMarker(latlng, data);
+    // 設定所有現有標記為 0.6 透明度
+    this.markers.forEach(m => {
+      m.setIcon(this.getCustomIcon(m.data.type, 0.6));
+    });
+
+    // 加入新標記，透明度為 1.0
+    this.addMarker(latlng, data, 1.0);
+
     this.renderInfoTable();
     form.style.display = "none";
   });
 
-  // 綁定「取消」按鈕
   newCancel.addEventListener("click", () => {
     form.style.display = "none";
   });
 }
 
 
+
 addMarker(latlng, data) {
+  // 1. 所有現有標記先變淡
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+  });
+
   const marker = L.marker(latlng, {
     draggable: this.currentMode === 'editMarker',
     icon: this.getCustomIcon(data.type)
   });
 
   marker.data = data;
-  marker.setOpacity(0.6);
 
-  this.markers.eachLayer(m => m.setZIndexOffset(0)); // 重設 z-index
+  // 2. 新標記設為不透明 & 提到最上層
+  marker.setOpacity(1.0);
+  marker.setZIndexOffset(1000);
 
   let tapped = false;
 
@@ -496,15 +504,16 @@ addMarker(latlng, data) {
     }
 
     // ✅ 標記編輯模式
-if (this.currentMode === "editMarker") {
-  // 反白外觀
-  this.markers.eachLayer(m => { m.setOpacity(0.6); m.setZIndexOffset(0); });
-  marker.setOpacity(1);
-  marker.setZIndexOffset(1000);
-
-  this.showEditMarkerForm(marker);  // ✅ 加上這一行，才能真正顯示編輯表單
-  return;
-}
+    if (this.currentMode === "editMarker") {
+      this.markers.eachLayer(m => {
+        m.setOpacity(0.6);
+        m.setZIndexOffset(0);
+      });
+      marker.setOpacity(1);
+      marker.setZIndexOffset(1000);
+      this.showEditMarkerForm(marker);
+      return;
+    }
 
     // ✅ 預設模式（查看資訊）
     this.handleInfoMode(marker);
@@ -518,6 +527,7 @@ if (this.currentMode === "editMarker") {
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
 handleRouteSelect(marker) {
   const el = marker.getElement();
