@@ -420,37 +420,49 @@ saveMarkerForm() {
 }
 
 showNewMarkerForm(latlng, event) {
-  const form = document.createElement("form");
-  form.innerHTML = `
-    <label>名稱：<input type="text" name="name" required></label><br>
-    <label>時間：<input type="text" name="time" placeholder="如 5/20 10:30"></label><br>
-    <label>顏色：
-      <select name="color">
-        <option value="red">紅</option>
-        <option value="blue">藍</option>
-        <option value="green">綠</option>
-      </select>
-    </label><br>
-    <label>備註：<input type="text" name="remark" placeholder="非必填"></label><br>
-    <button type="submit">新增</button>
-  `;
-  const popup = L.popup()
-    .setLatLng(latlng)
-    .setContent(form)
-    .openOn(this.map);
+  const form = document.getElementById("markerForm");
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  // 顯示表單
+  form.style.display = "block";
+
+  // 定位表單位置到點擊處
+  const point = this.map.latLngToContainerPoint(latlng);
+  form.style.left = point.x + "px";
+  form.style.top = point.y + "px";
+
+  // 清空表單
+  document.getElementById("markerName").value = "";
+  document.getElementById("markerTime").value = "";
+  document.getElementById("markerType").value = "0";
+  document.getElementById("markerRemark").value = "";
+
+  // 解除舊事件綁定
+  const newSubmit = form.querySelector("#submitMarker").cloneNode(true);
+  form.querySelector("#submitMarker").replaceWith(newSubmit);
+
+  const newCancel = form.querySelector("#cancelMarker").cloneNode(true);
+  form.querySelector("#cancelMarker").replaceWith(newCancel);
+
+  // 綁定「確定」按鈕
+  newSubmit.addEventListener("click", () => {
     const data = {
-      name: form.name.value,
-      time: form.time.value,
-      type: ["red", "blue", "green"].indexOf(form.color.value),
-      remark: form.remark.value || ""
+      name: document.getElementById("markerName").value,
+      time: document.getElementById("markerTime").value,
+      type: parseInt(document.getElementById("markerType").value),
+      remark: document.getElementById("markerRemark").value || ""
     };
+
     this.addMarker(latlng, data);
-    this.map.closePopup();
+    this.renderInfoTable();
+    form.style.display = "none";
+  });
+
+  // 綁定「取消」按鈕
+  newCancel.addEventListener("click", () => {
+    form.style.display = "none";
   });
 }
+
 
 addMarker(latlng, data) {
   const marker = L.marker(latlng, {
