@@ -51,22 +51,21 @@
       }
     }
 
-.marker-border {
-  border-radius: 50%;
-  border: 4px solid transparent;
-  background-size: cover;
-  background-position: center;
-  clip-path: circle(50% at 50% 50%);
-  width: auto; /* 不固定寬高 */
-  height: auto;
-  display: inline-block;
-}
-
+    .marker-border {
+      border-radius: 50%;
+      border: 4px solid transparent;
+      width: 20px;
+      height: 20px;
+      background-size: cover;
+      background-position: center;
+      clip-path: circle(50% at 50% 50%);
+    }
 
 .markerBorder {
-  outline: 6px solid red;
+  box-shadow: 0 0 0 6px red;  /* 黄色外框圈圈 */
   border-radius: 50%;
-  transition: outline 0.2s;
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;        /* 确保 box-shadow 不撑大容器 */
 }
 
 
@@ -113,7 +112,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.5.7</div>
+  <div id="version">版本 2.6.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -167,7 +166,7 @@
         const control = L.control({ position: 'topright' });
         control.onAdd = () => {
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
-          div.innerHTML = `
+          div.innerHTML = 
             <div class="btn-row">
               <button onclick="app.toggleEditMode()" id="editBtn">開始標記</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
@@ -194,7 +193,7 @@
               <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
             </div>
             <input type="file" id="restoreFile" style="display:none" accept=".json">
-          `;
+          ;
           L.DomEvent.disableClickPropagation(div);
           return div;
         };
@@ -229,12 +228,12 @@
       }
 
       updateInfoPanel(data) {
-        const content = `
+        const content = 
           <p><strong>${data.name}</strong></p>
           <p>時間：${data.time}</p>
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
-        `;
+        ;
         document.getElementById('panelContent').innerHTML = content;
       }
 
@@ -268,19 +267,17 @@ getCustomIcon(type = 0, scale = 1) {
   const size = 40 * scale;
   return L.divIcon({
     className: '',
-    html: `<div class="marker-border" style="
+    html: <div class="marker-border" style="
       background-image: url('${iconUrls[type]}');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
       width: ${size}px;
       height: ${size}px;
-    "></div>`,
+    "></div>,
     iconSize: [size, size],
-iconAnchor: [size / 2 + 6, size / 2 + 6],
-
-
-    popupAnchor: [0, -size]
+    iconAnchor: [size / 2, size / 2],     // ⬅️ 關鍵！設為中心對齊
+    popupAnchor: [0, -size / 2]
   });
 }
 
@@ -294,15 +291,22 @@ iconAnchor: [size / 2 + 6, size / 2 + 6],
         else if (zoom === 15) scale = 0.5;
         else scale = 0.3;
 
-        this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-        });
+this.markers.eachLayer(marker => {
+  marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+  
+  // 如果此 marker 是已選中的，重新加上 markerBorder class
+  const el = marker.getElement();
+  if (el && this.selectedMarkers.includes(marker)) {
+    el.classList.add('markerBorder');
+  }
+});
 
-        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
+
+        document.getElementById('zoomDisplay').textContent = Zoom: ${zoom};
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`);
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', 古龍種, 現在, ${this.lastMarkerType}, 重要出沒點);
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -369,7 +373,7 @@ if (this.routeSelecting) {
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
     const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
-                         `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+                         ${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark});
     if (input) {
       const [name, time, type, remark] = input.split(',').map(s => s.trim());
       const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -584,10 +588,10 @@ openGoogleRoute() {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      const current = `${position.coords.latitude},${position.coords.longitude}`;
-      const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
+      const current = ${position.coords.latitude},${position.coords.longitude};
+      const waypoints = this.selectedMarkers.map(m => ${m.getLatLng().lat},${m.getLatLng().lng});
       const route = [current, ...waypoints];
-      const url = `https://www.google.com/maps/dir/${route.join('/')}`;
+      const url = https://www.google.com/maps/dir/${route.join('/')};
 
       // 用 <a> 模擬點擊，解決 Safari 的彈出限制
       const link = document.createElement('a');
