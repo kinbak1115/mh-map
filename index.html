@@ -131,7 +131,6 @@
         <option value="17:00">17:00</option>
       </select>
     </label><br>
-    <label>顏色(0-3): <input type="number" id="markerType" min="0" max="3"></label><br>
     <label>備註: <input type="text" id="markerRemark"></label><br>
     <button id="submitMarker">確定</button>
     <button id="cancelMarker">取消</button>
@@ -442,7 +441,7 @@ showNewMarkerForm(latlng, event) {
     const data = {
       name: document.getElementById("markerName").value,
       time: document.getElementById("markerTime").value,
-      type: parseInt(document.getElementById("markerType").value),
+      type: 0,
       remark: document.getElementById("markerRemark").value || ""
     };
 
