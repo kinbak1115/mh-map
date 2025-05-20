@@ -494,9 +494,6 @@ if (this.currentMode === "editMarker") {
   // 反白外觀
   this.markers.eachLayer(m => { m.setOpacity(0.6); m.setZIndexOffset(0); });
   marker.setOpacity(1); marker.setZIndexOffset(1000);
-
-  // 直接顯示編輯表單
-  this.showEditMarkerForm(marker);
   return;                         // 不再往下跑其它模式
 }
 
