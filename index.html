@@ -156,15 +156,6 @@
 /* --- 在 class MapApp 裡任何方法之前，加一個 onMapClickAdd --- */
 onMapClickAdd = (e) => {
   if (this.currentMode !== "editMarker") return;        // 只在編輯標記模式生效
-
-  // 建立一個預設資料的新標記
-  const newMarker = this.addMarker(e.latlng, {
-    name: "新標記",
-    time: "",
-    type: 0,
-    remark: ""
-  });
-
   // 立刻打開表單編輯這顆新標記
   this.showNewMarkerForm(e.latlng, e);
 };
