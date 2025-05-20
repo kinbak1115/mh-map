@@ -450,8 +450,7 @@ this.markers.eachLayer(m => {
 
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
-    const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
-                         `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+ this.showMarkerForm(marker);
 
     if (input) {
       const [name, time, type, remark] = input.split(',').map(s => s.trim());
