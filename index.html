@@ -271,16 +271,17 @@
 initEventListeners() {
   let mapTapped = false;
 
-  const handleMapTap = (e) => {
-    if (mapTapped) return;
-    mapTapped = true;
-    setTimeout(() => (mapTapped = false), 300);
+const handleMapTap = (e) => {
+  if (mapTapped) return;
+  mapTapped = true;
+  setTimeout(() => (mapTapped = false), 300);
 
-    // 允許在 "editMarker" 模式下新增標記
-    if (this.currentMode === "editMarker") {
-this.map.on('click', e => this.showMarkerForm(e.latlng, e.originalEvent));
-    }
-  };
+  // ✅ 僅在 addMarker 模式下允許新增標記
+  if (this.currentMode === "addMarker") {
+    this.showMarkerForm(e.latlng, e.originalEvent);
+  }
+};
+
 
   this.map.on("click", handleMapTap);
   this.map.on("touchstart", handleMapTap);
@@ -515,7 +516,12 @@ this.markers.eachLayer(m => {
 
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
-this.map.on('click', e => this.showMarkerForm(e.latlng, e.originalEvent));
+this.map.on('click', e => {
+  if (this.currentMode !== "editColor") {
+    this.showMarkerForm(e.latlng, e.originalEvent);
+  }
+});
+
 
     if (input) {
       const [name, time, type, remark] = input.split(',').map(s => s.trim());
