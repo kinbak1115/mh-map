@@ -61,13 +61,12 @@
       clip-path: circle(50% at 50% 50%);
     }
 
-.marker-border.markerBorder {
-  box-shadow: 0 0 0 6px red; /* 黃色外圈 */
+.markerBorder {
+  box-shadow: 0 0 0 4px yellow;  /* 黄色外框圈圈 */
   border-radius: 50%;
-  box-sizing: border-box;
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;        /* 确保 box-shadow 不撑大容器 */
 }
-
-
 
 
     #version, #zoomDisplay {
@@ -113,7 +112,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.6.3</div>
+  <div id="version">版本 2.5.7</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -277,8 +276,8 @@ getCustomIcon(type = 0, scale = 1) {
       height: ${size}px;
     "></div>`,
     iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],     // ⬅️ 關鍵！設為中心對齊
-    popupAnchor: [0, -size / 2]
+iconAnchor: [(size + 12) / 2, (size + 12) / 2],
+    popupAnchor: [0, -size]
   });
 }
 
@@ -292,19 +291,9 @@ getCustomIcon(type = 0, scale = 1) {
         else if (zoom === 15) scale = 0.5;
         else scale = 0.3;
 
-this.markers.eachLayer(marker => {
-  marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-  
-  // 如果此 marker 是已選中的，重新加上 markerBorder class
-  const el = marker.getElement();
-  if (el && this.selectedMarkers.includes(marker)) {
-      const markerInner = el.querySelector('.marker-border');
-  if (markerInner) {
-    markerInner.classList.add('markerBorder');
-  }
-  }
-});
-
+        this.markers.eachLayer(marker => {
+          marker.setIcon(this.getCustomIcon(marker.data.type, scale));
+        });
 
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
@@ -340,24 +329,17 @@ const handler = (e) => {
   // 👉 路線選擇模式處理
 if (this.routeSelecting) {
   const markerElement = marker.getElement();
-const el = marker.getElement();
+
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-
-if (el) {
-  const markerInner = el.querySelector('.marker-border');
-  if (markerInner) {
-    markerInner.classList.remove('markerBorder');
+    if (markerElement) {
+       markerElement.classList.remove('markerBorder');
+    }
   } else {
     this.selectedMarkers.push(marker);
-
-if (el) {
-  const markerInner = el.querySelector('.marker-border');
-  if (markerInner) {
-    markerInner.classList.add('markerBorder');
-  }
-}
-
+    if (markerElement) {
+      markerElement.classList.add('markerBorder');
+    }
   }
   return; // 不進入其他模式
 }
