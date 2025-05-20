@@ -347,9 +347,6 @@ const handler = (e) => {
   // 👉 路線選擇模式處理
 if (this.routeSelecting) {
   const markerElement = marker.getElement();
-marker.on('click', function () {
-  map.panTo([lat, lng]); // 或 map.setView([lat, lng], 16);
-});
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     if (markerElement) {
@@ -404,6 +401,9 @@ marker.on('click', function () {
 this.markers.eachLayer(m => m.setOpacity(0.6));
     // 將被點選的標記設為 1.0
     marker.setOpacity(1.0);
+marker.on('click', function () {
+  map.panTo([lat, lng]); // 或 map.setView([lat, lng], 16);
+});
     this.updateInfoPanel(marker.data);
   }
 };
