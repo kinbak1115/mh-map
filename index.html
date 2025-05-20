@@ -119,7 +119,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.6.1</div>
+  <div id="version">版本 2.6.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -401,9 +401,6 @@ if (this.routeSelecting) {
 this.markers.eachLayer(m => m.setOpacity(0.6));
     // 將被點選的標記設為 1.0
     marker.setOpacity(1.0);
-marker.on('click', function () {
-  map.panTo([lat, lng]); // 或 map.setView([lat, lng], 16);
-});
     this.updateInfoPanel(marker.data);
   }
 };
