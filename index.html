@@ -152,6 +152,24 @@
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
 
     class MapApp {
+
+/* --- 在 class MapApp 裡任何方法之前，加一個 onMapClickAdd --- */
+onMapClickAdd = (e) => {
+  if (this.currentMode !== "editMarker") return;        // 只在編輯標記模式生效
+
+  // 建立一個預設資料的新標記
+  const newMarker = this.addMarker(e.latlng, {
+    name: "新標記",
+    time: "",
+    type: 0,
+    remark: ""
+  });
+
+  // 立刻打開表單編輯這顆新標記
+  this.showEditMarkerForm(newMarker);
+};
+
+
       constructor() {
           this.map = L.map('map', {
     doubleClickZoom: false  // 關閉雙擊放大
@@ -473,10 +491,15 @@ addMarker(latlng, data) {
     }
 
     // ✅ 標記編輯模式
-    if (this.currentMode === "editMarker") {
-      this.handleEditMarker(marker);
-      return;
-    }
+if (this.currentMode === "editMarker") {
+  // 反白外觀
+  this.markers.eachLayer(m => { m.setOpacity(0.6); m.setZIndexOffset(0); });
+  marker.setOpacity(1); marker.setZIndexOffset(1000);
+
+  // 直接顯示編輯表單
+  this.showEditMarkerForm(marker);
+  return;                         // 不再往下跑其它模式
+}
 
     // ✅ 預設模式（查看資訊）
     this.handleInfoMode(marker);
@@ -654,19 +677,24 @@ toggleEditMode() {
       const routeBtn = document.getElementById('routeBtn');
       if (routeBtn) routeBtn.textContent = '選擇路線';
     }
-  if (this.currentMode === "done") {
+if (this.currentMode === "done") {               // ➜ 進入編輯標記
     this.currentMode = "editMarker";
     document.getElementById('editBtn').textContent = "編輯標記";
-    this.markers.eachLayer(marker => marker.dragging.enable());
-  } else if (this.currentMode === "editMarker") {
+    this.map.on('click', this.onMapClickAdd);      // ★ 開放地圖點擊新增
+    this.markers.eachLayer(m => m.dragging.enable());
+
+  } else if (this.currentMode === "editMarker") {  // ➜ 進入編輯顏色
     this.currentMode = "editColor";
     document.getElementById('editBtn').textContent = "編輯顏色";
-    this.markers.eachLayer(marker => marker.dragging.disable());
-  } else {
+    this.map.off('click', this.onMapClickAdd);     // ★ 關閉地圖點擊新增
+    this.markers.eachLayer(m => m.dragging.disable());
+
+  } else {                                         // ➜ 回到完成模式
     this.currentMode = "done";
     document.getElementById('editBtn').textContent = "開始編輯";
-    this.markers.eachLayer(marker => marker.dragging.disable());
-    this.saveMarkers(); // 儲存所有變更
+    this.map.off('click', this.onMapClickAdd);     // ★ 關閉地圖點擊新增
+    this.markers.eachLayer(m => m.dragging.disable());
+    this.saveMarkers();
   }
 }
 
