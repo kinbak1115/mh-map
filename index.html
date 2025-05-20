@@ -61,12 +61,13 @@
       clip-path: circle(50% at 50% 50%);
     }
 
-.markerBorder {
-  box-shadow: 0 0 0 6px red;  /* 黄色外框圈圈 */
+.marker-border.marker-border-highlight {
+  box-shadow: 0 0 0 6px red;
   border-radius: 50%;
   transition: box-shadow 0.2s;
-  box-sizing: border-box;        /* 确保 box-shadow 不撑大容器 */
+  box-sizing: border-box;
 }
+
 
 
     #version, #zoomDisplay {
@@ -294,11 +295,11 @@ getCustomIcon(type = 0, scale = 1) {
 this.markers.eachLayer(marker => {
   marker.setIcon(this.getCustomIcon(marker.data.type, scale));
   
-  // 如果此 marker 是已選中的，重新加上 markerBorder class
-  const el = marker.getElement();
-  if (el && this.selectedMarkers.includes(marker)) {
-    el.classList.add('markerBorder');
-  }
+ const markerBorderDiv = el.querySelector('.marker-border');
+
+if (markerBorderDiv) {
+      markerBorderDiv.classList.add('marker-border-highlight');
+    }
 });
 
 
@@ -570,13 +571,15 @@ toggleSelectingRoute() {
 
 clearAllMarkerBorders() {
   this.markers.eachLayer(marker => {
-    const markerElement = marker.getElement();
-    if (markerElement) {
-      markerElement.classList.remove('markerBorder');
+    const el = marker.getElement();
+    if (el) {
+      const markerBorderDiv = el.querySelector('.marker-border');
+      if (markerBorderDiv) {
+        markerBorderDiv.classList.remove('marker-border-highlight');
+      }
     }
   });
 
-  // 同時清除選中的 marker 清單（若有）
   this.selectedMarkers = [];
 }
 
