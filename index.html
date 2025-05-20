@@ -278,7 +278,7 @@ initEventListeners() {
 
     // 允許在 "editMarker" 模式下新增標記
     if (this.currentMode === "editMarker") {
-      this.showMarkerForm(e.latlng);
+this.map.on('click', e => this.showMarkerForm(e.latlng, e.originalEvent));
     }
   };
 
@@ -358,7 +358,7 @@ showMarkerForm(marker) {
     });
     this._markerFormListenerAdded = true;
   }
-},
+}
 
 saveMarkerForm() {
   const form = document.getElementById('markerForm');
@@ -381,24 +381,45 @@ saveMarkerForm() {
   this.selectedMarker = null;
 }
 
-showMarkerForm(latlng) {
+showMarkerForm(latlng, event) {
   const form = document.getElementById('markerForm');
   form.style.display = 'block';
-  form.style.left = event.pageX + 'px';
-  form.style.top = event.pageY + 'px';
 
+  // 設定表單位置，防止跑版
+  if (event) {
+    form.style.left = event.pageX + 'px';
+    form.style.top = event.pageY + 'px';
+  } else {
+    // 預設位置（置中或左上角）
+    form.style.left = '50%';
+    form.style.top = '50%';
+    form.style.transform = 'translate(-50%, -50%)';
+  }
+
+  // 預設表單欄位值
   document.getElementById('markerName').value = '古龍種';
   document.getElementById('markerTime').value = '';
-  document.getElementById('markerType').value = this.lastMarkerType;
+  document.getElementById('markerType').value = this.lastMarkerType || 0;
   document.getElementById('markerRemark').value = '重要出沒點';
 
   const submitBtn = document.getElementById('submitMarker');
   const cancelBtn = document.getElementById('cancelMarker');
 
-  const handleSubmit = () => {
+  // 先移除舊事件，避免重複綁定
+  submitBtn.replaceWith(submitBtn.cloneNode(true));
+  cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+
+  // 重新取得按鈕元素（因為替換了）
+  const newSubmitBtn = document.getElementById('submitMarker');
+  const newCancelBtn = document.getElementById('cancelMarker');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
     const name = document.getElementById('markerName').value.trim();
     const time = document.getElementById('markerTime').value.trim();
-    const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 3);
+    let type = parseInt(document.getElementById('markerType').value);
+    type = isNaN(type) ? 0 : Math.min(Math.max(type, 0), 3);
     const remark = document.getElementById('markerRemark').value.trim();
 
     if (!name || !time) {
@@ -410,19 +431,22 @@ showMarkerForm(latlng) {
     this.lastMarkerType = type;
     form.style.display = 'none';
 
-    submitBtn.removeEventListener('click', handleSubmit);
-    cancelBtn.removeEventListener('click', handleCancel);
+    // 移除監聽器
+    newSubmitBtn.removeEventListener('click', handleSubmit);
+    newCancelBtn.removeEventListener('click', handleCancel);
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e) => {
+    e.preventDefault();
     form.style.display = 'none';
-    submitBtn.removeEventListener('click', handleSubmit);
-    cancelBtn.removeEventListener('click', handleCancel);
+    newSubmitBtn.removeEventListener('click', handleSubmit);
+    newCancelBtn.removeEventListener('click', handleCancel);
   };
 
-  submitBtn.addEventListener('click', handleSubmit);
-  cancelBtn.addEventListener('click', handleCancel);
+  newSubmitBtn.addEventListener('click', handleSubmit);
+  newCancelBtn.addEventListener('click', handleCancel);
 }
+
 
 addMarker(latlng, data) {
   const marker = L.marker(latlng, {
@@ -491,7 +515,7 @@ this.markers.eachLayer(m => {
 
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
- this.showMarkerForm(marker);
+this.map.on('click', e => this.showMarkerForm(e.latlng, e.originalEvent));
 
     if (input) {
       const [name, time, type, remark] = input.split(',').map(s => s.trim());
