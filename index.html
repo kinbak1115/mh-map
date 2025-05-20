@@ -61,13 +61,16 @@
       clip-path: circle(50% at 50% 50%);
     }
 
-.markerBorder {
-  border: 6px solid red;
+.markerWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px; /* size (44) + 6*2 box-shadow */
+  height: 56px;
+  box-shadow: 0 0 0 6px red;
   border-radius: 50%;
   box-sizing: border-box;
 }
-
-
 
     #version, #zoomDisplay {
       position: absolute;
@@ -256,30 +259,32 @@ initEventListeners() {
 }
 
 
-getCustomIcon(type = 0, scale = 1) {
-  const iconUrls = {
-    0: iconUrl,
-    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png'
-  };
+function getCustomIcon(iconUrl, size = 44, className = "") {
+  const totalSize = size + 12; // 因為 box-shadow: 6px，左右共增加12px
 
-  const size = 40 * scale;
   return L.divIcon({
-    className: '',
-    html: `<div class="marker-border" style="
-      background-image: url('${iconUrls[type]}');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-      width: ${size}px;
-      height: ${size}px;
-    "></div>`,
-    iconSize: [size, size],
-iconAnchor: [(size + 12) / 2, (size + 12) / 2],
-    popupAnchor: [0, -size]
+    className: "",
+    html: `
+      <div class="markerWrapper ${className}" style="
+        width: ${totalSize}px;
+        height: ${totalSize}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 0 6px red;
+        border-radius: 50%;
+        box-sizing: border-box;
+      ">
+        <img src="${iconUrl}" width="${size}" height="${size}" style="
+          display: block;
+        " />
+      </div>
+    `,
+    iconSize: [totalSize, totalSize],
+    iconAnchor: [totalSize / 2, totalSize / 2],
   });
 }
+
 
 
       updateMarkerScales() {
