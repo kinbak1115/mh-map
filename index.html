@@ -334,6 +334,9 @@ addMarker(latlng, data) {
 
   marker.data = data;
   marker.setOpacity(0.6);
+  this.markers.eachLayer(m => {
+  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+});
 
   let tapped = false;
 
@@ -366,19 +369,27 @@ if (this.routeSelecting) {
 
     this.markers.eachLayer(marker => {
       marker.setOpacity(0.6);
+this.markers.eachLayer(m => {
+  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+});
       marker.on('click', this.handleMarkerSelect, this); 
     })
 
   marker.setOpacity(1.0);
+  marker.setZIndexOffset(1000)
     this.cycleMarkerColor(marker);
   } else if (this.currentMode === "editMarker") {
 
     this.markers.eachLayer(marker => {
       marker.setOpacity(0.6);
+this.markers.eachLayer(m => {
+  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+});
       marker.on('click', this.handleMarkerSelect, this); 
     })
 
   marker.setOpacity(1.0); // 先設為不透明
+  marker.setZIndexOffset(1000)
 
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
@@ -399,8 +410,12 @@ if (this.routeSelecting) {
 }
  else {
 this.markers.eachLayer(m => m.setOpacity(0.6));
+this.markers.eachLayer(m => {
+  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+});
     // 將被點選的標記設為 1.0
     marker.setOpacity(1.0);
+    marker.setZIndexOffset(1000)
     this.updateInfoPanel(marker.data);
   }
 };
@@ -571,6 +586,9 @@ toggleSelectingRoute() {
 
     // 降低所有標記透明度
     this.markers.eachLayer(marker => marker.setOpacity(0.6));
+this.markers.eachLayer(m => {
+  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+});
   } else {
     // 離開選擇狀態
     app.clearAllMarkerBorders();
