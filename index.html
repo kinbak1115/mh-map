@@ -351,47 +351,51 @@ this.markers.eachLayer(marker => {
       }
 showEditMarkerForm(marker) {
   const data = marker.data;
-  const form = document.createElement("form");
-  form.innerHTML = `
-    <label>名稱：<input type="text" name="name" value="${data.name}" required></label><br>
-    <label>時間：<input type="text" name="time" value="${data.time}"></label><br>
-    <label>顏色：
-      <select name="color">
-        <option value="0" ${data.type === 0 ? "selected" : ""}>原始</option>
-        <option value="1" ${data.type === 1 ? "selected" : ""}>紅</option>
-        <option value="2" ${data.type === 2 ? "selected" : ""}>藍</option>
-        <option value="3" ${data.type === 3 ? "selected" : ""}>綠</option>
-      </select>
-    </label><br>
-    <label>備註：<input type="text" name="remark" value="${data.remark || ""}"></label><br>
-    <button type="submit">更新</button>
-  `;
+  const form = document.getElementById("markerForm");
 
-  marker.bindPopup(form).openPopup();
+  // 顯示表單
+  form.style.display = "block";
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
+  // 定位到 marker 的位置
+  const latlng = marker.getLatLng();
+  const point = this.map.latLngToContainerPoint(latlng);
+  form.style.left = point.x + "px";
+  form.style.top = point.y + "px";
 
-    const newType = parseInt(form.color.value); // 顏色值現在是數字字串
+  // 填入資料
+  document.getElementById("markerName").value = data.name || "";
+  document.getElementById("markerTime").value = data.time || "";
+  document.getElementById("markerType").value = data.type ?? 0;
+  document.getElementById("markerRemark").value = data.remark || "";
 
+  // 解除舊的事件監聽，避免重複綁定
+  const newSubmit = form.querySelector("#submitMarker").cloneNode(true);
+  form.querySelector("#submitMarker").replaceWith(newSubmit);
+
+  const newCancel = form.querySelector("#cancelMarker").cloneNode(true);
+  form.querySelector("#cancelMarker").replaceWith(newCancel);
+
+  // 綁定「確定」按鈕
+  newSubmit.addEventListener("click", () => {
     const newData = {
-      name: form.name.value,
-      time: form.time.value,
-      type: newType,
-      remark: form.remark.value || ""
+      name: document.getElementById("markerName").value,
+      time: document.getElementById("markerTime").value,
+      type: parseInt(document.getElementById("markerType").value),
+      remark: document.getElementById("markerRemark").value
     };
 
-    marker.setIcon(this.getCustomIcon(newType));
+    marker.setIcon(this.getCustomIcon(newData.type));
     this.saveMarkerData(marker, newData);
     this.renderInfoTable();
-    this.map.closePopup();
+    form.style.display = "none";
   });
 
-  form.querySelector("#deleteMarker").addEventListener("click", () => {
-    this.removeMarker(marker);
-    this.map.closePopup();
+  // 綁定「取消」按鈕
+  newCancel.addEventListener("click", () => {
+    form.style.display = "none";
   });
 }
+
 
 
 saveMarkerForm() {
