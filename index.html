@@ -439,8 +439,6 @@ showNewMarkerForm(latlng, event) {
   });
 }
 
-
-
 addMarker(latlng, data) {
   const marker = L.marker(latlng, {
     draggable: this.currentMode === 'editMarker',
@@ -450,76 +448,69 @@ addMarker(latlng, data) {
   marker.data = data;
   marker.setOpacity(0.6);
   this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
+    m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+  });
 
   let tapped = false;
 
-const handler = (e) => {
-  if (tapped) return;
-  tapped = true;
-  setTimeout(() => tapped = false, 300);
+  const handler = (e) => {
+    if (tapped) return;
+    tapped = true;
+    setTimeout(() => tapped = false, 300);
 
-  this.selectedMarker = marker;
+    this.selectedMarker = marker;
 
-  // 👉 路線選擇模式處理
-if (this.routeSelecting) {
-  const markerElement = marker.getElement();
-  if (this.selectedMarkers.includes(marker)) {
-    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-    if (markerElement) {
-       markerElement.classList.remove('markerBorder');
+    // 👉 路線選擇模式處理
+    if (this.routeSelecting) {
+      const markerElement = marker.getElement();
+      if (this.selectedMarkers.includes(marker)) {
+        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+        if (markerElement) {
+          markerElement.classList.remove('markerBorder');
+        }
+      } else {
+        this.selectedMarkers.push(marker);
+        if (markerElement) {
+          markerElement.classList.add('markerBorder');
+        }
+      }
+      return; // 不進入其他模式
     }
-  } else {
-    this.selectedMarkers.push(marker);
-    if (markerElement) {
-      markerElement.classList.add('markerBorder');
+
+    if (this.currentMode === "editColor") {
+      this.markers.eachLayer(marker => {
+        marker.setOpacity(0.6);
+        this.markers.eachLayer(m => {
+          m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+        });
+        marker.on('click', this.handleMarkerSelect, this); 
+      });
+
+      marker.setOpacity(1.0);
+      marker.setZIndexOffset(1000);
+      this.cycleMarkerColor(marker);
+    } else if (this.currentMode === "editMarker") {
+      this.markers.eachLayer(m => {
+        m.setOpacity(0.6);
+        m.setZIndexOffset(0);
+        m.off('click'); // 清除舊的事件監聽
+        m.on('click', () => {
+          m.setOpacity(1.0);
+          m.setZIndexOffset(1000);
+          this.showEditMarkerForm(m); // 立刻顯示編輯表單
+        });
+      });
+      return;
+    } else {
+      this.markers.eachLayer(m => m.setOpacity(0.6));
+      this.markers.eachLayer(m => {
+        m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
+      });
+      marker.setOpacity(1.0);
+      marker.setZIndexOffset(1000);
+      this.updateInfoPanel(marker.data);
     }
-  }
-  return; // 不進入其他模式
-}
-
-
-  if (this.currentMode === "editColor") {
-
-    this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
-      marker.on('click', this.handleMarkerSelect, this); 
-    })
-
-  marker.setOpacity(1.0);
-  marker.setZIndexOffset(1000)
-    this.cycleMarkerColor(marker);
-} else if (this.currentMode === "editMarker") {
-  this.markers.eachLayer(m => {
-    m.setOpacity(0.6);
-    m.setZIndexOffset(0);
-    m.off('click'); // 清除舊的事件監聽
-    m.on('click', () => {
-      m.setOpacity(1.0);
-      m.setZIndexOffset(1000);
-      this.showEditMarkerForm(m); // 立刻顯示編輯表單
-    });
-  });
-  return;
-}
-
-}
- else {
-this.markers.eachLayer(m => m.setOpacity(0.6));
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
-    // 將被點選的標記設為 1.0
-    marker.setOpacity(1.0);
-    marker.setZIndexOffset(1000)
-    this.updateInfoPanel(marker.data);
-  }
-};
-
+  };
 
   marker.on('click', handler);
   marker.on('touchstart', handler);
@@ -528,8 +519,7 @@ this.markers.eachLayer(m => {
   this.saveMarkers();
   this.filterMarkersByTypes();
   this.updateMarkerScales();
-}
-
+} // ✅ 這個是你少的那個關閉 brace
 
 
 
