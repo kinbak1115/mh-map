@@ -52,21 +52,11 @@
     }
 
     .marker-border {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
-    .marker-border::before {
-      content: "";
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      border-radius: 50%;
-      background-size: cover;
-      background-position: center;
     }
 
     .markerBorder {
@@ -124,7 +114,6 @@
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
-    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green' };
 
     class MapApp {
       constructor() {
@@ -161,6 +150,30 @@
 
         this.map.on('zoomend', () => this.updateMarkerScales());
         this.updateMarkerScales();
+      }
+
+      initControls() {
+        const customControl = L.control({ position: 'topright' });
+        customControl.onAdd = () => {
+          const div = L.DomUtil.create('div', 'leaflet-control-custom');
+          div.innerHTML = `
+            <div class="btn-row">
+              <button id="addMarker">新增標記</button>
+              <button id="deleteMarkers">清除標記</button>
+            </div>
+            <div class="btn-row">
+              <button id="routeMode">路線模式</button>
+            </div>
+          `;
+          return div;
+        };
+        customControl.addTo(this.map);
+
+        setTimeout(() => {
+          document.getElementById('addMarker').onclick = () => alert('新增標記功能尚未實作');
+          document.getElementById('deleteMarkers').onclick = () => alert('清除標記功能尚未實作');
+          document.getElementById('routeMode').onclick = () => alert('路線模式功能尚未實作');
+        }, 0);
       }
 
       getCustomIcon(type = 0, scale = 1) {
