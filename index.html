@@ -448,9 +448,8 @@ addMarker(latlng, data) {
 
   marker.data = data;
   marker.setOpacity(0.6);
-  this.markers.eachLayer(m => {
-    m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-  });
+
+  this.markers.eachLayer(m => m.setZIndexOffset(0)); // 重設 z-index
 
   let tapped = false;
 
@@ -461,56 +460,26 @@ addMarker(latlng, data) {
 
     this.selectedMarker = marker;
 
-    // 👉 路線選擇模式處理
+    // ✅ 路線選擇模式
     if (this.routeSelecting) {
-      const markerElement = marker.getElement();
-      if (this.selectedMarkers.includes(marker)) {
-        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-        if (markerElement) {
-          markerElement.classList.remove('markerBorder');
-        }
-      } else {
-        this.selectedMarkers.push(marker);
-        if (markerElement) {
-          markerElement.classList.add('markerBorder');
-        }
-      }
-      return; // 不進入其他模式
-    }
-
-    if (this.currentMode === "editColor") {
-      this.markers.eachLayer(marker => {
-        marker.setOpacity(0.6);
-        this.markers.eachLayer(m => {
-          m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-        });
-        marker.on('click', this.handleMarkerSelect, this); 
-      });
-
-      marker.setOpacity(1.0);
-      marker.setZIndexOffset(1000);
-      this.cycleMarkerColor(marker);
-    } else if (this.currentMode === "editMarker") {
-      this.markers.eachLayer(m => {
-        m.setOpacity(0.6);
-        m.setZIndexOffset(0);
-        m.off('click'); // 清除舊的事件監聽
-        m.on('click', () => {
-          m.setOpacity(1.0);
-          m.setZIndexOffset(1000);
-          this.showEditMarkerForm(m); // 立刻顯示編輯表單
-        });
-      });
+      this.handleRouteSelect(marker);
       return;
-    } else {
-      this.markers.eachLayer(m => m.setOpacity(0.6));
-      this.markers.eachLayer(m => {
-        m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-      });
-      marker.setOpacity(1.0);
-      marker.setZIndexOffset(1000);
-      this.updateInfoPanel(marker.data);
     }
+
+    // ✅ 顏色編輯模式
+    if (this.currentMode === "editColor") {
+      this.handleEditColor(marker);
+      return;
+    }
+
+    // ✅ 標記編輯模式
+    if (this.currentMode === "editMarker") {
+      this.handleEditMarker(marker);
+      return;
+    }
+
+    // ✅ 預設模式（查看資訊）
+    this.handleInfoMode(marker);
   };
 
   marker.on('click', handler);
@@ -520,7 +489,61 @@ addMarker(latlng, data) {
   this.saveMarkers();
   this.filterMarkersByTypes();
   this.updateMarkerScales();
-} // ✅ 這個是你少的那個關閉 brace
+}
+
+handleRouteSelect(marker) {
+  const el = marker.getElement();
+  if (!el) return;
+
+  if (this.selectedMarkers.includes(marker)) {
+    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+    el.classList.remove('markerBorder');
+  } else {
+    this.selectedMarkers.push(marker);
+    el.classList.add('markerBorder');
+  }
+}
+
+handleEditColor(marker) {
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+  });
+
+  marker.setOpacity(1.0);
+  marker.setZIndexOffset(1000);
+  this.cycleMarkerColor(marker);
+}
+
+handleEditMarker(selectedMarker) {
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+    m.off('click');
+
+    // 點其他 marker 時也能觸發編輯
+    m.on('click', () => {
+      m.setOpacity(1.0);
+      m.setZIndexOffset(1000);
+      this.showEditMarkerForm(m);
+    });
+  });
+
+  selectedMarker.setOpacity(1.0);
+  selectedMarker.setZIndexOffset(1000);
+  this.showEditMarkerForm(selectedMarker);
+}
+
+handleInfoMode(marker) {
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+  });
+
+  marker.setOpacity(1.0);
+  marker.setZIndexOffset(1000);
+  this.updateInfoPanel(marker.data);
+}
 
 
 
