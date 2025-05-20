@@ -517,7 +517,7 @@ this.markers.eachLayer(m => {
   // 等待 UI 更新後再呼叫 prompt
   setTimeout(() => {
 this.map.on('click', e => {
-  if (this.currentMode !== "editColor") {
+  if (this.currentMode === "editMarker") {
     this.showMarkerForm(e.latlng, e.originalEvent);
   }
 });
