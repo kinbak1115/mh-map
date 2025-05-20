@@ -339,6 +339,47 @@ this.markers.eachLayer(marker => {
 
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
+showMarkerForm(marker) {
+  this.selectedMarker = marker;
+
+  const form = document.getElementById('markerForm');
+  form.elements['name'].value = marker.data.name || '';
+  form.elements['time'].value = marker.data.time || '';
+  form.elements['type'].value = marker.data.type || 0;
+  form.elements['remark'].value = marker.data.remark || '';
+
+  form.style.display = 'block';  // 顯示表單
+
+  // 如果還沒綁定儲存事件，可以綁定一次
+  if (!this._markerFormListenerAdded) {
+    form.querySelector('button[type="submit"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.saveMarkerForm();
+    });
+    this._markerFormListenerAdded = true;
+  }
+},
+
+saveMarkerForm() {
+  const form = document.getElementById('markerForm');
+  if (!this.selectedMarker) return;
+
+  // 更新資料
+  this.selectedMarker.data.name = form.elements['name'].value;
+  this.selectedMarker.data.time = form.elements['time'].value;
+  this.selectedMarker.data.type = parseInt(form.elements['type'].value);
+  this.selectedMarker.data.remark = form.elements['remark'].value;
+
+  // 更新標記圖示
+  this.selectedMarker.setIcon(this.getCustomIcon(this.selectedMarker.data.type));
+
+  this.saveMarkers();
+  this.updateInfoPanel(this.selectedMarker.data);
+
+  // 隱藏表單
+  form.style.display = 'none';
+  this.selectedMarker = null;
+}
 
 showMarkerForm(latlng) {
   const form = document.getElementById('markerForm');
