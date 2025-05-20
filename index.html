@@ -61,13 +61,10 @@
       clip-path: circle(50% at 50% 50%);
     }
 
-.markerBorder {
-  position: relative;
+.marker-border.markerBorder {
+  box-shadow: 0 0 0 6px red; /* 黃色外圈 */
   border-radius: 50%;
-  transition: all 0.2s;
-  outline: 6px solid yellow;
-  outline-offset: 0;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5); /* 軟陰影，不影響定位 */
+  box-sizing: border-box;
 }
 
 
@@ -301,7 +298,10 @@ this.markers.eachLayer(marker => {
   // 如果此 marker 是已選中的，重新加上 markerBorder class
   const el = marker.getElement();
   if (el && this.selectedMarkers.includes(marker)) {
-    el.classList.add('markerBorder');
+      const markerInner = el.querySelector('.marker-border');
+  if (markerInner) {
+    markerInner.classList.add('markerBorder');
+  }
   }
 });
 
@@ -340,17 +340,24 @@ const handler = (e) => {
   // 👉 路線選擇模式處理
 if (this.routeSelecting) {
   const markerElement = marker.getElement();
-
+const el = marker.getElement();
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-    if (markerElement) {
-       markerElement.classList.remove('markerBorder');
-    }
+
+if (el) {
+  const markerInner = el.querySelector('.marker-border');
+  if (markerInner) {
+    markerInner.classList.remove('markerBorder');
   } else {
     this.selectedMarkers.push(marker);
-    if (markerElement) {
-      markerElement.classList.add('markerBorder');
-    }
+
+if (el) {
+  const markerInner = el.querySelector('.marker-border');
+  if (markerInner) {
+    markerInner.classList.add('markerBorder');
+  }
+}
+
   }
   return; // 不進入其他模式
 }
