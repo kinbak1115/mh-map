@@ -278,7 +278,7 @@ const handleMapTap = (e) => {
 
   // ✅ 僅在 addMarker 模式下允許新增標記
   if (this.currentMode === "addMarker") {
-    this.showMarkerForm(e.latlng, e.originalEvent);
+   this.showNewMarkerForm(latlng, event);
   }
 };
 
@@ -340,25 +340,49 @@ this.markers.eachLayer(marker => {
 
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
-showMarkerForm(marker) {
-  this.selectedMarker = marker;
+showEditMarkerForm(marker) {
+  const data = marker.data;
+  const form = document.createElement("form");
+  form.innerHTML = `
+    <label>名稱：<input type="text" name="name" value="${data.name}" required></label><br>
+    <label>時間：<input type="text" name="time" value="${data.time}"></label><br>
+    <label>顏色：
+      <select name="color">
+        <option value="red" ${data.type === 0 ? "selected" : ""}>紅</option>
+        <option value="blue" ${data.type === 1 ? "selected" : ""}>藍</option>
+        <option value="green" ${data.type === 2 ? "selected" : ""}>綠</option>
+      </select>
+    </label><br>
+    <label>備註：<input type="text" name="remark" value="${data.remark || ""}"></label><br>
+    <button type="submit">更新</button>
+    <button type="button" id="deleteMarker">刪除</button>
+  `;
 
-  const form = document.getElementById('markerForm');
-  form.elements['name'].value = marker.data.name || '';
-  form.elements['time'].value = marker.data.time || '';
-  form.elements['type'].value = marker.data.type || 0;
-  form.elements['remark'].value = marker.data.remark || '';
+  marker.bindPopup(form).openPopup();
 
-  form.style.display = 'block';  // 顯示表單
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const colorMap = { red: 0, blue: 1, green: 2 };
+    const newColor = form.color.value;
+    const newType = colorMap[newColor];
 
-  // 如果還沒綁定儲存事件，可以綁定一次
-  if (!this._markerFormListenerAdded) {
-    form.querySelector('button[type="submit"]').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.saveMarkerForm();
-    });
-    this._markerFormListenerAdded = true;
-  }
+    const newData = {
+      name: form.name.value,
+      time: form.time.value,
+      type: newType,
+      remark: form.remark.value || ""
+    };
+
+    marker.setIcon(this.getMarkerIcon(newType));
+    this.saveMarkerData(marker, newData);
+    this.renderInfoTable();
+    this.map.closePopup();
+  });
+
+  form.querySelector("#deleteMarker").addEventListener("click", () => {
+    this.removeMarker(marker);
+    this.map.closePopup();
+  });
 }
 
 saveMarkerForm() {
@@ -382,71 +406,39 @@ saveMarkerForm() {
   this.selectedMarker = null;
 }
 
-showMarkerForm(latlng, event) {
-  const form = document.getElementById('markerForm');
-  form.style.display = 'block';
+showNewMarkerForm(latlng, event) {
+  const form = document.createElement("form");
+  form.innerHTML = `
+    <label>名稱：<input type="text" name="name" required></label><br>
+    <label>時間：<input type="text" name="time" placeholder="如 5/20 10:30"></label><br>
+    <label>顏色：
+      <select name="color">
+        <option value="red">紅</option>
+        <option value="blue">藍</option>
+        <option value="green">綠</option>
+      </select>
+    </label><br>
+    <label>備註：<input type="text" name="remark" placeholder="非必填"></label><br>
+    <button type="submit">新增</button>
+  `;
+  const popup = L.popup()
+    .setLatLng(latlng)
+    .setContent(form)
+    .openOn(this.map);
 
-  // 設定表單位置，防止跑版
-  if (event) {
-    form.style.left = event.pageX + 'px';
-    form.style.top = event.pageY + 'px';
-  } else {
-    // 預設位置（置中或左上角）
-    form.style.left = '50%';
-    form.style.top = '50%';
-    form.style.transform = 'translate(-50%, -50%)';
-  }
-
-  // 預設表單欄位值
-  document.getElementById('markerName').value = '古龍種';
-  document.getElementById('markerTime').value = '';
-  document.getElementById('markerType').value = this.lastMarkerType || 0;
-  document.getElementById('markerRemark').value = '重要出沒點';
-
-  const submitBtn = document.getElementById('submitMarker');
-  const cancelBtn = document.getElementById('cancelMarker');
-
-  // 先移除舊事件，避免重複綁定
-  submitBtn.replaceWith(submitBtn.cloneNode(true));
-  cancelBtn.replaceWith(cancelBtn.cloneNode(true));
-
-  // 重新取得按鈕元素（因為替換了）
-  const newSubmitBtn = document.getElementById('submitMarker');
-  const newCancelBtn = document.getElementById('cancelMarker');
-
-  const handleSubmit = (e) => {
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
-
-    const name = document.getElementById('markerName').value.trim();
-    const time = document.getElementById('markerTime').value.trim();
-    let type = parseInt(document.getElementById('markerType').value);
-    type = isNaN(type) ? 0 : Math.min(Math.max(type, 0), 3);
-    const remark = document.getElementById('markerRemark').value.trim();
-
-    if (!name || !time) {
-      alert("請填寫名稱與選擇時間");
-      return;
-    }
-
-    this.addMarker(latlng, { name, time, type, remark, lat: latlng.lat, lng: latlng.lng });
-    this.lastMarkerType = type;
-    form.style.display = 'none';
-
-    // 移除監聽器
-    newSubmitBtn.removeEventListener('click', handleSubmit);
-    newCancelBtn.removeEventListener('click', handleCancel);
-  };
-
-  const handleCancel = (e) => {
-    e.preventDefault();
-    form.style.display = 'none';
-    newSubmitBtn.removeEventListener('click', handleSubmit);
-    newCancelBtn.removeEventListener('click', handleCancel);
-  };
-
-  newSubmitBtn.addEventListener('click', handleSubmit);
-  newCancelBtn.addEventListener('click', handleCancel);
+    const data = {
+      name: form.name.value,
+      time: form.time.value,
+      type: ["red", "blue", "green"].indexOf(form.color.value),
+      remark: form.remark.value || ""
+    };
+    this.addMarker(latlng, data);
+    this.map.closePopup();
+  });
 }
+
 
 
 addMarker(latlng, data) {
@@ -518,7 +510,7 @@ this.markers.eachLayer(m => {
   setTimeout(() => {
 this.map.on('click', e => {
   if (this.currentMode === "editMarker") {
-     this.showMarkerForm(marker); 
+    this.showEditMarkerForm(marker);
   }
 });
 
