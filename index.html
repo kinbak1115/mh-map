@@ -271,14 +271,14 @@
 initEventListeners() {
   let mapTapped = false;
 
+
 const handleMapTap = (e) => {
   if (mapTapped) return;
   mapTapped = true;
   setTimeout(() => (mapTapped = false), 300);
 
-  // ✅ 僅在 addMarker 模式下允許新增標記
   if (this.currentMode === "addMarker") {
-   this.showNewMarkerForm(latlng, event);
+    this.showNewMarkerForm(e.latlng, e);  // 正確使用 e.latlng
   }
 };
 
