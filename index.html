@@ -347,7 +347,9 @@ const handler = (e) => {
   // 👉 路線選擇模式處理
 if (this.routeSelecting) {
   const markerElement = marker.getElement();
-
+marker.on('click', function () {
+  map.panTo([lat, lng]); // 或 map.setView([lat, lng], 16);
+});
   if (this.selectedMarkers.includes(marker)) {
     this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
     if (markerElement) {
