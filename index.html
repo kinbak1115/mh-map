@@ -360,21 +360,16 @@ this.markers.eachLayer(marker => {
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
 
-showMarkerForm(latlng) {
-  // 用預設資料直接新增標記
-  const defaultName = '古龍種';
-  const defaultTime = '現在';
-  const defaultType = this.lastMarkerType || 0;
-  const defaultRemark = '重要出沒點';
+      
+      showMarkerForm(latlng) {
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', 古龍種, 現在, ${this.lastMarkerType}, 重要出沒點);
+        if (input) {
+          const [name, time, type, remark] = input.split(',').map(s => s.trim());
+          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng });
+          this.lastMarkerType = markerType;
+        }
 
-  this.addMarker(latlng, {
-    name: defaultName,
-    time: defaultTime,
-    type: defaultType,
-    remark: defaultRemark,
-    lat: latlng.lat,
-    lng: latlng.lng
-  });
 
   this.lastMarkerType = defaultType;
    // ✅ 顯示回左上資訊面板
