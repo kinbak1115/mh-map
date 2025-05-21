@@ -253,6 +253,7 @@ function getNearestTimeString(marker) {
 
     class MapApp {
       constructor() {
+        setInterval(() => this.updateMarkerScales(), 60 * 1000);
         this.map = L.map('map', {
           doubleClickZoom: false
         });
