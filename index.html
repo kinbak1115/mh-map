@@ -115,25 +115,39 @@
 </head>
 <body>
 
-<!-- 🟦 Marker 編輯用 Modal（顯示在底部中間） -->
-<div id="markerEditModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h3>編輯標記資訊</h3>
-    <label>名稱 <input type="text" id="markerName" /></label><br/>
-    <label>時間 
-      <select id="markerTime">
-        <option value="早上">早上</option>
-        <option value="中午">中午</option>
-        <option value="晚上">晚上</option>
-        <option value="凌晨">凌晨</option>
-      </select>
-    </label><br/>
-    <label>顏色 (0-3) <input type="number" id="markerType" min="0" max="3" /></label><br/>
-    <label>備註 <input type="text" id="markerRemark" /></label><br/>
+
+<!-- 🟦 Marker 編輯用 Modal（顯示在左上角） -->
+<div id="markerEditModal" style="
+  display:none;
+  position:fixed;
+  top: 20px;
+  left: 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 16px;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  border-radius: 8px;
+  width: 300px;
+">
+  <h3 style="margin-top: 0;">更改標記資訊</h3>
+  <label>名稱：<input type="text" id="markerName" /></label><br/><br/>
+  <label>時間：
+    <select id="markerTime">
+      <option value="早上">早上</option>
+      <option value="中午">中午</option>
+      <option value="晚上">晚上</option>
+      <option value="凌晨">凌晨</option>
+    </select>
+  </label><br/><br/>
+  <label>顏色（0-3）：<input type="number" id="markerType" min="0" max="3" /></label><br/><br/>
+  <label>備註：<input type="text" id="markerRemark" /></label><br/><br/>
+  <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
     <button onclick="document.getElementById('markerEditModal').style.display='none'">取消</button>
   </div>
 </div>
+
 
 
 
@@ -142,7 +156,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.0.3</div>
+  <div id="version">版本 3.0.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
