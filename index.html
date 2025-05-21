@@ -178,7 +178,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.3</div>
+  <div id="version">版本 3.2.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -375,40 +375,42 @@
         this.map.on("touchstart", handleMapTap);
       }
 
-      getCustomIcon(type = 0, scale = 1, marker = null) {
-        const iconUrls = {
-          0: iconUrl,
-          1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-          2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-          3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-          4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
-        };
-        const size = 40 * scale;
-        let timeStr = "";
-        if (marker) {
-          timeStr = getNearestTimeString(marker);
-        }
-        return L.divIcon({
-          className: '',
-          html: `
-            <div class="marker-wrapper">
-              <div class="marker-border" style="
-                background-image: url('${iconUrls[type]}');
-                background-size: contain;
-                background-repeat: no-repeat;
-                background-position: center;
-                width: ${size}px;
-                height: ${size}px;
-                position: relative;
-              ">
-                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:14px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
-              </div>
-            </div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-          popupAnchor: [0, -size / 2]
-        });
-      }
+getCustomIcon(type = 0, scale = 1, marker = null) {
+  const iconUrls = {
+    0: iconUrl,
+    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
+  };
+  const size = 40 * scale;
+  let timeStr = "";
+  if (marker) {
+    timeStr = getNearestTimeString(marker);
+  }
+  // 動態決定時間字體大小
+  let timeFontSize = Math.max(10, Math.floor(14 * scale));
+  return L.divIcon({
+    className: '',
+    html: `
+      <div class="marker-wrapper">
+        <div class="marker-border" style="
+          background-image: url('${iconUrls[type]}');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          width: ${size}px;
+          height: ${size}px;
+          position: relative;
+        ">
+          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+        </div>
+      </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2]
+  });
+}
 
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
