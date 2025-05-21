@@ -362,7 +362,7 @@ this.markers.eachLayer(marker => {
 
       
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', 古龍種, 現在, ${this.lastMarkerType}, 重要出沒點);
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`);
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
@@ -370,8 +370,6 @@ this.markers.eachLayer(marker => {
           this.lastMarkerType = markerType;
         }
 
-
-  this.lastMarkerType = defaultType;
    // ✅ 顯示回左上資訊面板
     if (infoPanel) infoPanel.style.display = '';
 
