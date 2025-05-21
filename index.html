@@ -178,7 +178,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.7</div>
+  <div id="version">版本 3.2.8</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -232,7 +232,7 @@ function getNearestTimeString(marker) {
 
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
-  // ABAB與BABA都只顯示A時段（index 0,2,4,6...）
+  // ABAB古龍種 和 BABA古龍種 只顯示 A 時段（index 0,2,4...）
   if (["ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) {
     times = times.filter((_, idx) => idx % 2 === 0);
   }
@@ -266,7 +266,6 @@ function getNearestTimeString(marker) {
   }
   return bestDisplayTime;
 }
-
     class MapApp {
       constructor() {
         this.map = L.map('map', {
