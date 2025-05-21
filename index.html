@@ -124,33 +124,36 @@
   left: 20px;
   background: #fff;
   border: 1px solid #ccc;
-  padding: 16px;
+  padding: 24px 32px;
   z-index: 9999;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  border-radius: 8px;
-  width: 300px;
+  box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+  border-radius: 10px;
+  width: 400px;
+  font-size: 16px;
+  line-height: 1.4;
 ">
-  <h3 style="margin-top: 0;">更改標記資訊</h3>
-  <label>名稱：<input type="text" id="markerName" /></label><br/><br/>
+  <h3 style="margin-top: 0; font-size: 22px;">更改標記資訊</h3>
+  <label>名稱：<input type="text" id="markerName" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
   <label>時間：
-    <select id="markerTime">
+    <select id="markerTime" style="width: 100%; font-size: 16px; padding: 6px;">
       <option value="早上">早上</option>
       <option value="中午">中午</option>
       <option value="晚上">晚上</option>
       <option value="凌晨">凌晨</option>
     </select>
   </label><br/><br/>
-  <label>顏色（0-3）：<input type="number" id="markerType" min="0" max="3" /></label><br/><br/>
-  <label>備註：<input type="text" id="markerRemark" /></label><br/><br/>
+  <label>顏色（0-3）：<input type="number" id="markerType" min="0" max="3" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
+  <label>備註：<input type="text" id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
   <div style="text-align:right;">
-    <button id="saveMarkerBtn">儲存</button>
-   <button onclick="
-  document.getElementById('markerEditModal').style.display='none';
-  const infoPanel = document.getElementById('infoPanel');
-  if (infoPanel) infoPanel.style.display = '';
-">取消</button>
+    <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
+    <button onclick="
+      document.getElementById('markerEditModal').style.display='none';
+      const infoPanel = document.getElementById('infoPanel');
+      if (infoPanel) infoPanel.style.display = '';
+    " style="font-size: 16px; padding: 8px 16px; margin-left: 12px;">取消</button>
   </div>
 </div>
+
 
 
 
