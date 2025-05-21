@@ -227,45 +227,47 @@
     }
 
     // 工具函數：取得最近的顯示時間（含ABAB/BABA忽略B時段）
-    function getNearestTimeString(marker) {
-      if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
+function getNearestTimeString(marker) {
+  if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
 
-      let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
-      // 若是 ABAB/BABA古龍種，忽略B時段
-      if (["ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) {
-        times = times.filter((_, idx) => idx % 2 === 0); // 只保留A時段
+  // 若是 ABAB/BABA古龍種，忽略B時段
+  if (["ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) {
+    times = times.filter((_, idx) => idx % 2 === 0); // 只保留奇數 index（A時段）
+  }
+
+  if (!times.length) return "";
+
+  const offset = parseInt(marker.data.offsetMinutes || 0, 10);
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  let minDiff = Infinity;
+  let bestRawTime = "";
+  let bestDisplayTime = "";
+
+  for (const t of times) {
+    let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) continue;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    let total = h * 60 + mm + offset;
+    if (total < 0) total += 24 * 60;
+    if (total >= 24 * 60) total -= 24 * 60;
+    let diff = total - nowMin;
+    if (diff >= -25 && diff <= 25) {
+      if (Math.abs(diff) < Math.abs(minDiff)) {
+        minDiff = diff;
+        bestRawTime = t;
+        bestDisplayTime = addMinutesToTimeString(t, offset);
       }
-
-      if (!times.length) return "";
-
-      const offset = parseInt(marker.data.offsetMinutes || 0, 10);
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      let minDiff = Infinity;
-      let bestDisplayTime = "";
-
-      for (const t of times) {
-        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-        if (!m) continue;
-        let h = parseInt(m[1], 10);
-        let mm = parseInt(m[2], 10);
-        let ap = m[3].toUpperCase();
-        if (ap === "PM" && h !== 12) h += 12;
-        if (ap === "AM" && h === 12) h = 0;
-        let total = h * 60 + mm + offset;
-        if (total < 0) total += 24 * 60;
-        if (total >= 24 * 60) total -= 24 * 60;
-        let diff = total - nowMin;
-        if (diff >= -25 && diff <= 25) {
-          if (Math.abs(diff) < Math.abs(minDiff)) {
-            minDiff = diff;
-            bestDisplayTime = addMinutesToTimeString(t, offset);
-          }
-        }
-      }
-      return bestDisplayTime;
     }
+  }
+  return bestDisplayTime;
+}
 
     class MapApp {
       constructor() {
