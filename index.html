@@ -163,7 +163,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.0.5</div>
+  <div id="version">版本 3.0.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -360,15 +360,25 @@ this.markers.eachLayer(marker => {
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
 
-      showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', `古龍種, 現在, ${this.lastMarkerType}, 重要出沒點`);
-        if (input) {
-          const [name, time, type, remark] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng });
-          this.lastMarkerType = markerType;
-        }
-      }
+showMarkerForm(latlng) {
+  // 用預設資料直接新增標記
+  const defaultName = '古龍種';
+  const defaultTime = '現在';
+  const defaultType = this.lastMarkerType || 0;
+  const defaultRemark = '重要出沒點';
+
+  this.addMarker(latlng, {
+    name: defaultName,
+    time: defaultTime,
+    type: defaultType,
+    remark: defaultRemark,
+    lat: latlng.lat,
+    lng: latlng.lng
+  });
+
+  this.lastMarkerType = defaultType;
+}
+
       
 resetAllMarkers() {
   this.markers.eachLayer(m => {
