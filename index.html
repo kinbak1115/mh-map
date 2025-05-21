@@ -178,13 +178,31 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.5</div>
+  <div id="version">版本 3.2.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
+
+    // 時間表對應顏色
+    const timeToType = {
+      "7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM": 1, // 紅
+      "7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM": 2, // 藍
+      "8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM": 3,           // 綠
+      "8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM": 4           // 紫
+    };
+
+    // 綁定：選時間自動選顏色
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('markerTime').addEventListener('change', function() {
+        const val = this.value.trim();
+        if (timeToType[val] !== undefined) {
+          document.getElementById('markerType').value = timeToType[val];
+        }
+      });
+    });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
     function addMinutesToTimeString(timestr, offset) {
@@ -208,52 +226,49 @@
       return `${showh}:${nmm.toString().padStart(2, '0')}${nap}`;
     }
 
-    // 工具函數：取得最近的顯示時間
-function getNearestTimeString(marker) {
-  if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
+    // 工具函數：取得最近的顯示時間（含ABAB/BABA忽略B時段）
+    function getNearestTimeString(marker) {
+      if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
 
-  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+      let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
-  // 若是 ABAB/BABA古龍種，忽略B時段
-  if (["ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) {
-    times = times.filter((_, idx) => idx % 2 === 0); // 只保留奇數 index（A時段）
-  }
-
-  if (!times.length) return "";
-
-  const offset = parseInt(marker.data.offsetMinutes || 0, 10);
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  let minDiff = Infinity;
-  let bestRawTime = "";
-  let bestDisplayTime = "";
-
-  for (const t of times) {
-    let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-    if (!m) continue;
-    let h = parseInt(m[1], 10);
-    let mm = parseInt(m[2], 10);
-    let ap = m[3].toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    let total = h * 60 + mm + offset;
-    if (total < 0) total += 24 * 60;
-    if (total >= 24 * 60) total -= 24 * 60;
-    let diff = total - nowMin;
-    if (diff >= -25 && diff <= 25) {
-      if (Math.abs(diff) < Math.abs(minDiff)) {
-        minDiff = diff;
-        bestRawTime = t;
-        bestDisplayTime = addMinutesToTimeString(t, offset);
+      // 若是 ABAB/BABA古龍種，忽略B時段
+      if (["ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) {
+        times = times.filter((_, idx) => idx % 2 === 0); // 只保留A時段
       }
+
+      if (!times.length) return "";
+
+      const offset = parseInt(marker.data.offsetMinutes || 0, 10);
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let minDiff = Infinity;
+      let bestDisplayTime = "";
+
+      for (const t of times) {
+        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        if (!m) continue;
+        let h = parseInt(m[1], 10);
+        let mm = parseInt(m[2], 10);
+        let ap = m[3].toUpperCase();
+        if (ap === "PM" && h !== 12) h += 12;
+        if (ap === "AM" && h === 12) h = 0;
+        let total = h * 60 + mm + offset;
+        if (total < 0) total += 24 * 60;
+        if (total >= 24 * 60) total -= 24 * 60;
+        let diff = total - nowMin;
+        if (diff >= -25 && diff <= 25) {
+          if (Math.abs(diff) < Math.abs(minDiff)) {
+            minDiff = diff;
+            bestDisplayTime = addMinutesToTimeString(t, offset);
+          }
+        }
+      }
+      return bestDisplayTime;
     }
-  }
-  return bestDisplayTime;
-}
 
     class MapApp {
       constructor() {
-        setInterval(() => this.updateMarkerScales(), 60 * 1000);
         this.map = L.map('map', {
           doubleClickZoom: false
         });
@@ -385,42 +400,42 @@ function getNearestTimeString(marker) {
         this.map.on("touchstart", handleMapTap);
       }
 
-getCustomIcon(type = 0, scale = 1, marker = null) {
-  const iconUrls = {
-    0: iconUrl,
-    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
-  };
-  const size = 40 * scale;
-  let timeStr = "";
-  if (marker) {
-    timeStr = getNearestTimeString(marker);
-  }
-  // 動態決定時間字體大小
-  let timeFontSize = Math.max(10, Math.floor(14 * scale));
-  return L.divIcon({
-    className: '',
-    html: `
-      <div class="marker-wrapper">
-        <div class="marker-border" style="
-          background-image: url('${iconUrls[type]}');
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          width: ${size}px;
-          height: ${size}px;
-          position: relative;
-        ">
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
-        </div>
-      </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2]
-  });
-}
+      getCustomIcon(type = 0, scale = 1, marker = null) {
+        const iconUrls = {
+          0: iconUrl,
+          1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+          2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+          3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+          4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
+        };
+        const size = 40 * scale;
+        let timeStr = "";
+        if (marker) {
+          timeStr = getNearestTimeString(marker);
+        }
+        // 動態決定時間字體大小
+        let timeFontSize = Math.max(10, Math.floor(14 * scale));
+        return L.divIcon({
+          className: '',
+          html: `
+            <div class="marker-wrapper">
+              <div class="marker-border" style="
+                background-image: url('${iconUrls[type]}');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                width: ${size}px;
+                height: ${size}px;
+                position: relative;
+              ">
+                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+              </div>
+            </div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -size / 2]
+        });
+      }
 
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
