@@ -466,6 +466,7 @@ setTimeout(() => {
     marker.data.remark = remark;
 
     marker.setIcon(this.getCustomIcon(type));
+    this.updateMarkerScales();
     this.saveMarkers();
     this.updateInfoPanel(marker.data);
 
