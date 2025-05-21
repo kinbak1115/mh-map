@@ -119,7 +119,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 2.6.2</div>
+  <div id="version">版本 2.6.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -344,86 +344,90 @@ addMarker(latlng, data) {
 
   let tapped = false;
 
-const handler = (e) => {
-  if (tapped) return;
-  tapped = true;
-  setTimeout(() => tapped = false, 300);
+  const handler = (e) => {
+    if (tapped) return;
+    tapped = true;
+    setTimeout(() => tapped = false, 300);
 
-  this.selectedMarker = marker;
+    this.selectedMarker = marker;
 
-  // 👉 路線選擇模式處理
-if (this.routeSelecting) {
-  const markerElement = marker.getElement();
-  if (this.selectedMarkers.includes(marker)) {
-    this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-    if (markerElement) {
-       markerElement.classList.remove('markerBorder');
+    // 👉 路線選擇模式處理
+    if (this.routeSelecting) {
+      const markerElement = marker.getElement();
+      if (this.selectedMarkers.includes(marker)) {
+        this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+        if (markerElement) markerElement.classList.remove('markerBorder');
+      } else {
+        this.selectedMarkers.push(marker);
+        if (markerElement) markerElement.classList.add('markerBorder');
+      }
+      return; // 不進入其他模式
     }
-  } else {
-    this.selectedMarkers.push(marker);
-    if (markerElement) {
-      markerElement.classList.add('markerBorder');
+
+    // 👉 編輯顏色模式
+    if (this.currentMode === "editColor") {
+      this.resetAllMarkers()
+      this.markers.eachLayer(m => {
+        m.on('click', this.handleMarkerSelect, this);
+      });
+
+      marker.setOpacity(1.0);
+      marker.setZIndexOffset(1000);
+      this.cycleMarkerColor(marker);
     }
-  }
-  return; // 不進入其他模式
-}
 
+    // 👉 編輯標記模式
+    else if (this.currentMode === "editMarker") {
+      this.resetAllMarkers()
+      this.markers.eachLayer(m => {
+        m.on('click', this.handleMarkerSelect, this);
+      });
 
-  if (this.currentMode === "editColor") {
-    this.resetAllMarkers()
-    this.markers.eachLayer(marker => {
-      marker.on('click', this.handleMarkerSelect, this); 
-    })
+      marker.setOpacity(1.0);
+      marker.setZIndexOffset(1000);
 
-  marker.setOpacity(1.0);
-  marker.setZIndexOffset(1000)
-    this.cycleMarkerColor(marker);
-  } else if (this.currentMode === "editMarker") {
-    this.resetAllMarkers()
-    this.markers.eachLayer(marker => {
-      marker.on('click', this.handleMarkerSelect, this); 
-    })
+      // 等待 UI 更新後顯示 prompt
+      setTimeout(() => {
+        const input = prompt(
+          '更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
+          `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`
+        );
 
-  marker.setOpacity(1.0); // 先設為不透明
-  marker.setZIndexOffset(1000)
+        if (input) {
+          const [name, time, type, remark] = input.split(',').map(s => s.trim());
+          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
+          marker.data.name = name;
+          marker.data.time = time;
+          marker.data.type = markerType;
+          marker.data.remark = remark;
+          marker.setIcon(this.getCustomIcon(markerType));
+          this.saveMarkers();
+          this.updateInfoPanel(marker.data);
+        }
+      }, 0); // 讓出執行權讓 UI 重繪
+    }
 
-  // 等待 UI 更新後再呼叫 prompt
-  setTimeout(() => {
-    const input = prompt('更改標記資訊（名稱, 時間, 顏色(0-3), 備註）',
-                         `${marker.data.name}, ${marker.data.time}, ${marker.data.type}, ${marker.data.remark}`);
+    // 👉 預設（瀏覽）模式
+    else {
+      this.resetAllMarkers()
 
-    if (input) {
-      const [name, time, type, remark] = input.split(',').map(s => s.trim());
-      const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 3);
-      marker.data.name = name;
-      marker.data.time = time;
-      marker.data.type = markerType;
-      marker.data.remark = remark;
-      marker.setIcon(this.getCustomIcon(markerType));
-      this.saveMarkers();
+      marker.setOpacity(1.0);
+      marker.setZIndexOffset(1000);
       this.updateInfoPanel(marker.data);
     }
-  }, 0); // ✅ 讓出執行權，讓 UI 有機會重繪
-}
- else {
+  };
 
-this.resetAllMarkers()
-    // 將被點選的標記設為 1.0
-    marker.setOpacity(1.0);
-    marker.setZIndexOffset(1000)
-    this.updateInfoPanel(marker.data);
-  }
-};
-
-
+  // 綁定事件
   marker.on('click', handler);
   marker.on('touchstart', handler);
 
+  // 加入圖層與更新狀態
   this.markers.addLayer(marker);
   this.saveMarkers();
   this.filterMarkersByTypes();
   this.updateMarkerScales();
 }
+
 
 
 
