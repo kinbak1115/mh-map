@@ -154,7 +154,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.0.1</div>
+  <div id="version">版本 3.0.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -423,6 +423,10 @@ addMarker(latlng, data) {
 
       // 等待 UI 更新後顯示 prompt
 setTimeout(() => {
+  // ⛔ 暫時隱藏左上資訊面板
+  const infoPanel = document.getElementById('infoPanel');
+  if (infoPanel) infoPanel.style.display = 'none';
+
   // 填入原有值
   document.getElementById('markerName').value = marker.data.name;
   document.getElementById('markerTime').value = marker.data.time;
@@ -448,10 +452,14 @@ setTimeout(() => {
     this.saveMarkers();
     this.updateInfoPanel(marker.data);
 
+    // ✅ 顯示回左上資訊面板
+    if (infoPanel) infoPanel.style.display = 'block';
+
     // 關閉 Modal
     document.getElementById('markerEditModal').style.display = 'none';
   };
 }, 0);
+
 
     }
 
