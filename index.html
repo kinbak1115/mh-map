@@ -325,7 +325,14 @@ this.markers.eachLayer(marker => {
           this.lastMarkerType = markerType;
         }
       }
-
+      
+resetAllMarkers() {
+  this.markers.eachLayer(m => {
+    m.setOpacity(0.6);
+    m.setZIndexOffset(0);
+  });
+}
+      
 addMarker(latlng, data) {
   const marker = L.marker(latlng, {
     draggable: this.currentMode === 'editMarker',
@@ -333,10 +340,7 @@ addMarker(latlng, data) {
   });
 
   marker.data = data;
-  marker.setOpacity(0.6);
-  this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
+  this.resetAllMarkers()
 
   let tapped = false;
 
@@ -366,12 +370,8 @@ if (this.routeSelecting) {
 
 
   if (this.currentMode === "editColor") {
-
+    this.resetAllMarkers()
     this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
       marker.on('click', this.handleMarkerSelect, this); 
     })
 
@@ -379,12 +379,8 @@ this.markers.eachLayer(m => {
   marker.setZIndexOffset(1000)
     this.cycleMarkerColor(marker);
   } else if (this.currentMode === "editMarker") {
-
+    this.resetAllMarkers()
     this.markers.eachLayer(marker => {
-      marker.setOpacity(0.6);
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
       marker.on('click', this.handleMarkerSelect, this); 
     })
 
@@ -410,10 +406,8 @@ this.markers.eachLayer(m => {
   }, 0); // ✅ 讓出執行權，讓 UI 有機會重繪
 }
  else {
-this.markers.eachLayer(m => m.setOpacity(0.6));
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
+
+this.resetAllMarkers()
     // 將被點選的標記設為 1.0
     marker.setOpacity(1.0);
     marker.setZIndexOffset(1000)
@@ -586,10 +580,7 @@ toggleSelectingRoute() {
     button.textContent = '完成選擇';
 
     // 降低所有標記透明度
-    this.markers.eachLayer(marker => marker.setOpacity(0.6));
-this.markers.eachLayer(m => {
-  m.setZIndexOffset(0); // 將其他 marker 恢復為預設 z-index
-});
+    this.resetAllMarkers()
   } else {
     // 離開選擇狀態
     app.clearAllMarkerBorders();
