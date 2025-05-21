@@ -152,7 +152,14 @@
 </option>
     </select>
   </label><br/><br/>
-  <label>顏色：原始<input type="hidden" id="markerType" min="0" max="3" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
+  <label for="markerType">顏色：</label>
+<select id="markerType" style="width: 100%; font-size: 16px; padding: 6px;">
+  <option value="0">⚪ 原始</option>
+  <option value="1">🔴 紅</option>
+  <option value="2">🔵 藍</option>
+  <option value="3">🟢 綠</option>
+  <option value="4">🟣 紫</option>
+</select>
   <label for="markerRemark">狀態：</label>
 <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
   <option value="已確認">✅ 已確認</option>
@@ -394,7 +401,7 @@ isMobile() {
 
       
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-3), 備註）', `採集點, 現在, ${this.lastMarkerType}, 未確認`);
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註）', `採集點, 現在, ${this.lastMarkerType}, 未確認`);
         if (input) {
           const [name, time, type, remark] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
