@@ -116,29 +116,15 @@
 
 
 <!-- 🟦 Marker 編輯用 Modal（顯示在左上角） -->
-<div id="markerEditModal" style="
-  display:none;
-  position:fixed;
-  top: 20px;
-  left: 20px;
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 24px 32px;
-  z-index: 9999;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.4);
-  border-radius: 10px;
-  width: 400px;
-  font-size: 16px;
-  line-height: 1.4;
-">
+<div id="markerEditModal" style="...">
   <h3 style="margin-top: 0; font-size: 22px;">更改標記資訊</h3>
-<label for="markerName">名稱：</label>
-<select id="markerName" style="width: 100%; font-size: 16px; padding: 6px;">
-  <option value="全天古龍種">全天古龍種</option>
-  <option value="ABAB古龍種">ABAB古龍種</option>
-  <option value="BABA古龍種">BABA古龍種</option>
-  <option value="大連狩獵">大連狩獵</option>
-</select><br/><br/>
+  <label for="markerName">名稱：</label>
+  <select id="markerName" style="width: 100%; font-size: 16px; padding: 6px;">
+    <option value="全天古龍種">全天古龍種</option>
+    <option value="ABAB古龍種">ABAB古龍種</option>
+    <option value="BABA古龍種">BABA古龍種</option>
+    <option value="大連狩獵">大連狩獵</option>
+  </select><br/><br/>
   <label>時間：
     <select id="markerTime" style="width: 100%; font-size: 16px; padding: 6px;">
       <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM
@@ -160,10 +146,13 @@
     <option value="4">🟣 紫</option>
   </select><br/><br/>
   <label for="markerRemark">狀態：</label>
-<select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
-  <option value="已確認">✅ 已確認</option>
-  <option value="未確認">❌ 未確認</option>
-</select><br/><br/>
+  <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
+    <option value="已確認">✅ 已確認</option>
+    <option value="未確認">❌ 未確認</option>
+  </select><br/><br/>
+  <!-- 新增時間偏差欄位 -->
+  <label for="markerOffset">時間偏差（分鐘）：</label>
+  <input id="markerOffset" type="number" style="width:100%;font-size:16px;padding:6px;" value="0"><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
     <button onclick="
@@ -174,16 +163,12 @@
   </div>
 </div>
 
-
-
-
-
   <div id="map"></div>
   <div id="infoPanel" class="info-panel">
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.1</div>
+  <div id="version">版本 3.2.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -192,23 +177,16 @@
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
 
     // 工具函數：取得最近的顯示時間
-    function getNearestTimeString(marker) {
-      // 只針對「全天古龍種」「ABAB古龍種」「BABA古龍種」
+ function getNearestTimeString(marker) {
       if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
-
-      // 時間字串陣列
       let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
       if (!times.length) return "";
-
-      // 現在時間
+      const offset = parseInt(marker.data.offsetMinutes || 0, 10);
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
-
       let minDiff = Infinity;
       let showTime = "";
-
       for (const t of times) {
-        // "3:35PM" 轉分鐘
         let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
         if (!m) continue;
         let h = parseInt(m[1], 10);
@@ -216,14 +194,12 @@
         let ap = m[3].toUpperCase();
         if (ap === "PM" && h !== 12) h += 12;
         if (ap === "AM" && h === 12) h = 0;
-        let total = h * 60 + mm;
-
-        // 計算 diff
+        let total = h * 60 + mm + offset;
         let diff = total - nowMin;
-        if (diff >= -25 && diff <= 25) { // 在「現在-25」~「現在+25」分鐘內
+        if (diff >= -25 && diff <= 25) {
           if (Math.abs(diff) < Math.abs(minDiff)) {
             minDiff = diff;
-            showTime = t;
+            showTime = t + (offset ? (offset > 0 ? `+${offset}` : offset) : "");
           }
         }
       }
@@ -524,38 +500,34 @@ setTimeout(() => {
   if (infoPanel) infoPanel.style.display = 'none';
 
   // 填入原有值
-  document.getElementById('markerName').value = marker.data.name;
-  document.getElementById('markerTime').value = marker.data.time;
-  document.getElementById('markerType').value = marker.data.type;
-  document.getElementById('markerRemark').value = marker.data.remark;
-
+      document.getElementById('markerName').value = marker.data.name;
+      document.getElementById('markerTime').value = marker.data.time;
+      document.getElementById('markerType').value = marker.data.type;
+      document.getElementById('markerRemark').value = marker.data.remark;
+      document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
   // 顯示 Modal
   document.getElementById('markerEditModal').style.display = 'block';
 
   // 綁定儲存按鈕
-  document.getElementById('saveMarkerBtn').onclick = () => {
-    const name = document.getElementById('markerName').value.trim();
-    const time = document.getElementById('markerTime').value;
-    const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
-    const remark = document.getElementById('markerRemark').value.trim();
-
-    marker.data.name = name;
-    marker.data.time = time;
-    marker.data.type = type;
-    marker.data.remark = remark;
-
-    marker.setIcon(this.getCustomIcon(type, 1, marker));
-    this.updateMarkerScales();
-    this.saveMarkers();
-    this.updateInfoPanel(marker.data);
-
-    // ✅ 顯示回左上資訊面板
-    const infoPanel = document.getElementById('infoPanel');
-    if (infoPanel) infoPanel.style.display = '';
-
-    // 關閉 Modal
-    document.getElementById('markerEditModal').style.display = 'none';
-  };
+ document.getElementById('saveMarkerBtn').onclick = () => {
+        const name = document.getElementById('markerName').value.trim();
+        const time = document.getElementById('markerTime').value;
+        const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+        const remark = document.getElementById('markerRemark').value.trim();
+        const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
+        marker.data.name = name;
+        marker.data.time = time;
+        marker.data.type = type;
+        marker.data.remark = remark;
+        marker.data.offsetMinutes = offsetMinutes;
+        marker.setIcon(this.getCustomIcon(type, 1, marker));
+        this.updateMarkerScales();
+        this.saveMarkers();
+        this.updateInfoPanel(marker.data);
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel) infoPanel.style.display = '';
+        document.getElementById('markerEditModal').style.display = 'none';
+      };
 }, 0);
 
 
