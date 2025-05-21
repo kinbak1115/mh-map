@@ -153,7 +153,11 @@
     </select>
   </label><br/><br/>
   <label>顏色：原始<input type="hidden" id="markerType" min="0" max="3" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
-  <label>備註：<input type="text" id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;" /></label><br/><br/>
+  <label for="markerRemark">狀態：</label>
+<select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
+  <option value="已確認">✅ 已確認</option>
+  <option value="未確認">❌ 未確認</option>
+</select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
     <button onclick="
