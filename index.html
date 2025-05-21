@@ -336,29 +336,44 @@ return L.divIcon({
 
 }
 
+isMobile() {
+  return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+}
+     updateMarkerScales() {
+  const zoom = this.map.getZoom();
+  const mobile = this.isMobile();
 
-      updateMarkerScales() {
-        const zoom = this.map.getZoom();
-        let scale = 1.0;
-        if (zoom >= 18) scale = 2.0;
-        else if (zoom === 17) scale = 1.8;
-        else if (zoom === 16) scale = 1.6;
-        else if (zoom === 15) scale = 1.0;
-        else scale = 0.6;
+  let scale = 1.0;
 
-this.markers.eachLayer(marker => {
-  marker.setIcon(this.getCustomIcon(marker.data.type, scale));
-  
-  // 如果此 marker 是已選中的，重新加上 markerBorder class
-  const el = marker.getElement();
-  if (el && this.selectedMarkers.includes(marker)) {
-    el.classList.add('markerBorder');
+  if (mobile) {
+    if (zoom >= 18) scale = 1.0;
+    else if (zoom === 17) scale = 0.9;
+    else if (zoom === 16) scale = 0.8;
+    else if (zoom === 15) scale = 0.5;
+    else if (zoom === 14) scale = 0.3;
+    else scale = 0.3;
+  } else {
+    if (zoom >= 18) scale = 2.0;
+    else if (zoom === 17) scale = 1.8;
+    else if (zoom === 16) scale = 1.6;
+    else if (zoom === 15) scale = 1.0;
+    else if (zoom === 14) scale = 0.6;
+    else scale = 0.3;
   }
-});
 
+  this.markers.eachLayer(marker => {
+    marker.setIcon(this.getCustomIcon(marker.data.type, scale));
 
-        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
-      }
+    // 如果此 marker 是已選中的，重新加上 markerBorder class
+    const el = marker.getElement();
+    if (el && this.selectedMarkers.includes(marker)) {
+      el.classList.add('markerBorder');
+    }
+  });
+
+  document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
+}
+
 
       
       showMarkerForm(latlng) {
