@@ -377,6 +377,11 @@ showMarkerForm(latlng) {
   });
 
   this.lastMarkerType = defaultType;
+   // ✅ 顯示回左上資訊面板
+    if (infoPanel) infoPanel.style.display = '';
+
+    // 關閉 Modal
+    document.getElementById('markerEditModal').style.display = 'none';
 }
 
       
