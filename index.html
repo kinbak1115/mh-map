@@ -517,6 +517,7 @@ setTimeout(() => {
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
+        this.updateInfoPanel(marker.data);
       }
 
       deleteSelectedMarker() {
