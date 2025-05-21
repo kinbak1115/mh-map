@@ -457,7 +457,7 @@ setTimeout(() => {
   document.getElementById('saveMarkerBtn').onclick = () => {
     const name = document.getElementById('markerName').value.trim();
     const time = document.getElementById('markerTime').value;
-    const type = 0;
+    const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 3);
     const remark = document.getElementById('markerRemark').value.trim();
 
     marker.data.name = name;
