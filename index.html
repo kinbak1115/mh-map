@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.3</div>
+  <div id="version">版本 3.3.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -330,13 +330,15 @@
         });
         this.map.locate({ setView: true, maxZoom: 16 });
 
-        this.map.on('locationfound', e => {
-          L.circle(e.latlng, {
-            radius: e.accuracy / 2,
-            color: 'blue',
-            fillOpacity: 0.2
-          }).addTo(this.map);
-        });
+      this.map.on('locationfound', e => {
+        let maxRadius = 100; // 最多顯示半徑 100 公尺
+        let r = Math.min(e.accuracy / 2, maxRadius);
+        L.circle(e.latlng, {
+          radius: r,
+          color: 'blue',
+          fillOpacity: 0.2
+        }).addTo(this.map);
+      });
 
         this.map.on('locationerror', () => {
           alert("無法取得你的定位，使用預設地點。");
