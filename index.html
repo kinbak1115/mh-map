@@ -646,7 +646,7 @@ toggleEditMode() {
   }
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
-    document.getElementById('editBtn').textContent = "編輯標記";
+    document.getElementById('editBtn').textContent = "結束編輯";
     this.markers.eachLayer(marker => marker.dragging.enable());
   } else {
     this.currentMode = "done";
