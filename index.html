@@ -155,9 +155,9 @@
   </select><br/><br/>
   <label for="markerRemark">狀態：</label>
   <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
-  <option value="A確認">A確認</option>
-  <option value="B確認">B確認</option>
-  <option value="AB確認">AB確認</option>
+    <option value="A確認">A確認</option>
+    <option value="B確認">B確認</option>
+    <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <!-- 新增時間偏差欄位 -->
   <label for="markerOffset">時間偏差（分鐘）：</label>
@@ -177,7 +177,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.1</div>
+  <div id="version">版本 3.3.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -316,6 +316,7 @@
       }
       return bestDisplayTime;
     }
+
     class MapApp {
       constructor() {
         this.map = L.map('map', {
@@ -446,7 +447,7 @@
         this.map.on("touchstart", handleMapTap);
       }
 
-      getCustomIcon(type = 0, scale = 1, marker = null) {
+      getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         const iconUrls = {
           0: iconUrl,
           1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
@@ -475,6 +476,24 @@
                 position: relative;
               ">
                 ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+                ${orderNumber !== null ? `
+                  <div class="marker-order-badge" style="
+                    position: absolute;
+                    top: -14px; left: -14px;
+                    width: 28px; height: 28px;
+                    background: #ff6600;
+                    color: #fff;
+                    border-radius: 50%;
+                    font-size: 18px;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    border: 2px solid #fff;
+                    z-index: 20;
+                  ">${orderNumber+1}</div>
+                ` : ""}
               </div>
             </div>`,
           iconSize: [size, size],
@@ -507,7 +526,12 @@
           else scale = 0.3;
         }
         this.markers.eachLayer(marker => {
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker));
+          let orderNumber = null;
+          if (this.routeSelecting) {
+            const idx = this.selectedMarkers.indexOf(marker);
+            if (idx !== -1) orderNumber = idx;
+          }
+          marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker, orderNumber));
           const el = marker.getElement();
           if (el && this.selectedMarkers.includes(marker)) {
             el.classList.add('markerBorder');
@@ -559,6 +583,7 @@
               this.selectedMarkers.push(marker);
               if (markerElement) markerElement.classList.add('markerBorder');
             }
+            this.updateMarkerScales(); // 即時刷新順序
             return;
           }
             if (this.currentMode === "editMarker") {
@@ -699,6 +724,7 @@
           this.markers.eachLayer(marker => marker.dragging.disable());
           this.saveMarkers();
         }
+        this.updateMarkerScales();
       }
 
       toggleSelectingRoute() {
@@ -713,11 +739,12 @@
           }
           this.selectedMarkers = [];
           button.textContent = '完成選擇';
-          this.resetAllMarkers()
+          this.resetAllMarkers();
         } else {
           app.clearAllMarkerBorders();
           button.textContent = '選擇路線';
         }
+        this.updateMarkerScales();
       }
 
       clearAllMarkerBorders() {
