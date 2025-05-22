@@ -47,31 +47,32 @@
         padding: 18px;
         min-height: 48px;
       }
-      select[multiple] {
-        font-size: 20px;
+      select[multiple], select, input[type="number"] {
+        font-size: 24px;
+        padding: 12px;
       }
     }
 
-    .marker-wrapper {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
+.marker-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
-    .marker-border {
-      border-radius: 50%;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-    }
+.marker-border {
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+}
 
-    .markerBorder {
-      box-shadow: 0 0 0 6px red;
-      border-radius: 50%;
-      box-sizing: border-box;
-    }
+.markerBorder {
+  box-shadow: 0 0 0 6px red;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
 
     #version, #zoomDisplay {
       position: absolute;
@@ -170,64 +171,150 @@
   </div>
 </div>
 
-<div id="map"></div>
-<div id="infoPanel" class="info-panel">
-  <h3>標記資訊</h3>
-  <div id="panelContent">請點選地圖上的標記</div>
-</div>
-<div id="version">版本 3.3.2</div>
-<div id="zoomDisplay">Zoom: -</div>
+  <div id="map"></div>
+  <div id="infoPanel" class="info-panel">
+    <h3>標記資訊</h3>
+    <div id="panelContent">請點選地圖上的標記</div>
+  </div>
+  <div id="version">版本 3.3.1</div>
+  <div id="zoomDisplay">Zoom: -</div>
 
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script>
-  // ====== 動態時間選項顯示最近時段 & 選擇時自動設全天古龍種 ======
-  function getNearestTime(timestr) {
-    if (!timestr) return '';
-    const times = timestr.split(/\s+/).filter(Boolean);
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    let minDiff = Infinity;
-    let best = '';
-    for (const t of times) {
-      const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-      if (!m) continue;
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
+    const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
+
+    // 時間表對應顏色
+    const timeToType = {
+      "7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM": 1, // 紅
+      "7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM": 2, // 藍
+      "8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM": 3,           // 綠
+      "8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM": 4           // 紫
+    };
+
+    // 工具：給一組時間字串，找出最靠近現在的那一個
+    function getNearestTime(timestr) {
+      if (!timestr) return '';
+      const times = timestr.split(/\s+/).filter(Boolean);
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let minDiff = Infinity;
+      let best = '';
+      for (const t of times) {
+        const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        if (!m) continue;
+        let h = parseInt(m[1], 10);
+        let mm = parseInt(m[2], 10);
+        let ap = m[3].toUpperCase();
+        if (ap === "PM" && h !== 12) h += 12;
+        if (ap === "AM" && h === 12) h = 0;
+        let total = h * 60 + mm;
+        let diff = Math.abs(total - nowMin);
+        if (diff > 12*60) diff = 24*60 - diff; // 跨午夜補正
+        if (diff < minDiff) {
+          minDiff = diff;
+          best = t;
+        }
+      }
+      return best;
+    }
+
+    // 動態更新 #markerTime 下拉每個 option 的顯示文字
+    function updateTimeOptionLabels() {
+      const markerTime = document.getElementById('markerTime');
+      if (!markerTime) return;
+      for (const opt of markerTime.options) {
+        const nearest = getNearestTime(opt.value);
+        // 顯示最近時間，value 不變
+        opt.textContent = nearest || opt.value;
+      }
+    }
+
+    // 綁定：選時間自動選顏色、名稱預設全天古龍種
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初次載入就更新 option 顯示
+      updateTimeOptionLabels();
+      // 每分鐘自動更新一次顯示
+      setInterval(updateTimeOptionLabels, 60000);
+
+      document.getElementById('markerTime').addEventListener('change', function() {
+        const val = this.value.trim();
+        if (timeToType[val] !== undefined) {
+          document.getElementById('markerType').value = timeToType[val];
+        }
+        // 當選擇時間時，自動設為「全天古龍種」
+        document.getElementById('markerName').value = "全天古龍種";
+        // 重新呼叫以即時更新 option 顯示
+        updateTimeOptionLabels();
+      });
+    });
+
+    // 工具函數：加分鐘並回傳hh:mmAM/PM格式
+    function addMinutesToTimeString(timestr, offset) {
+      // 格式: 3:35PM
+      let m = timestr.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+      if (!m) return timestr;
       let h = parseInt(m[1], 10);
       let mm = parseInt(m[2], 10);
       let ap = m[3].toUpperCase();
       if (ap === "PM" && h !== 12) h += 12;
       if (ap === "AM" && h === 12) h = 0;
-      let total = h * 60 + mm;
-      let diff = Math.abs(total - nowMin);
-      if (diff > 12*60) diff = 24*60 - diff; // 跨午夜補正
-      if (diff < minDiff) {
-        minDiff = diff;
-        best = t;
+      let total = h * 60 + mm + offset;
+      // 處理時間溢出
+      if (total < 0) total += 24 * 60;
+      if (total >= 24 * 60) total -= 24 * 60;
+      let nh = Math.floor(total / 60);
+      let nmm = total % 60;
+      let nap = nh >= 12 ? "PM" : "AM";
+      let showh = nh % 12;
+      if (showh === 0) showh = 12;
+      return `${showh}:${nmm.toString().padStart(2, '0')}${nap}`;
+    }
+
+    // 工具函數：取得最近的顯示時間（含ABAB/BABA忽略B時段）
+    function getNearestTimeString(marker) {
+      if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
+
+      let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+
+      // ABAB古龍種：A時段（0,2,4,6,8...）
+      if (marker.data.name === "ABAB古龍種") {
+        times = times.filter((_, idx) => idx % 2 === 0);
       }
+      // BABA古龍種：B時段（1,3,5,7,9...）
+      else if (marker.data.name === "BABA古龍種") {
+        times = times.filter((_, idx) => idx % 2 === 1);
+      }
+
+      if (!times.length) return "";
+
+      const offset = parseInt(marker.data.offsetMinutes || 0, 10);
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let minDiff = Infinity;
+      let bestDisplayTime = "";
+
+      for (const t of times) {
+        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        if (!m) continue;
+        let h = parseInt(m[1], 10);
+        let mm = parseInt(m[2], 10);
+        let ap = m[3].toUpperCase();
+        if (ap === "PM" && h !== 12) h += 12;
+        if (ap === "AM" && h === 12) h = 0;
+        let total = h * 60 + mm + offset;
+        if (total < 0) total += 24 * 60;
+        if (total >= 24 * 60) total -= 24 * 60;
+        let diff = total - nowMin;
+        if (diff >= -25 && diff <= 25) {
+          if (Math.abs(diff) < Math.abs(minDiff)) {
+            minDiff = diff;
+            bestDisplayTime = addMinutesToTimeString(t, offset);
+          }
+        }
+      }
+      return bestDisplayTime;
     }
-    return best;
-  }
-
-  function updateTimeOptionLabels() {
-    const markerTime = document.getElementById('markerTime');
-    if (!markerTime) return;
-    for (const opt of markerTime.options) {
-      const nearest = getNearestTime(opt.value);
-      opt.textContent = nearest || opt.value;
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    updateTimeOptionLabels();
-    setInterval(updateTimeOptionLabels, 60 * 1000);
-
-    const markerTimeEl = document.getElementById('markerTime');
-    if (markerTimeEl) {
-      markerTimeEl.addEventListener('change', function() {
-        document.getElementById('markerName').value = "全天古龍種";
-      });
-    }
-  });
-
     class MapApp {
       constructor() {
         this.map = L.map('map', {
@@ -276,7 +363,7 @@
           const div = L.DomUtil.create('div', 'leaflet-control-custom');
           div.innerHTML = `
             <div class="btn-row">
-              <button onclick="app.toggleEditMode()" id="editBtn">開始標記</button>
+              <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
             </div>
             <label>顯示顏色：</label>
@@ -442,44 +529,6 @@
         document.getElementById('markerEditModal').style.display = 'none';
       }
 
-function getNearestTime(timestr) {
-  if (!timestr) return '';
-  const times = timestr.split(/\s+/).filter(Boolean);
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  let minDiff = Infinity;
-  let best = '';
-  for (const t of times) {
-    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-    if (!m) continue;
-    let h = parseInt(m[1], 10);
-    let mm = parseInt(m[2], 10);
-    let ap = m[3].toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    let total = h * 60 + mm;
-    let diff = Math.abs(total - nowMin);
-    if (diff > 12*60) diff = 24*60 - diff; // 跨午夜補正
-    if (diff < minDiff) {
-      minDiff = diff;
-      best = t;
-    }
-  }
-  return best;
-}
-
-function updateTimeOptionLabels() {
-  const markerTime = document.getElementById('markerTime');
-  if (!markerTime) return;
-  for (const opt of markerTime.options) {
-    const nearest = getNearestTime(opt.value);
-    // 顯示最近的時間，value 還是原本那組
-    opt.textContent = nearest || opt.value;
-  }
-}
-
-
-
       resetAllMarkers() {
         this.markers.eachLayer(m => {
           m.setOpacity(0.6);
@@ -632,24 +681,24 @@ function updateTimeOptionLabels() {
           .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
 
-toggleEditMode() {
-  if (this.routeSelecting) {
-    app.clearAllMarkerBorders();
-    this.routeSelecting = false;
-    const routeBtn = document.getElementById('routeBtn');
-    if (routeBtn) routeBtn.textContent = '選擇路線';
-  }
-  if (this.currentMode === "done") {
-    this.currentMode = "editMarker";
-    document.getElementById('editBtn').textContent = "結束編輯";
-    this.markers.eachLayer(marker => marker.dragging.enable());
-  } else {
-    this.currentMode = "done";
-    document.getElementById('editBtn').textContent = "開始編輯";
-    this.markers.eachLayer(marker => marker.dragging.disable());
-    this.saveMarkers();
-  }
-}
+      toggleEditMode() {
+        if (this.routeSelecting) {
+          app.clearAllMarkerBorders();
+          this.routeSelecting = false;
+          const routeBtn = document.getElementById('routeBtn');
+          if (routeBtn) routeBtn.textContent = '選擇路線';
+        }
+        if (this.currentMode === "done") {
+          this.currentMode = "editMarker";
+          document.getElementById('editBtn').textContent = "結束編輯";
+          this.markers.eachLayer(marker => marker.dragging.enable());
+        } else {
+          this.currentMode = "done";
+          document.getElementById('editBtn').textContent = "開始編輯";
+          this.markers.eachLayer(marker => marker.dragging.disable());
+          this.saveMarkers();
+        }
+      }
 
       toggleSelectingRoute() {
         this.routeSelecting = !this.routeSelecting;
