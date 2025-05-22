@@ -179,7 +179,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.1</div>
+  <div id="version">版本 3.3.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -486,6 +486,48 @@ function getNearestTimeString(marker) {
         if (infoPanel) infoPanel.style.display = '';
         document.getElementById('markerEditModal').style.display = 'none';
       }
+
+function getNearestTime(timestr) {
+  if (!timestr) return '';
+  const times = timestr.split(/\s+/).filter(Boolean);
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  let minDiff = Infinity;
+  let best = '';
+  for (const t of times) {
+    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) continue;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    let total = h * 60 + mm;
+    let diff = Math.abs(total - nowMin);
+    if (diff > 12*60) diff = 24*60 - diff; // 跨午夜補正
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = t;
+    }
+  }
+  return best;
+}
+
+function updateTimeOptionLabels() {
+  const markerTime = document.getElementById('markerTime');
+  if (!markerTime) return;
+  for (const opt of markerTime.options) {
+    const nearest = getNearestTime(opt.value);
+    // 顯示最近的時間，value 還是原本那組
+    opt.textContent = nearest || opt.value;
+  }
+}
+
+// 頁面載入時與每分鐘自動更新
+document.addEventListener('DOMContentLoaded', function() {
+  updateTimeOptionLabels();
+  setInterval(updateTimeOptionLabels, 60 * 1000);
+});
 
       resetAllMarkers() {
         this.markers.eachLayer(m => {
