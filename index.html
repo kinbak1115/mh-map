@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.8</div>
+  <div id="version">版本 3.3.9</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -227,15 +227,19 @@
     }
 
     // 動態更新 #markerTime 下拉每個 option 的顯示文字
-    function updateTimeOptionLabels() {
-      const markerTime = document.getElementById('markerTime');
-      if (!markerTime) return;
-      for (const opt of markerTime.options) {
-        const nearest = getNearestTime(opt.value);
-        // 顯示最近時間，value 不變
-        opt.textContent = nearest || opt.value;
-      }
-    }
+function updateTimeOptionLabels() {
+  const markerTime = document.getElementById('markerTime');
+  if (!markerTime) return;
+  for (const opt of markerTime.options) {
+    const times = opt.value.split(/\s+/).filter(Boolean);
+    // 依照順序：偶數編號為A，奇數編號為B
+    const withAB = times.map((t, idx) => {
+      const label = idx % 2 === 0 ? '(A)' : '(B)';
+      return t + label;
+    }).join(' ');
+    opt.textContent = withAB;
+  }
+}
 
     // 綁定：選時間自動選顏色、名稱預設全天古龍種
     document.addEventListener('DOMContentLoaded', function() {
