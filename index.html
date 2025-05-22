@@ -160,14 +160,17 @@
     <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <!-- 新增時間偏差欄位 -->
-<label for="markerOffset">時間偏差（分鐘）：</label>
-<select id="markerOffset" style="width:100%;font-size:16px;padding:6px;">
-  <option value="0">0</option>
-  <option value="1">1</option>
-  <option value="2">2</option>
-  <option value="3">3</option>
-  <option value="4">4</option>
-</select><br/><br/>
+  <label for="markerOffset">時間偏差（分鐘）：</label>
+  <select id="markerOffset" style="width:100%;font-size:16px;padding:6px;">
+    <option value="0">0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+  </select><br/><br/>
+  <!-- 新增剩餘時間欄位 -->
+  <label for="markerRemain">剩餘時間：</label>
+  <input id="markerRemain" type="text" readonly style="width:100%;font-size:16px;padding:6px;"><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
     <button onclick="
@@ -183,7 +186,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.4</div>
+  <div id="version">版本 3.4.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -226,60 +229,145 @@
       return best;
     }
 
-function updateTimeOptionLabels() {
-  const markerTime = document.getElementById('markerTime');
-  if (!markerTime) return;
-  for (const opt of markerTime.options) {
-    const nearest = getNearestTime(opt.value);
-    // 找出這個最近時間是A還是B
-    let typeLabel = '';
-    if (nearest) {
-      // 用原始字串分割，找到 index
-      const times = opt.value.split(/\s+/).filter(Boolean);
-      const idx = times.findIndex(t => t === nearest);
-      if (idx !== -1) {
-        typeLabel = (idx % 2 === 0) ? '（A）' : '（B）';
-      }
-      opt.textContent = nearest + typeLabel;
-    } else {
-      opt.textContent = opt.value;
+    function getATagByIndex(idx) {
+      return idx % 2 === 0 ? 'A' : 'B';
     }
-  }
-}
-    // 綁定：選時間自動選顏色、名稱預設全天古龍種
+
+    function updateTimeOptionLabels() {
+      const markerTime = document.getElementById('markerTime');
+      if (!markerTime) return;
+      for (const opt of markerTime.options) {
+        const nearest = getNearestTime(opt.value);
+        // 找出這個最近時間是A還是B
+        let typeLabel = '';
+        if (nearest) {
+          // 用原始字串分割，找到 index
+          const times = opt.value.split(/\s+/).filter(Boolean);
+          const idx = times.findIndex(t => t === nearest);
+          if (idx !== -1) {
+            typeLabel = (idx % 2 === 0) ? '（A）' : '（B）';
+          }
+          opt.textContent = nearest + typeLabel;
+        } else {
+          opt.textContent = opt.value;
+        }
+      }
+    }
+
+    // 自動根據現在時間選擇最近時段，並自動填時間偏差與剩餘時間
+    function autoFillTimeAndOffsetAndRemain() {
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+
+      // 遍歷所有 option，找出最近且未來的那個時段
+      const markerTime = document.getElementById('markerTime');
+      let bestOptIdx = 0, bestTime = '', minDiff = Infinity, bestOffset = 0, bestRemain = 0;
+      for (let i = 0; i < markerTime.options.length; i++) {
+        const timestr = markerTime.options[i].value;
+        const times = timestr.split(/\s+/).filter(Boolean);
+        for (let j = 0; j < times.length; j++) {
+          const t = times[j];
+          const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+          if (!m) continue;
+          let h = parseInt(m[1], 10);
+          let mm = parseInt(m[2], 10);
+          let ap = m[3].toUpperCase();
+          if (ap === "PM" && h !== 12) h += 12;
+          if (ap === "AM" && h === 12) h = 0;
+          let total = h * 60 + mm;
+          let diff = total - nowMin;
+          if (diff < 0) diff += 24 * 60; // 跨午夜
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestOptIdx = i;
+            bestTime = t;
+            bestOffset = nowMin - total;
+            if (bestOffset < 0) bestOffset += 24 * 60;
+            bestOffset = Math.round(bestOffset);
+            bestRemain = diff;
+          }
+        }
+      }
+      markerTime.selectedIndex = bestOptIdx;
+      document.getElementById('markerOffset').value = bestOffset;
+      document.getElementById('markerRemain').value = bestRemain + "分鐘";
+
+      // 讓下方A/B、顏色、名稱、備註也自動連動
+      // 自動設定名稱
+      document.getElementById('markerName').value = '全天古龍種';
+
+      // 自動設定備註
+      const timestr = markerTime.options[bestOptIdx].value;
+      const times = timestr.split(/\s+/).filter(Boolean);
+      const idx = times.findIndex(t => t === bestTime);
+      if (idx !== -1) {
+        const ab = getATagByIndex(idx);
+        document.getElementById('markerRemark').value = ab + '確認';
+      } else {
+        document.getElementById('markerRemark').value = '';
+      }
+
+      // 自動設定顏色
+      const type = timeToType[timestr] ?? 0;
+      document.getElementById('markerType').value = type;
+    }
+
+    // 綁定：時間選項文字更新、選時間自動帶顏色/名稱/備註
     document.addEventListener('DOMContentLoaded', function() {
       // 初次載入就更新 option 顯示
       updateTimeOptionLabels();
       // 每分鐘自動更新一次顯示
       setInterval(updateTimeOptionLabels, 60000);
 
-// 取得A/B標記
-function getATagByIndex(idx) {
-  return idx % 2 === 0 ? 'A' : 'B';
-}
+      // 選擇時間自動帶顏色、名稱、備註
+      document.getElementById('markerTime').addEventListener('change', function() {
+        const timestr = this.value;
+        const times = timestr.split(/\s+/).filter(Boolean);
 
-// 根據選擇的時間自動更新備註
-document.getElementById('markerTime').addEventListener('change', function() {
-  const timestr = this.value;
-  const times = timestr.split(/\s+/).filter(Boolean);
+        // 自動設定名稱
+        document.getElementById('markerName').value = '全天古龍種';
 
-  // 自動設定名稱
-  document.getElementById('markerName').value = '全天古龍種';
+        // 自動設定備註
+        const nearest = getNearestTime(timestr);
+        const idx = times.findIndex(t => t === nearest);
+        if (idx !== -1) {
+          const ab = getATagByIndex(idx);
+          document.getElementById('markerRemark').value = ab + '確認';
+        } else {
+          document.getElementById('markerRemark').value = '';
+        }
 
-  // 自動設定備註
-  const nearest = getNearestTime(timestr);
-  const idx = times.findIndex(t => t === nearest);
-  if (idx !== -1) {
-    const ab = getATagByIndex(idx);
-    document.getElementById('markerRemark').value = ab + '確認';
-  } else {
-    document.getElementById('markerRemark').value = '';
-  }
+        // 自動設定顏色
+        const type = timeToType[timestr] ?? 0;
+        document.getElementById('markerType').value = type;
 
-  // 自動設定顏色
-  const type = timeToType[timestr] ?? 0;
-  document.getElementById('markerType').value = type;
-});
+        // 自動更新剩餘時間與時間偏差
+        // 先算最近時段
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        let bestRemain = Infinity, bestOffset = 0;
+        for (let j = 0; j < times.length; j++) {
+          const t = times[j];
+          const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+          if (!m) continue;
+          let h = parseInt(m[1], 10);
+          let mm = parseInt(m[2], 10);
+          let ap = m[3].toUpperCase();
+          if (ap === "PM" && h !== 12) h += 12;
+          if (ap === "AM" && h === 12) h = 0;
+          let total = h * 60 + mm;
+          let diff = total - nowMin;
+          if (diff < 0) diff += 24 * 60;
+          if (diff < bestRemain) {
+            bestRemain = diff;
+            bestOffset = nowMin - total;
+            if (bestOffset < 0) bestOffset += 24 * 60;
+            bestOffset = Math.round(bestOffset);
+          }
+        }
+        document.getElementById('markerOffset').value = bestOffset;
+        document.getElementById('markerRemain').value = bestRemain + "分鐘";
+      });
     });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
@@ -356,15 +444,15 @@ document.getElementById('markerTime').addEventListener('change', function() {
         });
         this.map.locate({ setView: true, maxZoom: 16 });
 
-      this.map.on('locationfound', e => {
-        let maxRadius = 100; // 最多顯示半徑 100 公尺
-        let r = Math.min(e.accuracy / 2, maxRadius);
-        L.circle(e.latlng, {
-          radius: r,
-          color: 'blue',
-          fillOpacity: 0.2
-        }).addTo(this.map);
-      });
+        this.map.on('locationfound', e => {
+          let maxRadius = 100; // 最多顯示半徑 100 公尺
+          let r = Math.min(e.accuracy / 2, maxRadius);
+          L.circle(e.latlng, {
+            radius: r,
+            color: 'blue',
+            fillOpacity: 0.2
+          }).addTo(this.map);
+        });
 
         this.map.on('locationerror', () => {
           alert("無法取得你的定位，使用預設地點。");
@@ -497,46 +585,46 @@ document.getElementById('markerTime').addEventListener('change', function() {
         // 動態決定時間字體大小
         let timeFontSize = Math.max(10, Math.floor(14 * scale));
         return L.divIcon({
-    className: '',
-    html: `
-      <div class="marker-wrapper">
-        <div class="marker-border" style="
-          background-image: url('${iconUrls[type]}');
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          width: ${size}px;
-          height: ${size}px;
-          position: relative;
-        ">
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
-          ${orderNumber !== null ? `
-            <div class="marker-order-badge" style="
-              position: absolute;
-              top: ${-10 * scale}px;
-              left: ${-10 * scale}px;
-              width: ${20 * scale}px;
-              height: ${20 * scale}px;
-              background: #ff6600;
-              color: #fff;
-              border-radius: 50%;
-              font-size: ${11 * scale}px;
-              font-weight: bold;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-              border: ${2 * scale}px solid #fff;
-              z-index: 20;
-            ">${orderNumber+1}</div>
-          ` : ""}
-        </div>
-      </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2]
-  });
-}
+          className: '',
+          html: `
+            <div class="marker-wrapper">
+              <div class="marker-border" style="
+                background-image: url('${iconUrls[type]}');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                width: ${size}px;
+                height: ${size}px;
+                position: relative;
+              ">
+                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+                ${orderNumber !== null ? `
+                  <div class="marker-order-badge" style="
+                    position: absolute;
+                    top: ${-10 * scale}px;
+                    left: ${-10 * scale}px;
+                    width: ${20 * scale}px;
+                    height: ${20 * scale}px;
+                    background: #ff6600;
+                    color: #fff;
+                    border-radius: 50%;
+                    font-size: ${11 * scale}px;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    border: ${2 * scale}px solid #fff;
+                    z-index: 20;
+                  ">${orderNumber+1}</div>
+                ` : ""}
+              </div>
+            </div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -size / 2]
+        });
+      }
 
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -577,17 +665,28 @@ document.getElementById('markerTime').addEventListener('change', function() {
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘)）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0`);
-        if (input) {
-          const [name, time, type, remark, offsetStr] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-          const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
-          this.lastMarkerType = markerType;
-        }
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
-        document.getElementById('markerEditModal').style.display = 'none';
+        // 彈窗式表單自動填充最近時段等
+        setTimeout(() => {
+          // only show modal if not already shown
+          if (document.getElementById('markerEditModal').style.display !== 'block') {
+            autoFillTimeAndOffsetAndRemain();
+            document.getElementById('markerEditModal').style.display = 'block';
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) infoPanel.style.display = 'none';
+            // 綁定儲存按鈕
+            document.getElementById('saveMarkerBtn').onclick = () => {
+              const name = document.getElementById('markerName').value.trim();
+              const time = document.getElementById('markerTime').value;
+              const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+              const remark = document.getElementById('markerRemark').value.trim();
+              const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
+              this.addMarker(latlng, { name, time, type, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
+              this.lastMarkerType = type;
+              document.getElementById('markerEditModal').style.display = 'none';
+              if (infoPanel) infoPanel.style.display = '';
+            };
+          }
+        }, 0);
       }
 
       resetAllMarkers() {
@@ -634,6 +733,8 @@ document.getElementById('markerTime').addEventListener('change', function() {
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
+              // 更新剩餘時間
+              autoFillTimeAndOffsetAndRemain();
               document.getElementById('markerEditModal').style.display = 'block';
               document.getElementById('saveMarkerBtn').onclick = () => {
                 const name = document.getElementById('markerName').value.trim();
@@ -768,10 +869,9 @@ document.getElementById('markerTime').addEventListener('change', function() {
           document.getElementById('editBtn').textContent = "開始編輯";
           this.markers.eachLayer(marker => marker.dragging.disable());
           this.saveMarkers();
-        // 新增這一行，確保結束時關閉表單
-        document.getElementById('markerEditModal').style.display = 'none';
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
+          document.getElementById('markerEditModal').style.display = 'none';
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
