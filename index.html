@@ -179,7 +179,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.9</div>
+  <div id="version">版本 3.3.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -516,12 +516,7 @@ function getNearestTimeString(marker) {
             }
             return;
           }
-          if (this.currentMode === "editColor") {
-            this.resetAllMarkers()
-            marker.setOpacity(1.0);
-            marker.setZIndexOffset(1000);
-            this.cycleMarkerColor(marker);
-          } else if (this.currentMode === "editMarker") {
+            if (this.currentMode === "editMarker") {
             this.resetAllMarkers()
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
@@ -568,16 +563,6 @@ function getNearestTimeString(marker) {
         this.saveMarkers();
         this.filterMarkersByTypes();
         this.updateMarkerScales();
-      }
-
-      cycleMarkerColor(marker) {
-        const nextType = (marker.data.type + 1) % 5;
-        marker.data.type = nextType;
-        marker.setIcon(this.getCustomIcon(nextType, 1, marker));
-        this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
-        this.updateInfoPanel(marker.data);
       }
 
       deleteSelectedMarker() {
@@ -652,28 +637,24 @@ function getNearestTimeString(marker) {
           .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
 
-      toggleEditMode() {
-        if (this.routeSelecting) {
-          app.clearAllMarkerBorders();
-          this.routeSelecting = false;
-          const routeBtn = document.getElementById('routeBtn');
-          if (routeBtn) routeBtn.textContent = '選擇路線';
-        }
-        if (this.currentMode === "done") {
-          this.currentMode = "editMarker";
-          document.getElementById('editBtn').textContent = "編輯標記";
-          this.markers.eachLayer(marker => marker.dragging.enable());
-        } else if (this.currentMode === "editMarker") {
-          this.currentMode = "editColor";
-          document.getElementById('editBtn').textContent = "編輯顏色";
-          this.markers.eachLayer(marker => marker.dragging.disable());
-        } else {
-          this.currentMode = "done";
-          document.getElementById('editBtn').textContent = "開始編輯";
-          this.markers.eachLayer(marker => marker.dragging.disable());
-          this.saveMarkers();
-        }
-      }
+toggleEditMode() {
+  if (this.routeSelecting) {
+    app.clearAllMarkerBorders();
+    this.routeSelecting = false;
+    const routeBtn = document.getElementById('routeBtn');
+    if (routeBtn) routeBtn.textContent = '選擇路線';
+  }
+  if (this.currentMode === "done") {
+    this.currentMode = "editMarker";
+    document.getElementById('editBtn').textContent = "編輯標記";
+    this.markers.eachLayer(marker => marker.dragging.enable());
+  } else {
+    this.currentMode = "done";
+    document.getElementById('editBtn').textContent = "開始編輯";
+    this.markers.eachLayer(marker => marker.dragging.disable());
+    this.saveMarkers();
+  }
+}
 
       toggleSelectingRoute() {
         this.routeSelecting = !this.routeSelecting;
