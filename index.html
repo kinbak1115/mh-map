@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.2</div>
+  <div id="version">版本 3.4.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -271,6 +271,10 @@ document.getElementById('markerTime').addEventListener('change', function() {
   } else {
     document.getElementById('markerRemark').value = '';
   }
+
+  // === 自動設定顏色 ===
+  const type = timeToType[timestr] ?? 0;
+  document.getElementById('markerType').value = type;
 });
     });
 
