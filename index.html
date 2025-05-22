@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.6</div>
+  <div id="version">版本 3.3.7</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -744,6 +744,8 @@
           this.saveMarkers();
         // 新增這一行，確保結束時關閉表單
         document.getElementById('markerEditModal').style.display = 'none';
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
