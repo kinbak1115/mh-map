@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.1</div>
+  <div id="version">版本 3.4.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -253,16 +253,25 @@ function updateTimeOptionLabels() {
       // 每分鐘自動更新一次顯示
       setInterval(updateTimeOptionLabels, 60000);
 
-      document.getElementById('markerTime').addEventListener('change', function() {
-        const val = this.value.trim();
-        if (timeToType[val] !== undefined) {
-          document.getElementById('markerType').value = timeToType[val];
-        }
-        // 當選擇時間時，自動設為「全天古龍種」
-        document.getElementById('markerName').value = "全天古龍種";
-        // 重新呼叫以即時更新 option 顯示
-        updateTimeOptionLabels();
-      });
+// 取得A/B標記
+function getATagByIndex(idx) {
+  return idx % 2 === 0 ? 'A' : 'B';
+}
+
+// 根據選擇的時間自動更新備註
+document.getElementById('markerTime').addEventListener('change', function() {
+  const timestr = this.value;
+  const times = timestr.split(/\s+/).filter(Boolean);
+  // 取得最近一個時間
+  const nearest = getNearestTime(timestr);
+  const idx = times.findIndex(t => t === nearest);
+  if (idx !== -1) {
+    const ab = getATagByIndex(idx);
+    document.getElementById('markerRemark').value = ab + '確認';
+  } else {
+    document.getElementById('markerRemark').value = '';
+  }
+});
     });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
