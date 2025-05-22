@@ -7,7 +7,6 @@
   <style>
     body, html { margin: 0; padding: 0; }
     #map { height: 100vh; }
-
     .leaflet-control-custom {
       background: white;
       padding: 10px;
@@ -16,27 +15,23 @@
       width: 240px;
       box-sizing: border-box;
     }
-
     .leaflet-control-custom .btn-row {
       display: flex;
       gap: 6px;
       margin-bottom: 6px;
     }
-
     .leaflet-control-custom button {
       flex: 1;
       font-size: 18px;
       padding: 10px;
       box-sizing: border-box;
     }
-
     select[multiple] {
       width: 100%;
       font-size: 18px;
       padding: 6px;
       margin-bottom: 10px;
     }
-
     @media (max-width: 600px) {
       .leaflet-control-custom {
         width: 100%;
@@ -52,28 +47,24 @@
         padding: 12px;
       }
     }
-
-.marker-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.marker-border {
-  border-radius: 50%;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-}
-
-.markerBorder {
-  box-shadow: 0 0 0 6px red;
-  border-radius: 50%;
-  box-sizing: border-box;
-}
-
+    .marker-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .marker-border {
+      border-radius: 50%;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+    }
+    .markerBorder {
+      box-shadow: 0 0 0 6px red;
+      border-radius: 50%;
+      box-sizing: border-box;
+    }
     #version, #zoomDisplay {
       position: absolute;
       right: 10px;
@@ -84,10 +75,8 @@
       border-radius: 5px;
       z-index: 1000;
     }
-
     #version { bottom: 10px; }
     #zoomDisplay { bottom: 40px; }
-
     .info-panel {
       position: absolute;
       top: 10px;
@@ -100,13 +89,11 @@
       font-size: 16px;
       z-index: 1000;
     }
-
     .info-panel h3 {
       margin: 0 0 8px;
       font-size: 18px;
       border-bottom: 1px solid #ccc;
     }
-
     .info-panel p { margin: 4px 0; }
     .leaflet-popup-content { display: none; }
   </style>
@@ -180,7 +167,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.6</div>
+  <div id="version">版本 3.4.7</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -264,7 +251,7 @@
         document.getElementById('markerType').value = type;
       });
 
-      // 剩餘時間自動推算
+      // 剩餘時間自動推算（但不改時間偏差）
       document.getElementById('markerRemain').addEventListener('input', function() {
         const remain = parseInt(this.value, 10);
         if (!remain || remain < 1 || remain > 24) return;
@@ -295,7 +282,7 @@
         if (bestTime === '') return;
 
         markerTime.selectedIndex = bestOptIdx;
-        document.getElementById('markerOffset').value = minDiff; // input number直接設值
+        // 時間偏差留待儲存時才自動填
         const type = timeToType[markerTime.options[bestOptIdx].value] ?? 0;
         document.getElementById('markerType').value = type;
         document.getElementById('markerName').value = '全天古龍種';
@@ -360,6 +347,7 @@
       return bestDisplayTime;
     }
 
+    // --- MapApp class ---
     class MapApp {
       constructor() {
         this.map = L.map('map', {
@@ -367,15 +355,15 @@
         });
         this.map.locate({ setView: true, maxZoom: 16 });
 
-      this.map.on('locationfound', e => {
-        let maxRadius = 100; // 最多顯示半徑 100 公尺
-        let r = Math.min(e.accuracy / 2, maxRadius);
-        L.circle(e.latlng, {
-          radius: r,
-          color: 'blue',
-          fillOpacity: 0.2
-        }).addTo(this.map);
-      });
+        this.map.on('locationfound', e => {
+          let maxRadius = 100;
+          let r = Math.min(e.accuracy / 2, maxRadius);
+          L.circle(e.latlng, {
+            radius: r,
+            color: 'blue',
+            fillOpacity: 0.2
+          }).addTo(this.map);
+        });
 
         this.map.on('locationerror', () => {
           alert("無法取得你的定位，使用預設地點。");
@@ -399,8 +387,6 @@
 
         this.map.on('zoomend', () => this.updateMarkerScales());
         this.updateMarkerScales();
-
-        // 每分鐘自動刷新標記顯示時間
         setInterval(() => this.updateMarkerScales(), 60 * 1000);
       }
 
@@ -505,11 +491,10 @@
         if (marker) {
           timeStr = getNearestTimeString(marker);
         }
-        // 動態決定時間字體大小
         let timeFontSize = Math.max(10, Math.floor(14 * scale));
         return L.divIcon({
-    className: '',
-    html: `
+          className: '',
+          html: `
       <div class="marker-wrapper">
         <div class="marker-border" style="
           background-image: url('${iconUrls[type]}');
@@ -543,11 +528,11 @@
           ` : ""}
         </div>
       </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2]
-  });
-}
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          popupAnchor: [0, -size / 2]
+        });
+      }
 
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -588,17 +573,80 @@
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘)）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0`);
-        if (input) {
-          const [name, time, type, remark, offsetStr] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-          const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
-          this.lastMarkerType = markerType;
+        // 這裡建議直接顯示 markerEditModal 讓使用者填寫
+        document.getElementById('markerEditModal').style.display = 'block';
+        document.getElementById('markerName').value = '全天古龍種';
+        document.getElementById('markerTime').selectedIndex = 0;
+        document.getElementById('markerType').value = 0;
+        document.getElementById('markerRemark').value = 'A確認';
+        document.getElementById('markerOffset').value = 0;
+        document.getElementById('markerRemain').value = '';
+        this.newMarkerLatLng = latlng;
+        document.getElementById('saveMarkerBtn').onclick = () => {
+          this.saveMarkerForm();
+        };
+      }
+
+      saveMarkerForm(marker = null) {
+        // marker==null 表示新增，否則為編輯
+        let latlng = this.newMarkerLatLng;
+        if (marker) latlng = marker.getLatLng();
+        const name = document.getElementById('markerName').value.trim();
+        const time = document.getElementById('markerTime').value;
+        const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+        const remark = document.getElementById('markerRemark').value.trim();
+
+        // === 儲存時自動計算 offset ===
+        let offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
+        const remain = parseInt(document.getElementById('markerRemain').value, 10);
+        if (remain && remain >= 1 && remain <= 24) {
+          const now = new Date();
+          let nowMin = now.getHours() * 60 + now.getMinutes();
+          const times = time.split(/\s+/).filter(Boolean);
+          let minDiff = Infinity, bestIdx = -1, bestTime = '';
+          times.forEach((t, idx) => {
+            const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+            if (!m) return;
+            let h = parseInt(m[1], 10), mm = parseInt(m[2], 10), ap = m[3].toUpperCase();
+            if (ap === "PM" && h !== 12) h += 12;
+            if (ap === "AM" && h === 12) h = 0;
+            const tMin = h * 60 + mm;
+            let diff = nowMin - tMin;
+            if (diff < 0) diff += 24*60;
+            if (diff < minDiff && diff <= 25) {
+              minDiff = diff;
+              bestTime = t;
+              bestIdx = idx;
+            }
+          });
+          if (bestIdx !== -1) {
+            offsetMinutes = minDiff;
+            document.getElementById('markerOffset').value = offsetMinutes;
+          }
         }
+        // === end ===
+
+        const markerData = {
+          name,
+          time,
+          type,
+          remark,
+          lat: latlng.lat,
+          lng: latlng.lng,
+          offsetMinutes
+        };
+        if (!marker) {
+          this.addMarker(latlng, markerData);
+        } else {
+          marker.data = markerData;
+          marker.setIcon(this.getCustomIcon(type, 1, marker));
+          this.updateMarkerScales();
+          this.saveMarkers();
+          this.updateInfoPanel(marker.data);
+        }
+        document.getElementById('markerEditModal').style.display = 'none';
         const infoPanel = document.getElementById('infoPanel');
         if (infoPanel) infoPanel.style.display = '';
-        document.getElementById('markerEditModal').style.display = 'none';
       }
 
       resetAllMarkers() {
@@ -614,7 +662,7 @@
           icon: this.getCustomIcon(data.type, 1, { data })
         });
         marker.data = data;
-        this.resetAllMarkers()
+        this.resetAllMarkers();
         let tapped = false;
         const handler = (e) => {
           if (tapped) return;
@@ -630,11 +678,11 @@
               this.selectedMarkers.push(marker);
               if (markerElement) markerElement.classList.add('markerBorder');
             }
-            this.updateMarkerScales(); // 即時刷新順序
+            this.updateMarkerScales();
             return;
           }
           if (this.currentMode === "editMarker") {
-            this.resetAllMarkers()
+            this.resetAllMarkers();
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
             setTimeout(() => {
@@ -645,29 +693,14 @@
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
+              document.getElementById('markerRemain').value = '';
               document.getElementById('markerEditModal').style.display = 'block';
               document.getElementById('saveMarkerBtn').onclick = () => {
-                const name = document.getElementById('markerName').value.trim();
-                const time = document.getElementById('markerTime').value;
-                const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
-                const remark = document.getElementById('markerRemark').value.trim();
-                const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
-                marker.data.name = name;
-                marker.data.time = time;
-                marker.data.type = type;
-                marker.data.remark = remark;
-                marker.data.offsetMinutes = offsetMinutes;
-                marker.setIcon(this.getCustomIcon(type, 1, marker));
-                this.updateMarkerScales();
-                this.saveMarkers();
-                this.updateInfoPanel(marker.data);
-                const infoPanel = document.getElementById('infoPanel');
-                if (infoPanel) infoPanel.style.display = '';
-                document.getElementById('markerEditModal').style.display = 'none';
+                this.saveMarkerForm(marker);
               };
             }, 0);
           } else {
-            this.resetAllMarkers()
+            this.resetAllMarkers();
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
             this.updateInfoPanel(marker.data);
@@ -675,15 +708,13 @@
         };
         marker.on('click', handler);
         marker.on('touchstart', handler);
-      
-        // === 新增：拖曳結束自動儲存 ===
+
         marker.on('dragend', () => {
-          // 拖曳後自動更新經緯度
           marker.data.lat = marker.getLatLng().lat;
           marker.data.lng = marker.getLatLng().lng;
           this.saveMarkers();
         });
-      
+
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
         this.saveMarkers();
@@ -779,10 +810,9 @@
           document.getElementById('editBtn').textContent = "開始編輯";
           this.markers.eachLayer(marker => marker.dragging.disable());
           this.saveMarkers();
-        // 新增這一行，確保結束時關閉表單
-        document.getElementById('markerEditModal').style.display = 'none';
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
+          document.getElementById('markerEditModal').style.display = 'none';
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
