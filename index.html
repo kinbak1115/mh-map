@@ -178,7 +178,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.2.8</div>
+  <div id="version">版本 3.2.9</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -329,9 +329,6 @@ function getNearestTimeString(marker) {
             <option value="3">🟢 綠</option>
             <option value="4">🟣 紫</option>
             </select>
-            <div class="btn-row">
-              <button onclick="app.confirmResetColors()">全部還原原始色</button>
-            </div>
             <div class="btn-row">
               <button onclick="app.backupMarkers()">📤 備份</button>
               <button onclick="app.restoreMarkers()">📥 還原</button>
@@ -618,18 +615,6 @@ function getNearestTimeString(marker) {
           }
         });
         this.filteredTypes = types;
-      }
-
-      confirmResetColors() {
-        if (confirm('確定要將所有標記顏色還原為原始嗎？')) {
-          this.markers.eachLayer(marker => {
-            marker.data.type = 0;
-            marker.setIcon(this.getCustomIcon(0, 1, marker));
-          });
-          this.saveMarkers();
-          this.filterMarkersByTypes();
-          this.updateMarkerScales();
-        }
       }
 
       backupMarkers() {
