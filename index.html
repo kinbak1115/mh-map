@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.0</div>
+  <div id="version">版本 3.4.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -226,27 +226,26 @@
       return best;
     }
 
-    // 動態更新 #markerTime 下拉每個 option 的顯示文字
-function getATagByIndex(idx) {
-  // A: index 0,2,4...  B: index 1,3,5...
-  return idx % 2 === 0 ? 'A' : 'B';
-}
-
-function labelTimesWithAB(timestr) {
-  if (!timestr) return '';
-  const times = timestr.split(/\s+/).filter(Boolean);
-  return times.map((t, idx) => `${t}（${getATagByIndex(idx)}）`).join(' ');
-}
-
 function updateTimeOptionLabels() {
   const markerTime = document.getElementById('markerTime');
   if (!markerTime) return;
   for (const opt of markerTime.options) {
-    const labeled = labelTimesWithAB(opt.value);
-    opt.textContent = labeled || opt.value;
+    const nearest = getNearestTime(opt.value);
+    // 找出這個最近時間是A還是B
+    let typeLabel = '';
+    if (nearest) {
+      // 用原始字串分割，找到 index
+      const times = opt.value.split(/\s+/).filter(Boolean);
+      const idx = times.findIndex(t => t === nearest);
+      if (idx !== -1) {
+        typeLabel = (idx % 2 === 0) ? '（A）' : '（B）';
+      }
+      opt.textContent = nearest + typeLabel;
+    } else {
+      opt.textContent = opt.value;
+    }
   }
 }
-
     // 綁定：選時間自動選顏色、名稱預設全天古龍種
     document.addEventListener('DOMContentLoaded', function() {
       // 初次載入就更新 option 顯示
