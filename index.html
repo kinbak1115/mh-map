@@ -183,7 +183,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.4</div>
+  <div id="version">版本 3.3.5</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -596,7 +596,7 @@
             this.updateMarkerScales(); // 即時刷新順序
             return;
           }
-            if (this.currentMode === "editMarker") {
+          if (this.currentMode === "editMarker") {
             this.resetAllMarkers()
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
@@ -638,6 +638,15 @@
         };
         marker.on('click', handler);
         marker.on('touchstart', handler);
+      
+        // === 新增：拖曳結束自動儲存 ===
+        marker.on('dragend', () => {
+          // 拖曳後自動更新經緯度
+          marker.data.lat = marker.getLatLng().lat;
+          marker.data.lng = marker.getLatLng().lng;
+          this.saveMarkers();
+        });
+      
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
         this.saveMarkers();
