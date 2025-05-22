@@ -179,7 +179,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.3.0</div>
+  <div id="version">版本 3.3.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -196,14 +196,16 @@
     };
 
     // 綁定：選時間自動選顏色
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('markerTime').addEventListener('change', function() {
-        const val = this.value.trim();
-        if (timeToType[val] !== undefined) {
-          document.getElementById('markerType').value = timeToType[val];
-        }
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('markerTime').addEventListener('change', function() {
+          const val = this.value.trim();
+          if (timeToType[val] !== undefined) {
+            document.getElementById('markerType').value = timeToType[val];
+          }
+          // 當選擇時間時，自動設為「全天古龍種」
+          document.getElementById('markerName').value = "全天古龍種";
+        });
       });
-    });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
     function addMinutesToTimeString(timestr, offset) {
