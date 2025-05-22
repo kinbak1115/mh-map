@@ -196,16 +196,21 @@
     };
 
     // 綁定：選時間自動選顏色
-      document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('markerTime').addEventListener('change', function() {
-          const val = this.value.trim();
-          if (timeToType[val] !== undefined) {
-            document.getElementById('markerType').value = timeToType[val];
-          }
-          // 當選擇時間時，自動設為「全天古龍種」
-          document.getElementById('markerName').value = "全天古龍種";
-        });
-      });
+// 3. DOMContentLoaded 時初始化，並每分鐘自動更新
+document.addEventListener('DOMContentLoaded', function() {
+  updateTimeOptionLabels();
+  setInterval(updateTimeOptionLabels, 60 * 1000);
+
+  // 4. 當選擇時間時，自動設為「全天古龍種」
+  document.getElementById('markerTime').addEventListener('change', function() {
+    // 若有 timeToType 也可在此同步設定 type
+    // const val = this.value.trim();
+    // if (timeToType[val] !== undefined) {
+    //   document.getElementById('markerType').value = timeToType[val];
+    // }
+    document.getElementById('markerName').value = "全天古龍種";
+  });
+});
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
     function addMinutesToTimeString(timestr, offset) {
@@ -523,11 +528,7 @@ function updateTimeOptionLabels() {
   }
 }
 
-// 頁面載入時與每分鐘自動更新
-document.addEventListener('DOMContentLoaded', function() {
-  updateTimeOptionLabels();
-  setInterval(updateTimeOptionLabels, 60 * 1000);
-});
+
 
       resetAllMarkers() {
         this.markers.eachLayer(m => {
