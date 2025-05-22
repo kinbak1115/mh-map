@@ -160,8 +160,14 @@
     <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <!-- 新增時間偏差欄位 -->
-  <label for="markerOffset">時間偏差（分鐘）：</label>
-  <input id="markerOffset" type="number" style="width:100%;font-size:16px;padding:6px;" value="0"><br/><br/>
+<label for="markerOffset">時間偏差（分鐘）：</label>
+<select id="markerOffset" style="width:100%;font-size:16px;padding:6px;">
+  <option value="0">0</option>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="3">3</option>
+  <option value="4">4</option>
+</select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
     <button onclick="
