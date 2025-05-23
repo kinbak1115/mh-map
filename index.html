@@ -131,10 +131,10 @@
       font-size: 13px;
       margin-top: 3px;
     }
-textarea {
-  resize: none !important;
-  overflow: hidden;
-}
+    textarea {
+      resize: none !important;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
@@ -167,9 +167,14 @@ textarea {
   <div class="time-generator-row">
     <select id="customTime1">
       <option value="">請選擇</option>
+      <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">紅</option>
+      <option value="7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM">藍</option>
+      <option value="8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM">綠</option>
+      <option value="8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM">紫</option>
     </select>
     <select id="customTime2">
       <option value="">請選擇</option>
+      <!-- 動態填入兩個最靠近的時段 -->
     </select>
     <button type="button" onclick="applyGeneratedTimes()">自動產生</button>
   </div>
@@ -213,7 +218,7 @@ textarea {
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.5.3</div>
+  <div id="version">版本 3.5.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -227,8 +232,10 @@ textarea {
       "8:35PM","9:00PM","9:25PM","9:50PM","10:15PM","10:40PM"
     ];
 
-    // 只顯示±25分鐘以內的時段，且預設空
+    // 只顯示現在最靠近的兩個時段
     function fillTimeSelectOptions() {
+      // customTime1固定四種(已在HTML中寫好)
+      // customTime2動態填入兩個最靠近的時段
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
       function timeStrToMin(t) {
@@ -240,50 +247,50 @@ textarea {
         if (ap === "AM" && h === 12) h = 0;
         return h * 60 + mm;
       }
-      function filterForSelect(times) {
-        // 只保留現在±25分鐘的時段
-        return times.filter(t => {
-          const min = timeStrToMin(t);
-          let diff = min - nowMin;
-          if (diff > 12*60) diff -= 24*60;
-          if (diff < -12*60) diff += 24*60;
-          return Math.abs(diff) <= 25;
-        });
-      }
-      const s1 = document.getElementById('customTime1');
       const s2 = document.getElementById('customTime2');
-      s1.innerHTML = '<option value="">請選擇</option>';
       s2.innerHTML = '<option value="">請選擇</option>';
-      const options = filterForSelect(allTimeOptions);
-      options.forEach(t => {
-        s1.appendChild(new Option(t, t));
-        s2.appendChild(new Option(t, t));
+      // 找出最近的兩個時段
+      let minDiff = 9999, minIdx = -1;
+      allTimeOptions.forEach((t, i) => {
+        const diff = Math.abs(timeStrToMin(t) - nowMin);
+        if (diff < minDiff) {
+          minDiff = diff;
+          minIdx = i;
+        }
+      });
+      // 最近的兩個時段（前後各一）
+      let idxs = [minIdx];
+      if (minIdx > 0 && minIdx < allTimeOptions.length - 1) {
+        if (timeStrToMin(allTimeOptions[minIdx-1]) < nowMin) {
+          idxs.unshift(minIdx-1);
+        } else {
+          idxs.push(minIdx+1);
+        }
+      } else if (minIdx === 0) {
+        idxs.push(1);
+      } else if (minIdx === allTimeOptions.length - 1) {
+        idxs.unshift(allTimeOptions.length-2);
+      }
+      // 如果剛好現在時間在兩個時段中間，兩者都選
+      idxs = Array.from(new Set(idxs));
+      idxs.slice(0,2).forEach(i => {
+        s2.appendChild(new Option(allTimeOptions[i], allTimeOptions[i]));
       });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
       fillTimeSelectOptions();
-      document.getElementById('markerTime').addEventListener('change', function() {
-        const timestr = this.value;
-        document.getElementById('markerName').value = '全天古龍種';
-        const nearest = getNearestTime(timestr);
-        const times = timestr.split(/\s+/).filter(Boolean);
-        const idx = times.findIndex(t => t === nearest);
-        function getATagByIndex(idx) {
-          return idx % 2 === 0 ? 'A' : 'B';
+      // 時間1選定時直接填入markerTime
+      document.getElementById('customTime1').addEventListener('change', function() {
+        const v = this.value;
+        if (v) {
+          document.getElementById('markerTime').value = v;
+          document.getElementById('markerTime').dispatchEvent(new Event('change'));
         }
-        if (idx !== -1) {
-          const ab = getATagByIndex(idx);
-          document.getElementById('markerRemark').value = ab + '確認';
-        } else {
-          document.getElementById('markerRemark').value = '';
-        }
-        const type = timeToType[timestr] ?? 0;
-        document.getElementById('markerType').value = type;
       });
+      // 每次開啟視窗都刷新
+      window.fillTimeSelectOptions = fillTimeSelectOptions;
     });
-
-    // 若 modal 彈出時要刷新，請在每次打開 markerEditModal 時呼叫 fillTimeSelectOptions()
 
     // ---- 時間規律產生器 ----
     function generateTimePattern(t1, t2) {
@@ -326,12 +333,19 @@ textarea {
     function applyGeneratedTimes() {
       const t1 = document.getElementById('customTime1').value;
       const t2 = document.getElementById('customTime2').value;
+      // t1若是4組之一，直接填入
+      if (t1 && (!t2 || t2 === "")) {
+        document.getElementById('generatedTimes').value = t1;
+        document.getElementById('markerTime').value = t1;
+        document.getElementById('markerTime').dispatchEvent(new Event('change'));
+        return;
+      }
       if (!t1 || !t2) {
         document.getElementById('generatedTimes').value = '';
         document.getElementById('markerTime').value = '';
         return;
       }
-      const times = generateTimePattern(t1, t2);
+      const times = generateTimePattern(t1.split(" ")[0], t2);
       document.getElementById('generatedTimes').value = times.join(' ');
       if (times.length > 0) {
         document.getElementById('markerTime').value = times.join(' ');
