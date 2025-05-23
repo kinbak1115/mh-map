@@ -81,7 +81,7 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 220px;
+      width: 150px;
       background: white;
       padding: 10px;
       border-radius: 8px;
@@ -89,12 +89,15 @@
       font-size: 16px;
       z-index: 1000;
     }
-    .info-panel h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-      border-bottom: 1px solid #ccc;
-    }
-    .info-panel p { margin: 4px 0; }
+  .info-panel h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    border-bottom: 1px solid #ccc;
+  }
+  .info-panel p {
+    margin: 8px 0; /* 增大格子高度 */
+    line-height: 1.8; /* 增大行高 */
+  }
     .leaflet-popup-content { display: none; }
   </style>
 </head>
@@ -176,7 +179,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.8</div>
+  <div id="version">版本 3.9.5</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
