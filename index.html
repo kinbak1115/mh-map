@@ -326,30 +326,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // === 主要顯示時間的邏輯 ===
 function getNearestTimeString(marker) {
-  // 全天/ABAB/BABA + 推规律都用此逻辑
-  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-
-  // ABAB古龍種：A時段（0,2,4,...）
-  if (marker.data.name === "ABAB古龍種") {
-    times = times.filter((_, idx) => idx % 2 === 0);
-  }
-  // BABA古龍種：B時段（1,3,5,...）
-  else if (marker.data.name === "BABA古龍種") {
-    times = times.filter((_, idx) => idx % 2 === 1);
-  }
-
-  // 推規律情境：时间1+时间2都选了
+  // 必须有时间1、时间2、时间表
   if (marker.data.time1 && marker.data.time2 && marker.data.time) {
+    const times = marker.data.time.split(/\s+/).filter(Boolean);
     const idx1 = times.findIndex(t => t === marker.data.time1);
     const idx2 = times.findIndex(t => t === marker.data.time2);
-    if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
+    if (idx1 !== -1 && idx2 !== -1 && idx2 !== idx1) {
+      // 支持任意格差，正向为主（如idx2<idx1则不生成）
       const step = idx2 - idx1;
-      let pattern = [];
-      let pos = idx1;
-      while (pos < times.length) {
-        pattern.push(times[pos]);
-        pos += step;
-      }
+      if (step > 0) {
+        let pattern = [];
+        let pos = idx1;
+        // 只循环一次到表结尾，和MH Now实际一致
+        while (pos < times.length) {
+          pattern.push(times[pos]);
+          pos += step;
+        }
+        // pattern就是循环序列
       times = pattern;
     }
   }
