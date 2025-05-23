@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.8.2</div>
+  <div id="version">版本 3.8.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -185,12 +185,18 @@
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
 
     // 所有38種時段
-    const allTimes = [
-      "7:15AM", "8:55AM", "10:35AM", "12:15PM", "1:55PM", "3:35PM", "5:15PM", "6:55PM", "8:35PM", "10:15PM",
-      "7:40AM", "9:20AM", "11:00AM", "12:40PM", "2:20PM", "4:00PM", "5:40PM", "7:20PM", "9:00PM", "10:40PM",
-      "8:05AM", "9:45AM", "11:25AM", "1:05PM", "2:45PM", "4:25PM", "6:05PM", "7:45PM", "9:25PM",
-      "8:30AM", "10:10AM", "11:50AM", "1:30PM", "3:10PM", "4:50PM", "6:30PM", "8:10PM", "9:50PM"
-    ];
+const allTimes = [
+  "7:15AM", "7:40AM", "8:05AM", "8:30AM",
+  "8:55AM", "9:20AM", "9:45AM", "10:10AM",
+  "10:35AM", "11:00AM", "11:25AM", "11:50AM",
+  "12:15PM", "12:40PM", "1:05PM", "1:30PM",
+  "1:55PM", "2:20PM", "2:45PM", "3:10PM",
+  "3:35PM", "4:00PM", "4:25PM", "4:50PM",
+  "5:15PM", "5:40PM", "6:05PM", "6:30PM",
+  "6:55PM", "7:20PM", "7:45PM", "8:10PM",
+  "8:35PM", "9:00PM", "9:25PM", "9:50PM",
+  "10:15PM", "10:40PM"
+];
 
     // 時間表對應顏色
     const timeToType = {
