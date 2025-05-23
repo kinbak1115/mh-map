@@ -131,6 +131,9 @@
       font-size: 13px;
       margin-top: 3px;
     }
+    textarea {
+      resize: none;
+    }
   </style>
 </head>
 <body>
@@ -161,8 +164,12 @@
   </select><br/><br/>
   <label>時間：</label>
   <div class="time-generator-row">
-    <select id="customTime1"></select>
-    <select id="customTime2"></select>
+    <select id="customTime1">
+      <option value="">請選擇</option>
+    </select>
+    <select id="customTime2">
+      <option value="">請選擇</option>
+    </select>
     <button type="button" onclick="applyGeneratedTimes()">自動產生</button>
   </div>
   <textarea id="generatedTimes" class="gen-result" rows="1" readonly style="margin-bottom:5px;"></textarea>
@@ -205,7 +212,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.5.2</div>
+  <div id="version">版本 3.5.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -219,42 +226,42 @@
       "8:35PM","9:00PM","9:25PM","9:50PM","10:15PM","10:40PM"
     ];
 
-    // 只顯示±25分鐘以內的時段
-function fillTimeSelectOptions() {
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    function timeStrToMin(t) {
-      let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-      let h = parseInt(m[1], 10);
-      let mm = parseInt(m[2], 10);
-      let ap = m[3].toUpperCase();
-      if (ap === "PM" && h !== 12) h += 12;
-      if (ap === "AM" && h === 12) h = 0;
-      return h * 60 + mm;
-    }
-    function filterForSelect(times) {
-      return times.filter(t => {
-        const min = timeStrToMin(t);
-        let diff = min - nowMin;
-        if (diff > 12*60) diff -= 24*60;
-        if (diff < -12*60) diff += 24*60;
-        return Math.abs(diff) <= 25;
+    // 只顯示±25分鐘以內的時段，且預設空
+    function fillTimeSelectOptions() {
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      function timeStrToMin(t) {
+        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        let h = parseInt(m[1], 10);
+        let mm = parseInt(m[2], 10);
+        let ap = m[3].toUpperCase();
+        if (ap === "PM" && h !== 12) h += 12;
+        if (ap === "AM" && h === 12) h = 0;
+        return h * 60 + mm;
+      }
+      function filterForSelect(times) {
+        // 只保留現在±25分鐘的時段
+        return times.filter(t => {
+          const min = timeStrToMin(t);
+          let diff = min - nowMin;
+          if (diff > 12*60) diff -= 24*60;
+          if (diff < -12*60) diff += 24*60;
+          return Math.abs(diff) <= 25;
+        });
+      }
+      const s1 = document.getElementById('customTime1');
+      const s2 = document.getElementById('customTime2');
+      s1.innerHTML = '<option value="">請選擇</option>';
+      s2.innerHTML = '<option value="">請選擇</option>';
+      const options = filterForSelect(allTimeOptions);
+      options.forEach(t => {
+        s1.appendChild(new Option(t, t));
+        s2.appendChild(new Option(t, t));
       });
     }
-    const s1 = document.getElementById('customTime1');
-    const s2 = document.getElementById('customTime2');
-    s1.innerHTML = s2.innerHTML = '<option value="">請選擇</option>'; // 預設空
-    const options = filterForSelect(allTimeOptions);
-    options.forEach(t => {
-      s1.appendChild(new Option(t, t));
-      s2.appendChild(new Option(t, t));
-    });
-  }
 
     document.addEventListener('DOMContentLoaded', function() {
       fillTimeSelectOptions();
-      // 時間產生器預設值
-      // markerTime 變更時自動判斷顏色與備註
       document.getElementById('markerTime').addEventListener('change', function() {
         const timestr = this.value;
         document.getElementById('markerName').value = '全天古龍種';
@@ -318,6 +325,11 @@ function fillTimeSelectOptions() {
     function applyGeneratedTimes() {
       const t1 = document.getElementById('customTime1').value;
       const t2 = document.getElementById('customTime2').value;
+      if (!t1 || !t2) {
+        document.getElementById('generatedTimes').value = '';
+        document.getElementById('markerTime').value = '';
+        return;
+      }
       const times = generateTimePattern(t1, t2);
       document.getElementById('generatedTimes').value = times.join(' ');
       if (times.length > 0) {
