@@ -96,6 +96,10 @@
     }
     .info-panel p { margin: 4px 0; }
     .leaflet-popup-content { display: none; }
+    /* 新增 移動標記模式下的自定義樣式 */
+    .move-marker-cursor {
+      cursor: grab !important;
+    }
   </style>
 </head>
 <body>
@@ -176,7 +180,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.6</div>
+  <div id="version">版本 3.9.7</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -447,7 +451,6 @@ function getNearestTimeString(marker) {
         this.lastMarkerType = 0;
         this.routeSelecting = false;
         this.selectedMarkers = [];
-        this.moveMarkerMode = false; // 移动标记模式
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -463,6 +466,10 @@ function getNearestTimeString(marker) {
 
         // 每分鐘自動刷新標記顯示時間
         setInterval(() => this.updateMarkerScales(), 60 * 1000);
+
+        // 移動標記模式
+        this.moveMarkerMode = false;
+        this.selectedMarkerToMove = null;
       }
 
       initControls() {
@@ -531,26 +538,6 @@ function getNearestTimeString(marker) {
         });
       }
 
-      toggleMoveMarkerMode() {
-        this.moveMarkerMode = !this.moveMarkerMode;
-        const btn = document.getElementById('moveMarkerBtn');
-        if (this.moveMarkerMode) {
-          btn.textContent = '完成移動';
-          this.markers.eachLayer(marker => marker.dragging.enable());
-        } else {
-          btn.textContent = '移動標記';
-          this.markers.eachLayer(marker => marker.dragging.disable());
-          this.saveMarkers();
-        }
-        // 退出其它模式
-        if (this.currentMode === 'editMarker') {
-          this.currentMode = 'done';
-          const editBtn = document.getElementById('editBtn');
-          if (editBtn) editBtn.textContent = '開始編輯';
-        }
-        this.updateMarkerScales();
-      }
-
       updateInfoPanel(data) {
         const content = `
           <p><strong>${data.name}</strong></p>
@@ -573,9 +560,45 @@ function getNearestTimeString(marker) {
           if (this.currentMode === "editMarker") {
             this.showMarkerForm(e.latlng);
           }
+          // 在移動標記模式下，點擊地圖移動標記
+          if (this.moveMarkerMode && this.selectedMarkerToMove) {
+            this.selectedMarkerToMove.setLatLng(e.latlng);
+            this.selectedMarkerToMove.data.lat = e.latlng.lat;
+            this.selectedMarkerToMove.data.lng = e.latlng.lng;
+            this.saveMarkers();
+            this.moveMarkerMode = false;
+            this.selectedMarkerToMove = null;
+            document.body.classList.remove('move-marker-cursor');
+            document.getElementById('moveMarkerBtn').textContent = '移動標記';
+            alert('標記已移動');
+          }
         };
         this.map.on("click", handleMapTap);
         this.map.on("touchstart", handleMapTap);
+      }
+
+      // 新增：移動標記模式的切換
+      toggleMoveMarkerMode() {
+        if (this.currentMode !== "done") {
+          alert('請先結束編輯模式才能移動標記');
+          return;
+        }
+        if (this.moveMarkerMode) {
+          this.moveMarkerMode = false;
+          this.selectedMarkerToMove = null;
+          document.getElementById('moveMarkerBtn').textContent = '移動標記';
+          document.body.classList.remove('move-marker-cursor');
+        } else {
+          if (!this.selectedMarker) {
+            alert('請先選擇一個標記');
+            return;
+          }
+          this.moveMarkerMode = true;
+          this.selectedMarkerToMove = this.selectedMarker;
+          document.getElementById('moveMarkerBtn').textContent = '點擊地圖選擇新位置';
+          document.body.classList.add('move-marker-cursor');
+          alert('請在地圖上點選新位置以移動標記');
+        }
       }
 
 getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
@@ -599,12 +622,11 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   // 原始大小
   let size = 40 * scale;
   if (isRaid) {
-    size = size * 0.9; // raid.png 小 10%
+    size = size * 0.75; // raid.png 小 10%
   }
 
   let timeStr = "";
   if (marker) {
-    // 只要不是大连狩猎才显示时间
     if (!(marker.data && marker.data.name === "大連狩獵")) {
       timeStr = getNearestTimeString(marker);
     }
@@ -720,7 +742,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           data.time2 = '';
         }
         const marker = L.marker(latlng, {
-          draggable: this.moveMarkerMode, // 只有移动标记模式允许拖动
+          draggable: false, // 一律預設為不可拖曳
           icon: this.getCustomIcon(data.type, 1, { data })
         });
         marker.data = data;
@@ -731,6 +753,12 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           tapped = true;
           setTimeout(() => tapped = false, 300);
           this.selectedMarker = marker;
+          // 移動標記模式下，點擊標記設為要移動的目標
+          if (this.moveMarkerMode) {
+            this.selectedMarkerToMove = marker;
+            alert('請在地圖上點選新位置以移動標記');
+            return;
+          }
           if (this.routeSelecting) {
             const markerElement = marker.getElement();
             if (this.selectedMarkers.includes(marker)) {
@@ -794,17 +822,14 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         };
         marker.on('click', handler);
         marker.on('touchstart', handler);
-      
+
+        // 禁用拖曳（編輯/移動模式外都不能拖動）
         marker.on('dragend', () => {
           marker.data.lat = marker.getLatLng().lat;
           marker.data.lng = marker.getLatLng().lng;
           this.saveMarkers();
         });
 
-        // 保证初始化后拖动状态和模式一致
-        if (!this.moveMarkerMode) marker.dragging.disable();
-        else marker.dragging.enable();
-      
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
         this.saveMarkers();
@@ -891,21 +916,23 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           const routeBtn = document.getElementById('routeBtn');
           if (routeBtn) routeBtn.textContent = '選擇路線';
         }
+        // 編輯模式不能開啟移動標記
         if (this.moveMarkerMode) {
-          this.toggleMoveMarkerMode(); // 退出移动标记模式
+          alert('請先結束移動標記模式');
+          return;
         }
         if (this.currentMode === "done") {
           this.currentMode = "editMarker";
           document.getElementById('editBtn').textContent = "結束編輯";
-          // 不处理 dragging
+          this.markers.eachLayer(marker => marker.dragging.enable());
         } else {
           this.currentMode = "done";
           document.getElementById('editBtn').textContent = "開始編輯";
-          // 不处理 dragging
+          this.markers.eachLayer(marker => marker.dragging.disable());
           this.saveMarkers();
-          document.getElementById('markerEditModal').style.display = 'none';
-          const infoPanel = document.getElementById('infoPanel');
-          if (infoPanel) infoPanel.style.display = '';
+        document.getElementById('markerEditModal').style.display = 'none';
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
