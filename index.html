@@ -81,7 +81,7 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 110px;
+      width: 220px;
       background: white;
       padding: 10px;
       border-radius: 8px;
@@ -96,7 +96,6 @@
   }
   .info-panel p {
     margin: 8px 0; /* 增大格子高度 */
-    line-height: 1.8; /* 增大行高 */
   }
     .leaflet-popup-content { display: none; }
   </style>
@@ -115,20 +114,20 @@
   z-index: 9999;
   box-shadow: 0 2px 15px rgba(0,0,0,0.4);
   border-radius: 10px;
-  width: 400px;
+  width: 200px;
   font-size: 16px;
   line-height: 1.4;
 ">
   <h3 style="margin-top: 0; font-size: 22px;">更改標記資訊</h3>
   <label for="markerName">名稱：</label>
-  <select id="markerName" style="width: 100%; font-size: 16px; padding: 6px;">
+  <select id="markerName" style="width: 100%; font-size: 16px; padding: 12px;">
     <option value="全天古龍種">全天古龍種</option>
     <option value="ABAB古龍種">ABAB古龍種</option>
     <option value="BABA古龍種">BABA古龍種</option>
     <option value="大連狩獵">大連狩獵</option>
   </select><br/><br/>
   <label>時間：</label>
-  <select id="markerTime" style="width: 100%; font-size: 16px; padding: 6px;">
+  <select id="markerTime" style="width: 100%; font-size: 16px; padding: 12px;">
     <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM</option>
     <option value="7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM">7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM</option>
     <option value="8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM">8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM</option>
@@ -136,13 +135,13 @@
   </select><br/><br/>
   <!-- 新增：時間1、時間2選擇器 -->
   <label for="markerTime1">時間1（上次選擇）：</label>
-  <select id="markerTime1" style="width:100%;font-size:16px;padding:6px;"></select>
+  <select id="markerTime1" style="width:100%;font-size:16px;padding:12px;"></select>
   <br/><br/>
   <label for="markerTime2">時間2：</label>
-  <select id="markerTime2" style="width:100%;font-size:16px;padding:6px;"></select>
+  <select id="markerTime2" style="width:100%;font-size:16px;padding:12px;"></select>
   <br/><br/>
   <label for="markerType">顏色：</label>
-  <select id="markerType" style="width: 100%; font-size: 16px; padding: 6px;">
+  <select id="markerType" style="width: 100%; font-size: 16px; padding: 12px;">
     <option value="0">⚪ 原始</option>
     <option value="1">🔴 紅</option>
     <option value="2">🔵 藍</option>
@@ -150,14 +149,14 @@
     <option value="4">🟣 紫</option>
   </select><br/><br/>
   <label for="markerRemark">狀態：</label>
-  <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 6px;">
+  <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 12px;">
     <option value="A確認">A確認</option>
     <option value="B確認">B確認</option>
     <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <!-- 新增時間偏差欄位 -->
 <label for="markerOffset">時間偏差（分鐘）：</label>
-<select id="markerOffset" style="width:100%;font-size:16px;padding:6px;">
+<select id="markerOffset" style="width:100%;font-size:16px;padding:12px;">
   <option value="0">0</option>
   <option value="1">1</option>
   <option value="2">2</option>
