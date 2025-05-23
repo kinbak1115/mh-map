@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.7.4</div>
+  <div id="version">版本 3.4.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -271,34 +271,34 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(updateTimeOptionLabels, 60000);
 
   // 當主時間選單變動，更新時間1/2選單
-document.getElementById('markerTime').addEventListener('change', function() {
-  updateTime1Time2Options();
+  document.getElementById('markerTime').addEventListener('change', function() {
+    updateTime1Time2Options();
 
-  // 自动设置名称
-  document.getElementById('markerName').value = '全天古龍種';
+    // 自动设置名称
+    document.getElementById('markerName').value = '全天古龍種';
 
-  const timestr = this.value;
-  const times = timestr.split(/\s+/).filter(Boolean);
+    const timestr = this.value;
+    const times = timestr.split(/\s+/).filter(Boolean);
 
-  // 自动设置备注
-  const nearest = getNearestTime(timestr);
-  const idx = times.findIndex(t => t === nearest);
-  if (idx !== -1) {
-    const ab = idx % 2 === 0 ? 'A' : 'B';
-    document.getElementById('markerRemark').value = ab + '確認';
-    // 只有时间1为空才自动赋值
-    const time1Select = document.getElementById('markerTime1');
-    if (!time1Select.value) {
-      time1Select.value = nearest;
+    // 自动设置备注
+    const nearest = getNearestTime(timestr);
+    const idx = times.findIndex(t => t === nearest);
+    if (idx !== -1) {
+      const ab = idx % 2 === 0 ? 'A' : 'B';
+      document.getElementById('markerRemark').value = ab + '確認';
+      // 只有时间1为空才自动赋值
+      const time1Select = document.getElementById('markerTime1');
+      if (!time1Select.value) {
+        time1Select.value = nearest;
+      }
+    } else {
+      document.getElementById('markerRemark').value = '';
     }
-  } else {
-    document.getElementById('markerRemark').value = '';
-  }
 
-  // 自动设置颜色
-  const type = timeToType[timestr] ?? 0;
-  document.getElementById('markerType').value = type;
-});
+    // 自动设置颜色
+    const type = timeToType[timestr] ?? 0;
+    document.getElementById('markerType').value = type;
+  });
 
   // 初次載入設置時間1/2選單
   updateTime1Time2Options();
@@ -324,43 +324,67 @@ document.getElementById('markerTime').addEventListener('change', function() {
       return `${showh}:${nmm.toString().padStart(2, '0')}${nap}`;
     }
 
-    // 工具函數：取得最近的顯示時間（含ABAB/BABA忽略B時段）
-function getNearestTimeString(marker) {
-  // 如果有时间1和时间2，并且都在原始时间表里，就按循环规律计算
-  if (marker.data.time1 && marker.data.time2 && marker.data.time) {
-    const times = marker.data.time.split(/\s+/).filter(Boolean);
-    const idx1 = times.findIndex(t => t === marker.data.time1);
-    const idx2 = times.findIndex(t => t === marker.data.time2);
-    if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
-      const step = idx2 - idx1;
-      // 生成循环序列
-      let pattern = [];
-      for (let i = idx1; i < times.length; i += step) {
-        pattern.push(times[i]);
+    // 只用時間1和時間2推規律，並找出未來最近的，如果都過了就不顯示
+    function getNearestTimeString(marker) {
+      if (marker.data.time1 && marker.data.time2 && marker.data.time) {
+        const times = marker.data.time.split(/\s+/).filter(Boolean);
+        const idx1 = times.findIndex(t => t === marker.data.time1);
+        const idx2 = times.findIndex(t => t === marker.data.time2);
+        if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
+          const step = idx2 - idx1;
+          let pattern = [];
+          let pos = idx1;
+          do {
+            pattern.push(times[pos]);
+            pos += step;
+            if (pos >= times.length) pos -= times.length;
+          } while (pos !== idx1 && pattern.length <= times.length);
+          const offset = parseInt(marker.data.offsetMinutes || 0, 10);
+          const now = new Date();
+          const nowMin = now.getHours() * 60 + now.getMinutes();
+          let futureTimes = [];
+          for (const t of pattern) {
+            let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+            if (!m) continue;
+            let h = parseInt(m[1], 10);
+            let mm = parseInt(m[2], 10);
+            let ap = m[3].toUpperCase();
+            if (ap === "PM" && h !== 12) h += 12;
+            if (ap === "AM" && h === 12) h = 0;
+            let total = h * 60 + mm + offset;
+            let diff = total - nowMin;
+            if (diff >= 0) {
+              futureTimes.push({diff, t});
+            }
+          }
+          if (futureTimes.length) {
+            futureTimes.sort((a,b) => a.diff - b.diff);
+            return addMinutesToTimeString(futureTimes[0].t, offset);
+          } else {
+            return ""; // 都過了就不顯示
+          }
+        }
       }
-      // 如果最后一个循环还没到结尾，可以补首位
-      // 例如 7:15AM 12:15PM 5:15PM 10:15PM
-      // 这段自动补够循环
-      // 其实只需循环到超过times.length
-      // pattern = [times[idx1], times[idx1+step], times[idx1+2*step]...]
-      // 但如果idx1+N*step超出length，需补回头
-      // 所以可以用循环
-      pattern = [];
-      let pos = idx1;
-      while (pattern.length < times.length) {
-        pattern.push(times[pos]);
-        pos += step;
-        if (pos >= times.length) pos -= times.length;
-        if (pos === idx1) break; // 循环一圈回到起点
+
+      // 原有 全天/ABAB/BABA 逻辑
+      if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
+
+      let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+
+      if (marker.data.name === "ABAB古龍種") {
+        times = times.filter((_, idx) => idx % 2 === 0);
       }
-      // 现在 pattern 里就是正确循环序列
-      // 找最近的
+      else if (marker.data.name === "BABA古龍種") {
+        times = times.filter((_, idx) => idx % 2 === 1);
+      }
+
+      if (!times.length) return "";
+
       const offset = parseInt(marker.data.offsetMinutes || 0, 10);
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
-      let minDiff = Infinity;
-      let bestDisplayTime = "";
-      for (const t of pattern) {
+      let futureTimes = [];
+      for (const t of times) {
         let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
         if (!m) continue;
         let h = parseInt(m[1], 10);
@@ -369,66 +393,17 @@ function getNearestTimeString(marker) {
         if (ap === "PM" && h !== 12) h += 12;
         if (ap === "AM" && h === 12) h = 0;
         let total = h * 60 + mm + offset;
-        // 不跨天，只算当天
         let diff = total - nowMin;
-        if (diff < 0) continue; // 只要未来的时间
-        if (diff < minDiff) {
-          minDiff = diff;
-          bestDisplayTime = addMinutesToTimeString(t, offset);
+        if (diff >= 0) {
+          futureTimes.push({diff, t});
         }
       }
-      // 如果没有未来时间，显示当天最后一个
-      if (!bestDisplayTime && pattern.length) {
-        bestDisplayTime = addMinutesToTimeString(pattern[pattern.length - 1], offset);
+      if (futureTimes.length) {
+        futureTimes.sort((a,b) => a.diff - b.diff);
+        return addMinutesToTimeString(futureTimes[0].t, offset);
       }
-      return bestDisplayTime;
+      return "";
     }
-  }
-
-  // === 原本的規律 (全天/ABAB/BABA) ===
-  if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
-
-  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-
-  // ABAB古龍種：A時段（0,2,4,6,8...）
-  if (marker.data.name === "ABAB古龍種") {
-    times = times.filter((_, idx) => idx % 2 === 0);
-  }
-  // BABA古龍種：B時段（1,3,5,7,9...）
-  else if (marker.data.name === "BABA古龍種") {
-    times = times.filter((_, idx) => idx % 2 === 1);
-  }
-
-  if (!times.length) return "";
-
-  const offset = parseInt(marker.data.offsetMinutes || 0, 10);
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  let minDiff = Infinity;
-  let bestDisplayTime = "";
-
-  for (const t of times) {
-    let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-    if (!m) continue;
-    let h = parseInt(m[1], 10);
-    let mm = parseInt(m[2], 10);
-    let ap = m[3].toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    let total = h * 60 + mm + offset;
-    let diff = total - nowMin;
-    if (diff < 0) continue;
-    if (diff < minDiff) {
-      minDiff = diff;
-      bestDisplayTime = addMinutesToTimeString(t, offset);
-    }
-  }
-  // 没有未来时间则显示当天最后一个
-  if (!bestDisplayTime && times.length) {
-    bestDisplayTime = addMinutesToTimeString(times[times.length - 1], offset);
-  }
-  return bestDisplayTime;
-}
 
     class MapApp {
       constructor() {
