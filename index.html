@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.7.0</div>
+  <div id="version">版本 3.7.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -239,7 +239,7 @@ function updateTimeOptionLabels() {
     }
   }
 }
-// 新增：根據主時間表更新時間1/時間2選單
+// 新增：根據主時間表更新時間1/時間2選單（時間2默认空）
 function updateTime1Time2Options() {
   const markerTime = document.getElementById('markerTime');
   const markerTime1 = document.getElementById('markerTime1');
@@ -258,6 +258,10 @@ function updateTime1Time2Options() {
     opt2.textContent = t;
     markerTime2.appendChild(opt2);
   });
+  // 默认时间1为最近的，时间2为空
+  const nearest = getNearestTime(markerTime.value);
+  markerTime1.value = nearest;
+  markerTime2.selectedIndex = -1;  // 让时间2没有选中任何选项
 }
 
 // 綁定：選時間自動選顏色、名稱預設全天古龍種
@@ -618,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!data.time1 && data.time) {
           const times = data.time.split(/\s+/).filter(Boolean);
           data.time1 = times[0] || '';
-          data.time2 = times[1] || '';
+          data.time2 = '';
         }
         const marker = L.marker(latlng, {
           draggable: this.currentMode === 'editMarker',
@@ -656,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
               // 新增：每次打開表單時根據主時間刷新時間1/時間2選單
               updateTime1Time2Options();
               document.getElementById('markerTime1').value = marker.data.time1 || '';
-              document.getElementById('markerTime2').value = marker.data.time2 || '';
+              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
@@ -669,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
                 // 新增：時間1/2
                 const time1 = document.getElementById('markerTime1').value;
-                const time2 = document.getElementById('markerTime2').value;
+                const time2 = document.getElementById('markerTime2').selectedIndex > -1 ? document.getElementById('markerTime2').value : '';
                 marker.data.name = name;
                 marker.data.time = time;
                 marker.data.type = type;
