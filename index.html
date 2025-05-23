@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.0</div>
+  <div id="version">版本 3.9.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -554,27 +554,34 @@ function getNearestTimeString(marker) {
         this.map.on("touchstart", handleMapTap);
       }
 
-      getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-        const iconUrls = {
-          0: iconUrl,
-          1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-          2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-          3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-          4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
-        };
-        const size = 40 * scale;
-        let timeStr = "";
-        if (marker) {
-          timeStr = getNearestTimeString(marker);
-        }
-        // 動態決定時間字體大小
-        let timeFontSize = Math.max(10, Math.floor(14 * scale));
-        return L.divIcon({
+getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+  // 新增大連狩獵icon
+  const iconUrls = {
+    0: iconUrl,
+    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
+    raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
+  };
+  const size = 40 * scale;
+  let timeStr = "";
+  if (marker) {
+    timeStr = getNearestTimeString(marker);
+  }
+  // 动态决定时间字体大小
+  let timeFontSize = Math.max(10, Math.floor(14 * scale));
+  // 大連狩獵强制icon
+  let useIconUrl = iconUrls[type];
+  if (marker && marker.data && marker.data.name === "大連狩獵") {
+    useIconUrl = iconUrls.raid;
+  }
+  return L.divIcon({
     className: '',
     html: `
       <div class="marker-wrapper">
         <div class="marker-border" style="
-          background-image: url('${iconUrls[type]}');
+          background-image: url('${useIconUrl}');
           background-size: contain;
           background-repeat: no-repeat;
           background-position: center;
@@ -610,7 +617,6 @@ function getNearestTimeString(marker) {
     popupAnchor: [0, -size / 2]
   });
 }
-
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
       }
