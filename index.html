@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.8.7</div>
+  <div id="version">版本 3.8.9</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -292,11 +292,9 @@ function updateTime1Time2Options() {
     }
   });
 
-  // 默认时间1为最近的，时间2为空
+  // 只设置时间1，时间2不要自动选
   const nearest = getNearestTime(markerTime.value);
   markerTime1.value = nearest;
- if (markerTime2.selectedIndex === -1) {
-markerTime2.selectedIndex = -1;}
 }
 
 // 綁定：選時間自動選顏色、名稱預設全天古龍種
