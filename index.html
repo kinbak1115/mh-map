@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.8.0</div>
+  <div id="version">版本 3.8.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -256,7 +256,7 @@ function updateTime1Time2Options() {
   if (!markerTime || !markerTime1 || !markerTime2) return;
   const times = markerTime.value.split(/\s+/).filter(Boolean);
 
-  // 時間1：仍然全部時段都能選（主時間表那一組）
+  // 时间1：主时间表那一组
   markerTime1.innerHTML = '';
   times.forEach(t => {
     const opt1 = document.createElement('option');
@@ -265,19 +265,31 @@ function updateTime1Time2Options() {
     markerTime1.appendChild(opt1);
   });
 
-  // 時間2：全部38種
+  // 时间2：用allTimes顺序，只放未来的
   markerTime2.innerHTML = '';
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
   allTimes.forEach(t => {
-    const opt2 = document.createElement('option');
-    opt2.value = t;
-    opt2.textContent = t;
-    markerTime2.appendChild(opt2);
+    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) return;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    const total = h * 60 + mm;
+    if (total >= nowMin) {
+      const opt2 = document.createElement('option');
+      opt2.value = t;
+      opt2.textContent = t;
+      markerTime2.appendChild(opt2);
+    }
   });
 
   // 默认时间1为最近的，时间2为空
   const nearest = getNearestTime(markerTime.value);
   markerTime1.value = nearest;
-  markerTime2.selectedIndex = -1;  // 让时间2没有选中任何选项
+  markerTime2.selectedIndex = -1;
 }
 
 // 綁定：選時間自動選顏色、名稱預設全天古龍種
