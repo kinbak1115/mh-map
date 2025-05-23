@@ -246,18 +246,37 @@ function updateTime1Time2Options() {
   const markerTime2 = document.getElementById('markerTime2');
   if (!markerTime || !markerTime1 || !markerTime2) return;
   const times = markerTime.value.split(/\s+/).filter(Boolean);
+
+  // 时间1：仍然全部时段都能选
   markerTime1.innerHTML = '';
-  markerTime2.innerHTML = '';
   times.forEach(t => {
     const opt1 = document.createElement('option');
     opt1.value = t;
     opt1.textContent = t;
     markerTime1.appendChild(opt1);
-    const opt2 = document.createElement('option');
-    opt2.value = t;
-    opt2.textContent = t;
-    markerTime2.appendChild(opt2);
   });
+
+  // 时间2：只保留“还没过的时间”
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  markerTime2.innerHTML = '';
+  times.forEach(t => {
+    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) return;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    const total = h * 60 + mm;
+    if (total >= nowMin) {
+      const opt2 = document.createElement('option');
+      opt2.value = t;
+      opt2.textContent = t;
+      markerTime2.appendChild(opt2);
+    }
+  });
+
   // 默认时间1为最近的，时间2为空
   const nearest = getNearestTime(markerTime.value);
   markerTime1.value = nearest;
