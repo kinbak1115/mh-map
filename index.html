@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.3</div>
+  <div id="version">版本 3.9.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -580,8 +580,11 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
 
   let timeStr = "";
   if (marker) {
-    timeStr = getNearestTimeString(marker);
+    if (!(marker.data && marker.data.name === "大連狩獵")) {
+      timeStr = getNearestTimeString(marker);
+    }
   }
+
   let timeFontSize = Math.max(10, Math.floor(14 * scale));
 
   return L.divIcon({
