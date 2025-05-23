@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.5</div>
+  <div id="version">版本 3.9.6</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -720,7 +720,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           data.time2 = '';
         }
         const marker = L.marker(latlng, {
-          draggable: this.currentMode === 'editMarker' || this.moveMarkerMode,
+          draggable: this.moveMarkerMode, // 只有移动标记模式允许拖动
           icon: this.getCustomIcon(data.type, 1, { data })
         });
         marker.data = data;
@@ -800,6 +800,10 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           marker.data.lng = marker.getLatLng().lng;
           this.saveMarkers();
         });
+
+        // 保证初始化后拖动状态和模式一致
+        if (!this.moveMarkerMode) marker.dragging.disable();
+        else marker.dragging.enable();
       
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
@@ -893,15 +897,15 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         if (this.currentMode === "done") {
           this.currentMode = "editMarker";
           document.getElementById('editBtn').textContent = "結束編輯";
-          this.markers.eachLayer(marker => marker.dragging.enable());
+          // 不处理 dragging
         } else {
           this.currentMode = "done";
           document.getElementById('editBtn').textContent = "開始編輯";
-          this.markers.eachLayer(marker => marker.dragging.disable());
+          // 不处理 dragging
           this.saveMarkers();
-        document.getElementById('markerEditModal').style.display = 'none';
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
+          document.getElementById('markerEditModal').style.display = 'none';
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
