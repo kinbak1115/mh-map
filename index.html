@@ -7,7 +7,6 @@
   <style>
     body, html { margin: 0; padding: 0; }
     #map { height: 100vh; }
-
     .leaflet-control-custom {
       background: white;
       padding: 10px;
@@ -16,27 +15,23 @@
       width: 240px;
       box-sizing: border-box;
     }
-
     .leaflet-control-custom .btn-row {
       display: flex;
       gap: 6px;
       margin-bottom: 6px;
     }
-
     .leaflet-control-custom button {
       flex: 1;
       font-size: 18px;
       padding: 10px;
       box-sizing: border-box;
     }
-
     select[multiple] {
       width: 100%;
       font-size: 18px;
       padding: 6px;
       margin-bottom: 10px;
     }
-
     @media (max-width: 600px) {
       .leaflet-control-custom {
         width: 100%;
@@ -52,14 +47,12 @@
         padding: 12px;
       }
     }
-
 .marker-wrapper {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
 .marker-border {
   border-radius: 50%;
   width: 100%;
@@ -67,13 +60,11 @@
   background-size: cover;
   background-position: center;
 }
-
 .markerBorder {
   box-shadow: 0 0 0 6px red;
   border-radius: 50%;
   box-sizing: border-box;
 }
-
     #version, #zoomDisplay {
       position: absolute;
       right: 10px;
@@ -84,10 +75,8 @@
       border-radius: 5px;
       z-index: 1000;
     }
-
     #version { bottom: 10px; }
     #zoomDisplay { bottom: 40px; }
-
     .info-panel {
       position: absolute;
       top: 10px;
@@ -100,13 +89,11 @@
       font-size: 16px;
       z-index: 1000;
     }
-
     .info-panel h3 {
       margin: 0 0 8px;
       font-size: 18px;
       border-bottom: 1px solid #ccc;
     }
-
     .info-panel p { margin: 4px 0; }
     .leaflet-popup-content { display: none; }
   </style>
@@ -137,31 +124,20 @@
     <option value="BABA古龍種">BABA古龍種</option>
     <option value="大連狩獵">大連狩獵</option>
   </select><br/><br/>
-  <!-- 新增時間2在時間右邊 -->
-  <div style="display: flex; gap: 8px;">
-    <div style="flex:1">
-      <label>時間：
-        <select id="markerTime" style="width: 100%; font-size: 16px; padding: 6px;">
-          <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM</option>
-          <option value="7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM">7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM</option>
-          <option value="8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM">8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM</option>
-          <option value="8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM">8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM</option>
-        </select>
-      </label>
-    </div>
-    <div style="flex:1">
-      <label>時間2：
-        <select id="markerTime2" style="width: 100%; font-size: 16px; padding: 6px;">
-          <option value="">（無）</option>
-          <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM</option>
-          <option value="7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM">7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM</option>
-          <option value="8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM">8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM</option>
-          <option value="8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM">8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM</option>
-        </select>
-      </label>
-    </div>
-  </div>
-  <br/>
+  <label>時間：</label>
+  <select id="markerTime" style="width: 100%; font-size: 16px; padding: 6px;">
+    <option value="7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM">7:15AM 8:55AM 10:35AM 12:15PM 1:55PM 3:35PM 5:15PM 6:55PM 8:35PM 10:15PM</option>
+    <option value="7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM">7:40AM 9:20AM 11:00AM 12:40PM 2:20PM 4:00PM 5:40PM 7:20PM 9:00PM 10:40PM</option>
+    <option value="8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM">8:05AM 9:45AM 11:25AM 1:05PM 2:45PM 4:25PM 6:05PM 7:45PM 9:25PM</option>
+    <option value="8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM">8:30AM 10:10AM 11:50AM 1:30PM 3:10PM 4:50PM 6:30PM 8:10PM 9:50PM</option>
+  </select><br/><br/>
+  <!-- 新增：時間1、時間2選擇器 -->
+  <label for="markerTime1">時間1（上次選擇）：</label>
+  <select id="markerTime1" style="width:100%;font-size:16px;padding:6px;"></select>
+  <br/><br/>
+  <label for="markerTime2">時間2：</label>
+  <select id="markerTime2" style="width:100%;font-size:16px;padding:6px;"></select>
+  <br/><br/>
   <label for="markerType">顏色：</label>
   <select id="markerType" style="width: 100%; font-size: 16px; padding: 6px;">
     <option value="0">⚪ 原始</option>
@@ -200,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.6.1</div>
+  <div id="version">版本 3.7.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -243,8 +219,8 @@
       return best;
     }
 
-function updateTimeOptionLabels(selectId = 'markerTime') {
-  const markerTime = document.getElementById(selectId);
+function updateTimeOptionLabels() {
+  const markerTime = document.getElementById('markerTime');
   if (!markerTime) return;
   for (const opt of markerTime.options) {
     const nearest = getNearestTime(opt.value);
@@ -263,52 +239,67 @@ function updateTimeOptionLabels(selectId = 'markerTime') {
     }
   }
 }
-    // 綁定：選時間自動選顏色、名稱預設全天古龍種
-    document.addEventListener('DOMContentLoaded', function() {
-      // 初次載入就更新 option 顯示
-      updateTimeOptionLabels('markerTime');
-      updateTimeOptionLabels('markerTime2');
-      // 每分鐘自動更新一次顯示
-      setInterval(() => updateTimeOptionLabels('markerTime'), 60000);
-      setInterval(() => updateTimeOptionLabels('markerTime2'), 60000);
-
-// 取得A/B標記
-function getATagByIndex(idx) {
-  return idx % 2 === 0 ? 'A' : 'B';
+// 新增：根據主時間表更新時間1/時間2選單
+function updateTime1Time2Options() {
+  const markerTime = document.getElementById('markerTime');
+  const markerTime1 = document.getElementById('markerTime1');
+  const markerTime2 = document.getElementById('markerTime2');
+  if (!markerTime || !markerTime1 || !markerTime2) return;
+  const times = markerTime.value.split(/\s+/).filter(Boolean);
+  markerTime1.innerHTML = '';
+  markerTime2.innerHTML = '';
+  times.forEach(t => {
+    const opt1 = document.createElement('option');
+    opt1.value = t;
+    opt1.textContent = t;
+    markerTime1.appendChild(opt1);
+    const opt2 = document.createElement('option');
+    opt2.value = t;
+    opt2.textContent = t;
+    markerTime2.appendChild(opt2);
+  });
 }
 
-// 根據選擇的時間自動更新備註
-document.getElementById('markerTime').addEventListener('change', function() {
-  const timestr = this.value;
-  const times = timestr.split(/\s+/).filter(Boolean);
+// 綁定：選時間自動選顏色、名稱預設全天古龍種
+document.addEventListener('DOMContentLoaded', function() {
+  updateTimeOptionLabels();
+  updateTime1Time2Options();
+  setInterval(updateTimeOptionLabels, 60000);
 
-  // 自動設定名稱
-  document.getElementById('markerName').value = '全天古龍種';
+  // 當主時間選單變動，更新時間1/2選單
+  document.getElementById('markerTime').addEventListener('change', function() {
+    updateTime1Time2Options();
 
-  // 自動設定備註
-  const nearest = getNearestTime(timestr);
-  const idx = times.findIndex(t => t === nearest);
-  if (idx !== -1) {
-    const ab = getATagByIndex(idx);
-    document.getElementById('markerRemark').value = ab + '確認';
-  } else {
-    document.getElementById('markerRemark').value = '';
-  }
+    // 自動設定名稱
+    document.getElementById('markerName').value = '全天古龍種';
 
-  // 自動設定顏色
-  const type = timeToType[timestr] ?? 0;
-  document.getElementById('markerType').value = type;
+    const timestr = this.value;
+    const times = timestr.split(/\s+/).filter(Boolean);
+
+    // 自動設定備註
+    const nearest = getNearestTime(timestr);
+    const idx = times.findIndex(t => t === nearest);
+    if (idx !== -1) {
+      const ab = idx % 2 === 0 ? 'A' : 'B';
+      document.getElementById('markerRemark').value = ab + '確認';
+      // 時間1自動設為最近
+      document.getElementById('markerTime1').value = nearest;
+    } else {
+      document.getElementById('markerRemark').value = '';
+      document.getElementById('markerTime1').value = '';
+    }
+
+    // 自動設定顏色
+    const type = timeToType[timestr] ?? 0;
+    document.getElementById('markerType').value = type;
+  });
+
+  // 初次載入設置時間1/2選單
+  updateTime1Time2Options();
 });
-
-document.getElementById('markerTime2').addEventListener('change', function() {
-  // 這裡可根據時間2自動設定顏色等，或和 markerTime 合併做特殊處理
-});
-
-    });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
     function addMinutesToTimeString(timestr, offset) {
-      // 格式: 3:35PM
       let m = timestr.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
       if (!m) return timestr;
       let h = parseInt(m[1], 10);
@@ -317,7 +308,6 @@ document.getElementById('markerTime2').addEventListener('change', function() {
       if (ap === "PM" && h !== 12) h += 12;
       if (ap === "AM" && h === 12) h = 0;
       let total = h * 60 + mm + offset;
-      // 處理時間溢出
       if (total < 0) total += 24 * 60;
       if (total >= 24 * 60) total -= 24 * 60;
       let nh = Math.floor(total / 60);
@@ -332,11 +322,7 @@ document.getElementById('markerTime2').addEventListener('change', function() {
     function getNearestTimeString(marker) {
       if (!["全天古龍種", "ABAB古龍種", "BABA古龍種"].includes(marker.data.name)) return "";
 
-      // 新增：如果有 time2，合併 time 和 time2
-      let timesArr = [];
-      if (marker.data.time) timesArr.push(marker.data.time);
-      if (marker.data.time2) timesArr.push(marker.data.time2);
-      let times = timesArr.join(' ').split(/\s+/).filter(Boolean);
+      let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
       // ABAB古龍種：A時段（0,2,4,6,8...）
       if (marker.data.name === "ABAB古龍種") {
@@ -488,6 +474,7 @@ document.getElementById('markerTime2').addEventListener('change', function() {
         const content = `
           <p><strong>${data.name}</strong></p>
           <p>時間：${data.time}</p>
+          <p>時間1：${data.time1 || ''}</p>
           <p>時間2：${data.time2 || ''}</p>
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
@@ -627,6 +614,12 @@ document.getElementById('markerTime2').addEventListener('change', function() {
       }
 
       addMarker(latlng, data) {
+        // 新增：預設time1/time2資料
+        if (!data.time1 && data.time) {
+          const times = data.time.split(/\s+/).filter(Boolean);
+          data.time1 = times[0] || '';
+          data.time2 = times[1] || '';
+        }
         const marker = L.marker(latlng, {
           draggable: this.currentMode === 'editMarker',
           icon: this.getCustomIcon(data.type, 1, { data })
@@ -660,6 +653,9 @@ document.getElementById('markerTime2').addEventListener('change', function() {
               if (infoPanel) infoPanel.style.display = 'none';
               document.getElementById('markerName').value = marker.data.name;
               document.getElementById('markerTime').value = marker.data.time;
+              // 新增：每次打開表單時根據主時間刷新時間1/時間2選單
+              updateTime1Time2Options();
+              document.getElementById('markerTime1').value = marker.data.time1 || '';
               document.getElementById('markerTime2').value = marker.data.time2 || '';
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
@@ -668,16 +664,19 @@ document.getElementById('markerTime2').addEventListener('change', function() {
               document.getElementById('saveMarkerBtn').onclick = () => {
                 const name = document.getElementById('markerName').value.trim();
                 const time = document.getElementById('markerTime').value;
-                const time2 = document.getElementById('markerTime2').value;
                 const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
                 const remark = document.getElementById('markerRemark').value.trim();
                 const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
+                // 新增：時間1/2
+                const time1 = document.getElementById('markerTime1').value;
+                const time2 = document.getElementById('markerTime2').value;
                 marker.data.name = name;
                 marker.data.time = time;
-                marker.data.time2 = time2;
                 marker.data.type = type;
                 marker.data.remark = remark;
                 marker.data.offsetMinutes = offsetMinutes;
+                marker.data.time1 = time1;
+                marker.data.time2 = time2;
                 marker.setIcon(this.getCustomIcon(type, 1, marker));
                 this.updateMarkerScales();
                 this.saveMarkers();
@@ -697,9 +696,7 @@ document.getElementById('markerTime2').addEventListener('change', function() {
         marker.on('click', handler);
         marker.on('touchstart', handler);
       
-        // === 新增：拖曳結束自動儲存 ===
         marker.on('dragend', () => {
-          // 拖曳後自動更新經緯度
           marker.data.lat = marker.getLatLng().lat;
           marker.data.lng = marker.getLatLng().lng;
           this.saveMarkers();
@@ -800,7 +797,6 @@ document.getElementById('markerTime2').addEventListener('change', function() {
           document.getElementById('editBtn').textContent = "開始編輯";
           this.markers.eachLayer(marker => marker.dragging.disable());
           this.saveMarkers();
-        // 新增這一行，確保結束時關閉表單
         document.getElementById('markerEditModal').style.display = 'none';
         const infoPanel = document.getElementById('infoPanel');
         if (infoPanel) infoPanel.style.display = '';
