@@ -176,13 +176,21 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.7.9</div>
+  <div id="version">版本 3.8.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
     const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
+
+    // 所有38種時段
+    const allTimes = [
+      "7:15AM", "8:55AM", "10:35AM", "12:15PM", "1:55PM", "3:35PM", "5:15PM", "6:55PM", "8:35PM", "10:15PM",
+      "7:40AM", "9:20AM", "11:00AM", "12:40PM", "2:20PM", "4:00PM", "5:40PM", "7:20PM", "9:00PM", "10:40PM",
+      "8:05AM", "9:45AM", "11:25AM", "1:05PM", "2:45PM", "4:25PM", "6:05PM", "7:45PM", "9:25PM",
+      "8:30AM", "10:10AM", "11:50AM", "1:30PM", "3:10PM", "4:50PM", "6:30PM", "8:10PM", "9:50PM"
+    ];
 
     // 時間表對應顏色
     const timeToType = {
@@ -239,7 +247,8 @@ function updateTimeOptionLabels() {
     }
   }
 }
-// 新增：根據主時間表更新時間1/時間2選單（時間2默认空）
+
+// 根據主時間表更新時間1/時間2選單（時間2為全部38種）
 function updateTime1Time2Options() {
   const markerTime = document.getElementById('markerTime');
   const markerTime1 = document.getElementById('markerTime1');
@@ -247,7 +256,7 @@ function updateTime1Time2Options() {
   if (!markerTime || !markerTime1 || !markerTime2) return;
   const times = markerTime.value.split(/\s+/).filter(Boolean);
 
-  // 时间1：仍然全部时段都能选
+  // 時間1：仍然全部時段都能選（主時間表那一組）
   markerTime1.innerHTML = '';
   times.forEach(t => {
     const opt1 = document.createElement('option');
@@ -256,25 +265,13 @@ function updateTime1Time2Options() {
     markerTime1.appendChild(opt1);
   });
 
-  // 时间2：只保留“还没过的时间”
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  // 時間2：全部38種
   markerTime2.innerHTML = '';
-  times.forEach(t => {
-    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-    if (!m) return;
-    let h = parseInt(m[1], 10);
-    let mm = parseInt(m[2], 10);
-    let ap = m[3].toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    const total = h * 60 + mm;
-    if (total >= nowMin) {
-      const opt2 = document.createElement('option');
-      opt2.value = t;
-      opt2.textContent = t;
-      markerTime2.appendChild(opt2);
-    }
+  allTimes.forEach(t => {
+    const opt2 = document.createElement('option');
+    opt2.value = t;
+    opt2.textContent = t;
+    markerTime2.appendChild(opt2);
   });
 
   // 默认时间1为最近的，时间2为空
@@ -358,7 +355,8 @@ function getNearestTimeString(marker) {
   // 时间1和时间2都选了：推规律
   if (marker.data.time1 && marker.data.time2 && marker.data.time) {
     const idx1 = times.findIndex(t => t === marker.data.time1);
-    const idx2 = times.findIndex(t => t === marker.data.time2);
+    // 支持时间2为allTimes中的任一时段
+    const idx2 = allTimes.findIndex(t => t === marker.data.time2);
     if (idx1 !== -1 && idx2 !== -1 && idx2 !== idx1) {
       const step = idx2 - idx1;
       if (step > 0) {
