@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.2</div>
+  <div id="version">版本 3.9.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -575,7 +575,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   // 原始大小
   let size = 40 * scale;
   if (isRaid) {
-    size = size * 0.9; // raid.png 小 10%
+    size = size * 0.75; // raid.png 小 10%
   }
 
   let timeStr = "";
