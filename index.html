@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.7.2</div>
+  <div id="version">版本 3.7.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -271,32 +271,34 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(updateTimeOptionLabels, 60000);
 
   // 當主時間選單變動，更新時間1/2選單
-  document.getElementById('markerTime').addEventListener('change', function() {
-    updateTime1Time2Options();
+document.getElementById('markerTime').addEventListener('change', function() {
+  updateTime1Time2Options();
 
-    // 自動設定名稱
-    document.getElementById('markerName').value = '全天古龍種';
+  // 自动设置名称
+  document.getElementById('markerName').value = '全天古龍種';
 
-    const timestr = this.value;
-    const times = timestr.split(/\s+/).filter(Boolean);
+  const timestr = this.value;
+  const times = timestr.split(/\s+/).filter(Boolean);
 
-    // 自動設定備註
-    const nearest = getNearestTime(timestr);
-    const idx = times.findIndex(t => t === nearest);
-    if (idx !== -1) {
-      const ab = idx % 2 === 0 ? 'A' : 'B';
-      document.getElementById('markerRemark').value = ab + '確認';
-      // 時間1自動設為最近
-      document.getElementById('markerTime1').value = nearest;
-    } else {
-      document.getElementById('markerRemark').value = '';
-      document.getElementById('markerTime1').value = '';
+  // 自动设置备注
+  const nearest = getNearestTime(timestr);
+  const idx = times.findIndex(t => t === nearest);
+  if (idx !== -1) {
+    const ab = idx % 2 === 0 ? 'A' : 'B';
+    document.getElementById('markerRemark').value = ab + '確認';
+    // 只有时间1为空才自动赋值
+    const time1Select = document.getElementById('markerTime1');
+    if (!time1Select.value) {
+      time1Select.value = nearest;
     }
+  } else {
+    document.getElementById('markerRemark').value = '';
+  }
 
-    // 自動設定顏色
-    const type = timeToType[timestr] ?? 0;
-    document.getElementById('markerType').value = type;
-  });
+  // 自动设置颜色
+  const type = timeToType[timestr] ?? 0;
+  document.getElementById('markerType').value = type;
+});
 
   // 初次載入設置時間1/2選單
   updateTime1Time2Options();
