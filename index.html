@@ -265,26 +265,26 @@ function updateTime1Time2Options() {
     markerTime1.appendChild(opt1);
   });
 
-// 时间2：用allTimes顺序，只放未来的
-markerTime2.innerHTML = '';
-const now = new Date();
-const nowMin = now.getHours() * 60 + now.getMinutes();
-allTimes.forEach(t => {
-  const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-  if (!m) return;
-  let h = parseInt(m[1], 10);
-  let mm = parseInt(m[2], 10);
-  let ap = m[3].toUpperCase();
-  if (ap === "PM" && h !== 12) h += 12;
-  if (ap === "AM" && h === 12) h = 0;
-  const total = h * 60 + mm;
-  if (total > nowMin) { // 只保留未来
-    const opt2 = document.createElement('option');
-    opt2.value = t;
-    opt2.textContent = t;
-    markerTime2.appendChild(opt2);
-  }
-});
+  // 时间2：标准顺序，只显示未来
+  markerTime2.innerHTML = '';
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  allTimes.forEach(t => {
+    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) return;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    const total = h * 60 + mm;
+    if (total > nowMin) {
+      const opt2 = document.createElement('option');
+      opt2.value = t;
+      opt2.textContent = t;
+      markerTime2.appendChild(opt2);
+    }
+  });
 
   // 默认时间1为最近的，时间2为空
   const nearest = getNearestTime(markerTime.value);
