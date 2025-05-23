@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.4</div>
+  <div id="version">版本 3.9.5</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -447,6 +447,7 @@ function getNearestTimeString(marker) {
         this.lastMarkerType = 0;
         this.routeSelecting = false;
         this.selectedMarkers = [];
+        this.moveMarkerMode = false; // 移动标记模式
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
@@ -472,6 +473,9 @@ function getNearestTimeString(marker) {
             <div class="btn-row">
               <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+            </div>
+            <div class="btn-row">
+              <button onclick="app.toggleMoveMarkerMode()" id="moveMarkerBtn">移動標記</button>
             </div>
             <label>顯示顏色：</label>
             <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
@@ -527,6 +531,26 @@ function getNearestTimeString(marker) {
         });
       }
 
+      toggleMoveMarkerMode() {
+        this.moveMarkerMode = !this.moveMarkerMode;
+        const btn = document.getElementById('moveMarkerBtn');
+        if (this.moveMarkerMode) {
+          btn.textContent = '完成移動';
+          this.markers.eachLayer(marker => marker.dragging.enable());
+        } else {
+          btn.textContent = '移動標記';
+          this.markers.eachLayer(marker => marker.dragging.disable());
+          this.saveMarkers();
+        }
+        // 退出其它模式
+        if (this.currentMode === 'editMarker') {
+          this.currentMode = 'done';
+          const editBtn = document.getElementById('editBtn');
+          if (editBtn) editBtn.textContent = '開始編輯';
+        }
+        this.updateMarkerScales();
+      }
+
       updateInfoPanel(data) {
         const content = `
           <p><strong>${data.name}</strong></p>
@@ -575,11 +599,12 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   // 原始大小
   let size = 40 * scale;
   if (isRaid) {
-    size = size * 0.75; // raid.png 小 10%
+    size = size * 0.9; // raid.png 小 10%
   }
 
   let timeStr = "";
   if (marker) {
+    // 只要不是大连狩猎才显示时间
     if (!(marker.data && marker.data.name === "大連狩獵")) {
       timeStr = getNearestTimeString(marker);
     }
@@ -695,7 +720,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           data.time2 = '';
         }
         const marker = L.marker(latlng, {
-          draggable: this.currentMode === 'editMarker',
+          draggable: this.currentMode === 'editMarker' || this.moveMarkerMode,
           icon: this.getCustomIcon(data.type, 1, { data })
         });
         marker.data = data;
@@ -861,6 +886,9 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           this.routeSelecting = false;
           const routeBtn = document.getElementById('routeBtn');
           if (routeBtn) routeBtn.textContent = '選擇路線';
+        }
+        if (this.moveMarkerMode) {
+          this.toggleMoveMarkerMode(); // 退出移动标记模式
         }
         if (this.currentMode === "done") {
           this.currentMode = "editMarker";
