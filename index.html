@@ -326,29 +326,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // === 主要顯示時間的邏輯 ===
 function getNearestTimeString(marker) {
-  // 必须有时间1、时间2、时间表
+  // 取得时间表
+  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+
+  // ABAB/BABA支持
+  if (marker.data.name === "ABAB古龍種") {
+    times = times.filter((_, idx) => idx % 2 === 0);
+  } else if (marker.data.name === "BABA古龍種") {
+    times = times.filter((_, idx) => idx % 2 === 1);
+  }
+
+  // 时间1和时间2都选了：推规律
   if (marker.data.time1 && marker.data.time2 && marker.data.time) {
-    const times = marker.data.time.split(/\s+/).filter(Boolean);
     const idx1 = times.findIndex(t => t === marker.data.time1);
     const idx2 = times.findIndex(t => t === marker.data.time2);
     if (idx1 !== -1 && idx2 !== -1 && idx2 !== idx1) {
-      // 支持任意格差，正向为主（如idx2<idx1则不生成）
       const step = idx2 - idx1;
       if (step > 0) {
         let pattern = [];
         let pos = idx1;
-        // 只循环一次到表结尾，和MH Now实际一致
         while (pos < times.length) {
           pattern.push(times[pos]);
           pos += step;
         }
-        // pattern就是循环序列
-      times = pattern;
+        times = pattern;
+      }
     }
   }
 
   if (!times.length) return "";
 
+  // ±25分钟内才显示
   const offset = parseInt(marker.data.offsetMinutes || 0, 10);
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
