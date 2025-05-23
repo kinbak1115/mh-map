@@ -515,12 +515,12 @@ document.getElementById('markerTime').addEventListener('change', function() {
               position: absolute;
               top: ${-10 * scale}px;
               left: ${-10 * scale}px;
-              width: ${32 * scale}px;
-              height: ${32 * scale}px;
+              width: ${Math.max(20 * scale, 18)}px;
+              height: ${Math.max(20 * scale, 18)}px;
               background: #ff6600;
               color: #fff;
               border-radius: 50%;
-              font-size: ${18 * scale}px;
+              font-size: ${Math.max(11 * scale, 12)}px;
               font-weight: bold;
               display: flex;
               align-items: center;
