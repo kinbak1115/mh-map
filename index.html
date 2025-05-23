@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.7.3</div>
+  <div id="version">版本 3.7.4</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -326,33 +326,63 @@ document.getElementById('markerTime').addEventListener('change', function() {
 
     // 工具函數：取得最近的顯示時間（含ABAB/BABA忽略B時段）
 function getNearestTimeString(marker) {
-  // time2存在時，僅用time1和time2比對
-  if (marker.data.time2) {
-    const times = [marker.data.time1, marker.data.time2].filter(Boolean);
-    if (!times.length) return "";
-    const offset = parseInt(marker.data.offsetMinutes || 0, 10);
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    let minDiff = Infinity;
-    let bestDisplayTime = "";
-    for (const t of times) {
-      let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-      if (!m) continue;
-      let h = parseInt(m[1], 10);
-      let mm = parseInt(m[2], 10);
-      let ap = m[3].toUpperCase();
-      if (ap === "PM" && h !== 12) h += 12;
-      if (ap === "AM" && h === 12) h = 0;
-      let total = h * 60 + mm + offset;
-      if (total < 0) total += 24 * 60;
-      if (total >= 24 * 60) total -= 24 * 60;
-      let diff = total - nowMin;
-      if (Math.abs(diff) < Math.abs(minDiff)) {
-        minDiff = diff;
-        bestDisplayTime = addMinutesToTimeString(t, offset);
+  // 如果有时间1和时间2，并且都在原始时间表里，就按循环规律计算
+  if (marker.data.time1 && marker.data.time2 && marker.data.time) {
+    const times = marker.data.time.split(/\s+/).filter(Boolean);
+    const idx1 = times.findIndex(t => t === marker.data.time1);
+    const idx2 = times.findIndex(t => t === marker.data.time2);
+    if (idx1 !== -1 && idx2 !== -1 && idx2 > idx1) {
+      const step = idx2 - idx1;
+      // 生成循环序列
+      let pattern = [];
+      for (let i = idx1; i < times.length; i += step) {
+        pattern.push(times[i]);
       }
+      // 如果最后一个循环还没到结尾，可以补首位
+      // 例如 7:15AM 12:15PM 5:15PM 10:15PM
+      // 这段自动补够循环
+      // 其实只需循环到超过times.length
+      // pattern = [times[idx1], times[idx1+step], times[idx1+2*step]...]
+      // 但如果idx1+N*step超出length，需补回头
+      // 所以可以用循环
+      pattern = [];
+      let pos = idx1;
+      while (pattern.length < times.length) {
+        pattern.push(times[pos]);
+        pos += step;
+        if (pos >= times.length) pos -= times.length;
+        if (pos === idx1) break; // 循环一圈回到起点
+      }
+      // 现在 pattern 里就是正确循环序列
+      // 找最近的
+      const offset = parseInt(marker.data.offsetMinutes || 0, 10);
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let minDiff = Infinity;
+      let bestDisplayTime = "";
+      for (const t of pattern) {
+        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        if (!m) continue;
+        let h = parseInt(m[1], 10);
+        let mm = parseInt(m[2], 10);
+        let ap = m[3].toUpperCase();
+        if (ap === "PM" && h !== 12) h += 12;
+        if (ap === "AM" && h === 12) h = 0;
+        let total = h * 60 + mm + offset;
+        // 不跨天，只算当天
+        let diff = total - nowMin;
+        if (diff < 0) continue; // 只要未来的时间
+        if (diff < minDiff) {
+          minDiff = diff;
+          bestDisplayTime = addMinutesToTimeString(t, offset);
+        }
+      }
+      // 如果没有未来时间，显示当天最后一个
+      if (!bestDisplayTime && pattern.length) {
+        bestDisplayTime = addMinutesToTimeString(pattern[pattern.length - 1], offset);
+      }
+      return bestDisplayTime;
     }
-    return bestDisplayTime;
   }
 
   // === 原本的規律 (全天/ABAB/BABA) ===
@@ -386,15 +416,16 @@ function getNearestTimeString(marker) {
     if (ap === "PM" && h !== 12) h += 12;
     if (ap === "AM" && h === 12) h = 0;
     let total = h * 60 + mm + offset;
-    if (total < 0) total += 24 * 60;
-    if (total >= 24 * 60) total -= 24 * 60;
     let diff = total - nowMin;
-    if (diff >= -25 && diff <= 25) {
-      if (Math.abs(diff) < Math.abs(minDiff)) {
-        minDiff = diff;
-        bestDisplayTime = addMinutesToTimeString(t, offset);
-      }
+    if (diff < 0) continue;
+    if (diff < minDiff) {
+      minDiff = diff;
+      bestDisplayTime = addMinutesToTimeString(t, offset);
     }
+  }
+  // 没有未来时间则显示当天最后一个
+  if (!bestDisplayTime && times.length) {
+    bestDisplayTime = addMinutesToTimeString(times[times.length - 1], offset);
   }
   return bestDisplayTime;
 }
