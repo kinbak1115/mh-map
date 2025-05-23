@@ -205,7 +205,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.5.1</div>
+  <div id="version">版本 3.5.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -220,37 +220,36 @@
     ];
 
     // 只顯示±25分鐘以內的時段
-    function fillTimeSelectOptions() {
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      function timeStrToMin(t) {
-        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-        let h = parseInt(m[1], 10);
-        let mm = parseInt(m[2], 10);
-        let ap = m[3].toUpperCase();
-        if (ap === "PM" && h !== 12) h += 12;
-        if (ap === "AM" && h === 12) h = 0;
-        return h * 60 + mm;
-      }
-      function filterForSelect(times) {
-        // 只保留現在±25分鐘的時段
-        return times.filter(t => {
-          const min = timeStrToMin(t);
-          let diff = min - nowMin;
-          if (diff > 12*60) diff -= 24*60;
-          if (diff < -12*60) diff += 24*60;
-          return Math.abs(diff) <= 25;
-        });
-      }
-      const s1 = document.getElementById('customTime1');
-      const s2 = document.getElementById('customTime2');
-      s1.innerHTML = s2.innerHTML = ""; // 清空
-      const options = filterForSelect(allTimeOptions);
-      options.forEach(t => {
-        s1.appendChild(new Option(t, t));
-        s2.appendChild(new Option(t, t));
+function fillTimeSelectOptions() {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    function timeStrToMin(t) {
+      let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+      let h = parseInt(m[1], 10);
+      let mm = parseInt(m[2], 10);
+      let ap = m[3].toUpperCase();
+      if (ap === "PM" && h !== 12) h += 12;
+      if (ap === "AM" && h === 12) h = 0;
+      return h * 60 + mm;
+    }
+    function filterForSelect(times) {
+      return times.filter(t => {
+        const min = timeStrToMin(t);
+        let diff = min - nowMin;
+        if (diff > 12*60) diff -= 24*60;
+        if (diff < -12*60) diff += 24*60;
+        return Math.abs(diff) <= 25;
       });
     }
+    const s1 = document.getElementById('customTime1');
+    const s2 = document.getElementById('customTime2');
+    s1.innerHTML = s2.innerHTML = '<option value="">請選擇</option>'; // 預設空
+    const options = filterForSelect(allTimeOptions);
+    options.forEach(t => {
+      s1.appendChild(new Option(t, t));
+      s2.appendChild(new Option(t, t));
+    });
+  }
 
     document.addEventListener('DOMContentLoaded', function() {
       fillTimeSelectOptions();
