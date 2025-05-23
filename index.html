@@ -176,7 +176,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.1</div>
+  <div id="version">版本 3.9.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -555,7 +555,6 @@ function getNearestTimeString(marker) {
       }
 
 getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-  // 新增大連狩獵icon
   const iconUrls = {
     0: iconUrl,
     1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
@@ -564,18 +563,27 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
     4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
     raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
   };
-  const size = 40 * scale;
+
+  // 判断是否大连狩猎
+  let useIconUrl = iconUrls[type];
+  let isRaid = false;
+  if (marker && marker.data && marker.data.name === "大連狩獵") {
+    useIconUrl = iconUrls.raid;
+    isRaid = true;
+  }
+
+  // 原始大小
+  let size = 40 * scale;
+  if (isRaid) {
+    size = size * 0.9; // raid.png 小 10%
+  }
+
   let timeStr = "";
   if (marker) {
     timeStr = getNearestTimeString(marker);
   }
-  // 动态决定时间字体大小
   let timeFontSize = Math.max(10, Math.floor(14 * scale));
-  // 大連狩獵强制icon
-  let useIconUrl = iconUrls[type];
-  if (marker && marker.data && marker.data.name === "大連狩獵") {
-    useIconUrl = iconUrls.raid;
-  }
+
   return L.divIcon({
     className: '',
     html: `
