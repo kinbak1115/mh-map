@@ -109,6 +109,21 @@
 
     .info-panel p { margin: 4px 0; }
     .leaflet-popup-content { display: none; }
+
+    /* 新增地區標籤樣式 */
+    .area-label {
+      pointer-events: auto;
+      font-size: 20px;
+      font-weight: bold;
+      background: #ffe066;
+      color: #222;
+      padding: 5px 12px;
+      border-radius: 8px;
+      border: 2px solid #eab308;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      display: inline-block;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -183,7 +198,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.4.4</div>
+  <div id="version">版本 3.4.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -226,26 +241,17 @@
       return best;
     }
 
-function updateTimeOptionLabels() {
-  const markerTime = document.getElementById('markerTime');
-  if (!markerTime) return;
-  for (const opt of markerTime.options) {
-    const nearest = getNearestTime(opt.value);
-    // 找出這個最近時間是A還是B
-    let typeLabel = '';
-    if (nearest) {
-      // 用原始字串分割，找到 index
-      const times = opt.value.split(/\s+/).filter(Boolean);
-      const idx = times.findIndex(t => t === nearest);
-      if (idx !== -1) {
-        typeLabel = (idx % 2 === 0) ? '（A）' : '（B）';
+    // 動態更新 #markerTime 下拉每個 option 的顯示文字
+    function updateTimeOptionLabels() {
+      const markerTime = document.getElementById('markerTime');
+      if (!markerTime) return;
+      for (const opt of markerTime.options) {
+        const nearest = getNearestTime(opt.value);
+        // 顯示最近時間，value 不變
+        opt.textContent = nearest || opt.value;
       }
-      opt.textContent = nearest + typeLabel;
-    } else {
-      opt.textContent = opt.value;
     }
-  }
-}
+
     // 綁定：選時間自動選顏色、名稱預設全天古龍種
     document.addEventListener('DOMContentLoaded', function() {
       // 初次載入就更新 option 顯示
@@ -253,33 +259,16 @@ function updateTimeOptionLabels() {
       // 每分鐘自動更新一次顯示
       setInterval(updateTimeOptionLabels, 60000);
 
-// 取得A/B標記
-function getATagByIndex(idx) {
-  return idx % 2 === 0 ? 'A' : 'B';
-}
-
-// 根據選擇的時間自動更新備註
-document.getElementById('markerTime').addEventListener('change', function() {
-  const timestr = this.value;
-  const times = timestr.split(/\s+/).filter(Boolean);
-
-  // 自動設定名稱
-  document.getElementById('markerName').value = '全天古龍種';
-
-  // 自動設定備註
-  const nearest = getNearestTime(timestr);
-  const idx = times.findIndex(t => t === nearest);
-  if (idx !== -1) {
-    const ab = getATagByIndex(idx);
-    document.getElementById('markerRemark').value = ab + '確認';
-  } else {
-    document.getElementById('markerRemark').value = '';
-  }
-
-  // 自動設定顏色
-  const type = timeToType[timestr] ?? 0;
-  document.getElementById('markerType').value = type;
-});
+      document.getElementById('markerTime').addEventListener('change', function() {
+        const val = this.value.trim();
+        if (timeToType[val] !== undefined) {
+          document.getElementById('markerType').value = timeToType[val];
+        }
+        // 當選擇時間時，自動設為「全天古龍種」
+        document.getElementById('markerName').value = "全天古龍種";
+        // 重新呼叫以即時更新 option 顯示
+        updateTimeOptionLabels();
+      });
     });
 
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
@@ -372,6 +361,7 @@ document.getElementById('markerTime').addEventListener('change', function() {
         });
 
         this.markers = new L.FeatureGroup();
+        this.areaMarkers = new L.FeatureGroup(); // 地區標記圖層
         this.filteredTypes = [];
         this.lastMarkerType = 0;
         this.routeSelecting = false;
@@ -381,6 +371,7 @@ document.getElementById('markerTime').addEventListener('change', function() {
           attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
         }).addTo(this.map);
         this.markers.addTo(this.map);
+        this.areaMarkers.addTo(this.map);
 
         this.initControls();
         this.loadSavedMarkers();
@@ -401,6 +392,9 @@ document.getElementById('markerTime').addEventListener('change', function() {
             <div class="btn-row">
               <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
               <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+            </div>
+            <div class="btn-row">
+              <button onclick="app.startAddArea()">➕ 新增地區</button>
             </div>
             <label>顯示顏色：</label>
             <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
@@ -457,14 +451,19 @@ document.getElementById('markerTime').addEventListener('change', function() {
       }
 
       updateInfoPanel(data) {
-        const content = `
-          <p><strong>${data.name}</strong></p>
-          <p>時間：${data.time}</p>
-          <p>類型：${markerColors[data.type] || '原始'}</p>
-          <p>備註：${data.remark}</p>
-          <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
-        `;
-        document.getElementById('panelContent').innerHTML = content;
+        if (data.type === "area") {
+          document.getElementById('panelContent').innerHTML =
+            `<p><strong>地區名稱：</strong>${data.areaName}</p>`;
+        } else {
+          const content = `
+            <p><strong>${data.name}</strong></p>
+            <p>時間：${data.time}</p>
+            <p>類型：${markerColors[data.type] || '原始'}</p>
+            <p>備註：${data.remark}</p>
+            <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
+          `;
+          document.getElementById('panelContent').innerHTML = content;
+        }
       }
 
       initEventListeners() {
@@ -475,6 +474,9 @@ document.getElementById('markerTime').addEventListener('change', function() {
           setTimeout(() => (mapTapped = false), 300);
           if (this.currentMode === "editMarker") {
             this.showMarkerForm(e.latlng);
+          } else if (this.currentMode === "addArea") {
+            this.addAreaMarker(e.latlng);
+            this.currentMode = "done";
           }
         };
         this.map.on("click", handleMapTap);
@@ -509,7 +511,7 @@ document.getElementById('markerTime').addEventListener('change', function() {
           height: ${size}px;
           position: relative;
         ">
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
           ${orderNumber !== null ? `
             <div class="marker-order-badge" style="
               position: absolute;
@@ -573,6 +575,9 @@ document.getElementById('markerTime').addEventListener('change', function() {
             el.classList.add('markerBorder');
           }
         });
+        this.areaMarkers.eachLayer(marker => {
+          // 地區標籤不用縮放
+        });
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
 
@@ -622,7 +627,7 @@ document.getElementById('markerTime').addEventListener('change', function() {
             this.updateMarkerScales(); // 即時刷新順序
             return;
           }
-          if (this.currentMode === "editMarker") {
+            if (this.currentMode === "editMarker") {
             this.resetAllMarkers()
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
@@ -664,15 +669,6 @@ document.getElementById('markerTime').addEventListener('change', function() {
         };
         marker.on('click', handler);
         marker.on('touchstart', handler);
-      
-        // === 新增：拖曳結束自動儲存 ===
-        marker.on('dragend', () => {
-          // 拖曳後自動更新經緯度
-          marker.data.lat = marker.getLatLng().lat;
-          marker.data.lng = marker.getLatLng().lng;
-          this.saveMarkers();
-        });
-      
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
         this.saveMarkers();
@@ -680,29 +676,98 @@ document.getElementById('markerTime').addEventListener('change', function() {
         this.updateMarkerScales();
       }
 
+      // 新增地區地標
+      startAddArea() {
+        this.currentMode = 'addArea';
+        alert('請在地圖上點擊選擇地區中心位置');
+      }
+      addAreaMarker(latlng, areaName) {
+        // 若未傳 areaName，則 prompt
+        if (typeof areaName !== "string") {
+          areaName = prompt('輸入地區名稱:');
+          if (!areaName) {
+            this.currentMode = 'done';
+            return;
+          }
+        }
+        const marker = L.marker(latlng, {
+          icon: L.divIcon({
+            className: 'area-label',
+            html: `<span>${areaName}</span>`,
+            iconSize: [120, 36],
+            iconAnchor: [60, 18],
+          }),
+          draggable: this.currentMode === 'editMarker'
+        });
+        marker.data = { areaName, lat: latlng.lat, lng: latlng.lng, type: 'area' };
+        marker.on('click', () => {
+          // 編輯名稱或刪除
+          const newName = prompt('修改地區名稱（留空將刪除）：', marker.data.areaName);
+          if (newName === null) return;
+          if (newName.trim() === '') {
+            if (confirm('確定要刪除此地區標記？')) {
+              this.areaMarkers.removeLayer(marker);
+              this.saveMarkers();
+              document.getElementById('panelContent').innerText = '請點選地圖上的標記';
+            }
+          } else {
+            marker.data.areaName = newName;
+            marker.setIcon(L.divIcon({
+              className: 'area-label',
+              html: `<span>${newName}</span>`,
+              iconSize: [120, 36],
+              iconAnchor: [60, 18]
+            }));
+            this.saveMarkers();
+            this.updateInfoPanel(marker.data);
+          }
+        });
+        this.areaMarkers.addLayer(marker);
+        this.saveMarkers();
+        this.updateInfoPanel(marker.data);
+      }
+
       deleteSelectedMarker() {
         if (!this.selectedMarker) {
           alert('請先點選一個標記再刪除');
           return;
         }
-        if (confirm('確定要刪除這個標記？')) {
-          this.markers.removeLayer(this.selectedMarker);
-          this.saveMarkers();
-          this.selectedMarker = null;
-          document.getElementById('panelContent').innerText = '請點選地圖上的標記';
+        // 判斷是否為地區標記
+        if (this.selectedMarker.data && this.selectedMarker.data.type === 'area') {
+          if (confirm('確定要刪除這個地區標記？')) {
+            this.areaMarkers.removeLayer(this.selectedMarker);
+            this.saveMarkers();
+            this.selectedMarker = null;
+            document.getElementById('panelContent').innerText = '請點選地圖上的標記';
+          }
+        } else {
+          if (confirm('確定要刪除這個標記？')) {
+            this.markers.removeLayer(this.selectedMarker);
+            this.saveMarkers();
+            this.selectedMarker = null;
+            document.getElementById('panelContent').innerText = '請點選地圖上的標記';
+          }
         }
       }
 
       saveMarkers() {
         const saved = [];
         this.markers.eachLayer(marker => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
+        this.areaMarkers.eachLayer(marker => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
         localStorage.setItem('mhnow_markers', JSON.stringify(saved));
       }
 
       loadSavedMarkers() {
         this.markers.clearLayers();
+        this.areaMarkers.clearLayers();
         const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-        saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
+        saved.forEach(data => {
+          if (data.type === 'area') {
+            this.addAreaMarker(L.latLng(data.lat, data.lng), data.areaName);
+          } else {
+            this.addMarker(L.latLng(data.lat, data.lng), data);
+          }
+        });
       }
 
       filterMarkersByTypes() {
@@ -715,11 +780,17 @@ document.getElementById('markerTime').addEventListener('change', function() {
             icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
           }
         });
+        // 地區標記總是顯示
         this.filteredTypes = types;
       }
 
       backupMarkers() {
-        const data = JSON.stringify(this.markers.getLayers().map(marker => marker.data));
+        const data = JSON.stringify(
+          [
+            ...this.markers.getLayers().map(marker => marker.data),
+            ...this.areaMarkers.getLayers().map(marker => marker.data)
+          ]
+        );
         const blob = new Blob([data], { type: 'application/json' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -763,15 +834,13 @@ document.getElementById('markerTime').addEventListener('change', function() {
           this.currentMode = "editMarker";
           document.getElementById('editBtn').textContent = "結束編輯";
           this.markers.eachLayer(marker => marker.dragging.enable());
+          this.areaMarkers.eachLayer(marker => marker.dragging && marker.dragging.enable());
         } else {
           this.currentMode = "done";
           document.getElementById('editBtn').textContent = "開始編輯";
           this.markers.eachLayer(marker => marker.dragging.disable());
+          this.areaMarkers.eachLayer(marker => marker.dragging && marker.dragging.disable());
           this.saveMarkers();
-        // 新增這一行，確保結束時關閉表單
-        document.getElementById('markerEditModal').style.display = 'none';
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
         }
         this.updateMarkerScales();
       }
@@ -785,9 +854,7 @@ document.getElementById('markerTime').addEventListener('change', function() {
             const editBtn = document.getElementById('editBtn');
             if (editBtn) editBtn.textContent = '開始編輯';
             this.markers.eachLayer(marker => marker.dragging.disable());
-            document.getElementById('markerEditModal').style.display = 'none';
-            const infoPanel = document.getElementById('infoPanel');
-            if (infoPanel) infoPanel.style.display = '';
+            this.areaMarkers.eachLayer(marker => marker.dragging && marker.dragging.disable());
           }
           this.selectedMarkers = [];
           button.textContent = '完成選擇';
