@@ -178,7 +178,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.5</div>
+  <div id="version">版本 4.0.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -423,26 +423,36 @@ function getNearestTimeString(marker) {
 }
 
     class MapApp {
-      constructor() {
-        this.map = L.map('map', {
-          doubleClickZoom: false
-        });
-        this.map.locate({ setView: true, maxZoom: 16 });
+constructor() {
+  this.map = L.map('map', {
+    doubleClickZoom: false
+  });
 
-      this.map.on('locationfound', e => {
-        let maxRadius = 100; // 最多顯示半徑 100 公尺
-        let r = Math.min(e.accuracy / 2, maxRadius);
-        L.circle(e.latlng, {
-          radius: r,
-          color: 'blue',
-          fillOpacity: 0.2
-        }).addTo(this.map);
-      });
+  // 實時追蹤位置
+  this.userLocationCircle = null;
+  this.map.locate({ setView: true, maxZoom: 16, watch: true });
 
-        this.map.on('locationerror', () => {
-          alert("無法取得你的定位，使用預設地點。");
-          this.map.setView([3.0000, 101.6167], 14);
-        });
+  this.map.on('locationfound', e => {
+    let maxRadius = 100; // 最多顯示半徑 100 公尺
+    let r = Math.min(e.accuracy / 2, maxRadius);
+
+    // 若已經有圓圈，則更新位置及半徑
+    if (this.userLocationCircle) {
+      this.userLocationCircle.setLatLng(e.latlng);
+      this.userLocationCircle.setRadius(r);
+    } else {
+      this.userLocationCircle = L.circle(e.latlng, {
+        radius: r,
+        color: 'blue',
+        fillOpacity: 0.2
+      }).addTo(this.map);
+    }
+  });
+
+  this.map.on('locationerror', () => {
+    alert("無法取得你的定位，使用預設地點。");
+    this.map.setView([3.0000, 101.6167], 14);
+  });
 
         this.markers = new L.FeatureGroup();
         this.filteredTypes = [];
