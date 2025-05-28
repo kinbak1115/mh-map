@@ -178,7 +178,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 4.0.0</div>
+  <div id="version">版本 4.0.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -430,7 +430,7 @@ constructor() {
 
   // 實時追蹤位置
   this.userLocationCircle = null;
-  this.map.locate({ setView: true, maxZoom: 16, watch: true });
+  this.map.locate({ setView: false, maxZoom: 16, watch: true });
 
   this.map.on('locationfound', e => {
     let maxRadius = 100; // 最多顯示半徑 100 公尺
