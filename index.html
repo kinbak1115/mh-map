@@ -424,13 +424,18 @@ function getNearestTimeString(marker) {
 
     class MapApp {
 constructor() {
-  this.map = L.map('map', {
-    doubleClickZoom: false
-  });
+ this.map = L.map('map', {
+  doubleClickZoom: false
+}).setView([3.0000, 101.6167], 14);
 
-  // 實時追蹤位置
-  this.userLocationCircle = null;
-  this.map.locate({ setView: false, maxZoom: 16, watch: true });
+this.map.locate({ setView: false, maxZoom: 16, watch: true });
+
+let firstLocation = true;
+this.map.on('locationfound', e => {
+  if (firstLocation) {
+    this.map.setView(e.latlng, 16);
+    firstLocation = false;
+  }
 
   this.map.on('locationfound', e => {
     let maxRadius = 100; // 最多顯示半徑 100 公尺
