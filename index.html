@@ -567,7 +567,6 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
     raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
   };
 
-  // 判断是否大连狩猎
   let useIconUrl = iconUrls[type];
   let isRaid = false;
   if (marker && marker.data && marker.data.name === "大連狩獵") {
@@ -575,10 +574,9 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
     isRaid = true;
   }
 
-  // 原始大小
   let size = 40 * scale;
   if (isRaid) {
-    size = size * 0.75; // raid.png 小 10%
+    size = size * 0.75;
   }
 
   let timeStr = "";
@@ -590,10 +588,21 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
 
   let timeFontSize = Math.max(10, Math.floor(14 * scale));
 
+  // 檢查備註是否有 f，要畫紅叉
+  let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+
+  // 淺紅色叉SVG（置中蓋在icon上）
+  const redCrossSVG = `
+    <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
+      <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+      <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+  `;
+
   return L.divIcon({
     className: '',
     html: `
-      <div class="marker-wrapper">
+      <div class="marker-wrapper" style="position:relative;">
         <div class="marker-border" style="
           background-image: url('${useIconUrl}');
           background-size: contain;
@@ -603,6 +612,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           height: ${size}px;
           position: relative;
         ">
+          ${showRedCross ? redCrossSVG : ""}
           ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
           ${orderNumber !== null ? `
             <div class="marker-order-badge" style="
