@@ -474,7 +474,6 @@ initControls() {
     div.innerHTML = `
       <div class="btn-row">
         <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
-        <button onclick="app.toggleMarkerDragging()" id="dragBtn">拖動標記</button>
         <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
       </div>
       <label>顯示顏色：</label>
@@ -503,7 +502,7 @@ initControls() {
   };
   control.addTo(this.map);
   this.currentMode = "done";
-  this.markerDraggingEnabled = false; // 默认标记拖动禁用
+  // 已移除拖动相关功能
   document.getElementById('restoreFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -605,7 +604,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           height: ${size}px;
           position: relative;
         ">
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;white-space:nowrap;">${timeStr}</div>` : ""}
+          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5[...]
           ${orderNumber !== null ? `
             <div class="marker-order-badge" style="
               position: absolute;
@@ -700,7 +699,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           data.time2 = '';
         }
         const marker = L.marker(latlng, {
-          draggable: this.currentMode === 'editMarker',
+          draggable: false, // 已移除拖动功能
           icon: this.getCustomIcon(data.type, 1, { data })
         });
         marker.data = data;
@@ -735,7 +734,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
               // 新增：每次打開表單時根據主時間刷新時間1/時間2選單
               updateTime1Time2Options();
               document.getElementById('markerTime1').value = marker.data.time1 || '';
-              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
+              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : [...]
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
@@ -775,11 +774,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         marker.on('click', handler);
         marker.on('touchstart', handler);
       
-        marker.on('dragend', () => {
-          marker.data.lat = marker.getLatLng().lat;
-          marker.data.lng = marker.getLatLng().lng;
-          this.saveMarkers();
-        });
+        // 已移除拖动相关监听
       
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
@@ -859,17 +854,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           })
           .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
       }
-toggleMarkerDragging() {
-  this.markerDraggingEnabled = !this.markerDraggingEnabled;
-  const dragBtn = document.getElementById('dragBtn');
-  if (this.markerDraggingEnabled) {
-    dragBtn.textContent = "禁用拖動";
-    this.markers.eachLayer(marker => marker.dragging.enable());
-  } else {
-    dragBtn.textContent = "拖動標記";
-    this.markers.eachLayer(marker => marker.dragging.disable());
-  }
-}
+
 toggleEditMode() {
   if (this.routeSelecting) {
     app.clearAllMarkerBorders();
@@ -880,13 +865,10 @@ toggleEditMode() {
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
     document.getElementById('editBtn').textContent = "結束編輯";
-    this.markerDraggingEnabled = false; // 强制禁用拖动
-    document.getElementById('dragBtn').textContent = "拖動標記";
-    this.markers.eachLayer(marker => marker.dragging.disable());
+    // 拖动相关功能已移除
   } else {
     this.currentMode = "done";
     document.getElementById('editBtn').textContent = "開始編輯";
-    this.markers.eachLayer(marker => marker.dragging.disable());
     this.saveMarkers();
     document.getElementById('markerEditModal').style.display = 'none';
     const infoPanel = document.getElementById('infoPanel');
@@ -903,7 +885,7 @@ toggleEditMode() {
             this.currentMode = 'done';
             const editBtn = document.getElementById('editBtn');
             if (editBtn) editBtn.textContent = '開始編輯';
-            this.markers.eachLayer(marker => marker.dragging.disable());
+            // 拖动相关功能已移除
             document.getElementById('markerEditModal').style.display = 'none';
             const infoPanel = document.getElementById('infoPanel');
             if (infoPanel) infoPanel.style.display = '';
