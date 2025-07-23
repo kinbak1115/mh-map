@@ -502,7 +502,6 @@ initControls() {
   };
   control.addTo(this.map);
   this.currentMode = "done";
-  // 已移除拖动相关功能
   document.getElementById('restoreFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -604,7 +603,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           height: ${size}px;
           position: relative;
         ">
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5[...]
+          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
           ${orderNumber !== null ? `
             <div class="marker-order-badge" style="
               position: absolute;
@@ -699,11 +698,11 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           data.time2 = '';
         }
         const marker = L.marker(latlng, {
-          draggable: false, // 已移除拖动功能
-          icon: this.getCustomIcon(data.type, 1, { data })
+          icon: this.getCustomIcon(data.type, 1, { data }),
+          draggable: false // remove drag功能
         });
         marker.data = data;
-        this.resetAllMarkers()
+        this.resetAllMarkers();
         let tapped = false;
         const handler = (e) => {
           if (tapped) return;
@@ -719,11 +718,11 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
               this.selectedMarkers.push(marker);
               if (markerElement) markerElement.classList.add('markerBorder');
             }
-            this.updateMarkerScales(); // 即時刷新順序
+            this.updateMarkerScales();
             return;
           }
           if (this.currentMode === "editMarker") {
-            this.resetAllMarkers()
+            this.resetAllMarkers();
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
             setTimeout(() => {
@@ -731,10 +730,9 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
               if (infoPanel) infoPanel.style.display = 'none';
               document.getElementById('markerName').value = marker.data.name;
               document.getElementById('markerTime').value = marker.data.time;
-              // 新增：每次打開表單時根據主時間刷新時間1/時間2選單
               updateTime1Time2Options();
               document.getElementById('markerTime1').value = marker.data.time1 || '';
-              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : [...]
+              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
@@ -745,7 +743,6 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
                 const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
                 const remark = document.getElementById('markerRemark').value.trim();
                 const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
-                // 新增：時間1/2
                 const time1 = document.getElementById('markerTime1').value;
                 const time2 = document.getElementById('markerTime2').selectedIndex > -1 ? document.getElementById('markerTime2').value : '';
                 marker.data.name = name;
@@ -765,7 +762,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
               };
             }, 0);
           } else {
-            this.resetAllMarkers()
+            this.resetAllMarkers();
             marker.setOpacity(1.0);
             marker.setZIndexOffset(1000);
             this.updateInfoPanel(marker.data);
@@ -773,9 +770,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         };
         marker.on('click', handler);
         marker.on('touchstart', handler);
-      
-        // 已移除拖动相关监听
-      
+        // 確認沒 dragend 事件
         this.selectedMarker = marker;
         this.markers.addLayer(marker);
         this.saveMarkers();
@@ -865,7 +860,6 @@ toggleEditMode() {
   if (this.currentMode === "done") {
     this.currentMode = "editMarker";
     document.getElementById('editBtn').textContent = "結束編輯";
-    // 拖动相关功能已移除
   } else {
     this.currentMode = "done";
     document.getElementById('editBtn').textContent = "開始編輯";
@@ -885,7 +879,6 @@ toggleEditMode() {
             this.currentMode = 'done';
             const editBtn = document.getElementById('editBtn');
             if (editBtn) editBtn.textContent = '開始編輯';
-            // 拖动相关功能已移除
             document.getElementById('markerEditModal').style.display = 'none';
             const infoPanel = document.getElementById('infoPanel');
             if (infoPanel) infoPanel.style.display = '';
