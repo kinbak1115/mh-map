@@ -532,7 +532,7 @@ class MapApp {
 
   autoAssignTimeForRelatedMarkers(marker) {
     const totalPoints = marker.data.totalPoints;
-    if (totalPoints !== 2 && totalPoints !== 3) return;
+    if (![2, 3, 4, 5, 6].includes(totalPoints)) return;
 
     const selectedTime = marker.data.time;
     const selectedMapId = marker.data.mapId;
@@ -553,46 +553,32 @@ class MapApp {
       }
     });
 
-    if (totalPoints === 2) {
-      // Handle totalPoints = 2 (paired markers)
-      if (relatedMarkers.length > 1) {
-        alert('警告：找到多個具有相同 mapId 和 totalPoints=2 的標記，只更新第一個。');
-      }
-      if (relatedMarkers.length > 0) {
-        const pairedMarker = relatedMarkers[0];
-        const alternativeTimeIndex = selectedTimeIndex === 0 ? 1 : 0;
-        pairedMarker.data.time = timeOptions[alternativeTimeIndex];
-        pairedMarker.setIcon(this.getCustomIcon(pairedMarker.data.type, 1, pairedMarker));
-        if (this.selectedMarker === pairedMarker) {
-          this.updateInfoPanel(pairedMarker.data);
-        }
-      }
-    } else if (totalPoints === 3) {
-      // Handle totalPoints = 3 (three markers)
-      if (relatedMarkers.length > 2) {
-        alert('警告：找到多個具有相同 mapId 和 totalPoints=3 的標記，只更新前兩個。');
-        relatedMarkers = relatedMarkers.slice(0, 2);
-      }
+    // Limit to N-1 markers to avoid over-assignment
+    const maxRelated = totalPoints - 1;
+    if (relatedMarkers.length > maxRelated) {
+      alert(`警告：找到多個具有相同 mapId 和 totalPoints=${totalPoints} 的標記，只更新前 ${maxRelated} 個。`);
+      relatedMarkers = relatedMarkers.slice(0, maxRelated);
+    }
 
-      // Collect used time indices
-      const usedIndices = [selectedTimeIndex];
-      relatedMarkers.forEach(m => {
-        const idx = timeOptions.indexOf(m.data.time);
-        if (idx !== -1) usedIndices.push(idx);
-      });
+    // Collect used time indices
+    const usedIndices = [selectedTimeIndex];
+    relatedMarkers.forEach(m => {
+      const idx = timeOptions.indexOf(m.data.time);
+      if (idx !== -1) usedIndices.push(idx);
+    });
 
-      // If two markers have valid times, assign the remaining time to the third
-      if (usedIndices.length >= 2 && relatedMarkers.length >= 2) {
-        const availableIndices = [0, 1, 2].filter(i => !usedIndices.includes(i));
-        if (availableIndices.length > 0) {
-          // Find the third marker (not the current marker or the ones with used times)
-          const thirdMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1);
-          if (thirdMarker) {
-            thirdMarker.data.time = timeOptions[availableIndices[0]];
-            thirdMarker.setIcon(this.getCustomIcon(thirdMarker.data.type, 1, thirdMarker));
-            if (this.selectedMarker === thirdMarker) {
-              this.updateInfoPanel(thirdMarker.data);
-            }
+    // If N-1 markers have valid times, assign the remaining time to the Nth marker
+    if (usedIndices.length >= maxRelated && relatedMarkers.length >= maxRelated) {
+      const availableIndices = Array.from({ length: timeOptions.length }, (_, i) => i).filter(i => !usedIndices.includes(i));
+      if (availableIndices.length > 0) {
+        // Find the Nth marker (one without a valid time or with a time to be replaced)
+        const nthMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1) || 
+                         relatedMarkers[relatedMarkers.length - 1];
+        if (nthMarker) {
+          nthMarker.data.time = timeOptions[availableIndices[0]];
+          nthMarker.setIcon(this.getCustomIcon(nthMarker.data.type, 1, nthMarker));
+          if (this.selectedMarker === nthMarker) {
+            this.updateInfoPanel(nthMarker.data);
           }
         }
       }
@@ -649,7 +635,7 @@ class MapApp {
             marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
 
-            // Auto-assign time for related markers (totalPoints = 2 or 3)
+            // Auto-assign time for related markers
             this.autoAssignTimeForRelatedMarkers(marker);
 
             this.updateMarkerScales();
@@ -699,7 +685,6 @@ class MapApp {
     this.markers.clearLayers();
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
     saved.forEach(data => {
-      // 如果 totalPoints=1，強制設置時間為唯一的選項
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
