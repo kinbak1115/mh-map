@@ -255,6 +255,11 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
 
 // 選擇最近的先前時間
 function getNearestTimeString(marker) {
+  // Handle "現在" case
+  if (marker.data.time === "現在") {
+    return "";
+  }
+
   // Get the full time schedule from marker.data.time
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -536,6 +541,9 @@ class MapApp {
     const validTotalPoints = [2, 3, 4, 5, 6];
     if (!validTotalPoints.includes(marker.data.totalPoints)) return;
 
+    // Skip if the time is "現在"
+    if (marker.data.time === "現在") return;
+
     const selectedTotalPoints = marker.data.totalPoints;
     const selectedMapId = marker.data.mapId;
     const timeOptions = timeTableByTotalPoints[selectedTotalPoints];
@@ -611,27 +619,9 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    // If adding a new marker with totalPoints in [2, 3, 4, 5, 6], assign an unused schedule
-    if ([2, 3, 4, 5, 6].includes(data.totalPoints) && data.time === "現在") {
-      const timeOptions = timeTableByTotalPoints[data.totalPoints];
-      let pairedMarkers = [];
-      this.markers.eachLayer(m => {
-        if (m.data.mapId === data.mapId && m.data.totalPoints === data.totalPoints) {
-          pairedMarkers.push(m);
-        }
-      });
-      const usedTimeIndices = new Set();
-      pairedMarkers.forEach(m => {
-        const idx = timeOptions.indexOf(m.data.time);
-        if (idx !== -1) usedTimeIndices.add(idx);
-      });
-      const availableTimeIndex = timeOptions.findIndex((_, i) => !usedTimeIndices.has(i));
-      if (availableTimeIndex !== -1) {
-        data.time = timeOptions[availableTimeIndex];
-      } else if (timeOptions.length > 0) {
-        data.time = timeOptions[0]; // Fallback to first schedule
-        console.warn(`No unused time schedule for new marker with mapId=${data.mapId}, totalPoints=${data.totalPoints}. Using first schedule.`);
-      }
+    // For totalPoints = 1, automatically assign the only schedule
+    if (data.totalPoints === 1) {
+      data.time = timeTableByTotalPoints[1][0];
     }
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
@@ -702,8 +692,6 @@ class MapApp {
     marker.on('touchstart', handler);
     this.selectedMarker = marker;
     this.markers.addLayer(marker);
-    // Auto-assign time for paired markers after adding the new marker
-    this.autoAssignTimeForPairedMarker(marker);
     this.saveMarkers();
     this.filterMarkersByTypes();
     this.updateMarkerScales();
