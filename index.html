@@ -9,41 +9,52 @@
     #map { height: 100vh; }
     .leaflet-control-custom {
       background: white;
-      padding: 10px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-      font-size: 16px;
-      width: 240px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      font-size: 18px;
+      width: 280px;
       box-sizing: border-box;
+      border-radius: 8px;
     }
     .leaflet-control-custom .btn-row {
       display: flex;
-      gap: 6px;
-      margin-bottom: 6px;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     .leaflet-control-custom button {
       flex: 1;
-      font-size: 18px;
-      padding: 10px;
-      box-sizing: border-box;
+      font-size: 20px;
+      padding: 12px;
+      min-height: 48px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .leaflet-control-custom button:hover {
+      background: #e0e0e0;
     }
     select[multiple] {
       width: 100%;
-      font-size: 18px;
-      padding: 6px;
-      margin-bottom: 10px;
+      font-size: 20px;
+      padding: 8px;
+      margin-bottom: 12px;
+      border-radius: 6px;
     }
     @media (max-width: 600px) {
       .leaflet-control-custom {
         width: 100%;
-        font-size: 18px;
+        padding: 16px;
+        font-size: 22px;
       }
       .leaflet-control-custom button {
-        font-size: 28px;
-        padding: 18px;
-        min-height: 48px;
+        font-size: 24px;
+        padding: 16px;
+        min-height: 56px;
       }
       select[multiple], select, input[type="number"] {
-        font-size: 24px;
+        font-size: 26px;
         padding: 12px;
       }
     }
@@ -81,57 +92,101 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 220px;
+      width: 240px;
       background: white;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      font-size: 16px;
+      font-size: 18px;
       z-index: 1000;
     }
     .info-panel h3 {
       margin: 0 0 8px;
-      font-size: 18px;
+      font-size: 20px;
       border-bottom: 1px solid #ccc;
     }
     .info-panel p {
       margin: 8px 0;
     }
     .leaflet-popup-content { display: none; }
+    #markerEditModal {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 28px 36px;
+      z-index: 10000;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.4);
+      border-radius: 10px;
+      width: 240px;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    #markerEditModal h3 {
+      margin-top: 0;
+      font-size: 24px;
+    }
+    #markerEditModal select {
+      width: 100%;
+      font-size: 20px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+    }
+    #markerEditModal button {
+      font-size: 20px;
+      padding: 12px 24px;
+      min-height: 48px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #markerEditModal button:hover {
+      background: #e0e0e0;
+    }
+    @media (max-width: 600px) {
+      #markerEditModal {
+        width: 90%;
+        padding: 20px;
+        font-size: 22px;
+      }
+      #markerEditModal h3 {
+        font-size: 28px;
+      }
+      #markerEditModal select {
+        font-size: 24px;
+        padding: 14px;
+      }
+      #markerEditModal button {
+        font-size: 24px;
+        padding: 16px 32px;
+        min-height: 56px;
+      }
+    }
   </style>
 </head>
 <body>
 
 <!-- 🟦 Marker 編輯用 Modal（顯示在左上角） -->
-<div id="markerEditModal" style="
-  display:none;
-  position:fixed;
-  top: 20px;
-  left: 20px;
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 24px 32px;
-  z-index: 10000;
-  box-shadow: 0 2px 15px rgba(0,0,0,0.4);
-  border-radius: 10px;
-  width: 200px;
-  font-size: 16px;
-  line-height: 1.4;
-">
-  <h3 style="margin-top: 0; font-size: 22px;">更改標記資訊</h3>
+<div id="markerEditModal">
+  <h3>更改標記資訊</h3>
   <label for="markerName">名稱：</label>
-  <select id="markerName" style="width: 100%; font-size: 16px; padding: 12px;">
+  <select id="markerName">
     <option value="全天古龍種">全天古龍種</option>
     <option value="ABAB古龍種">ABAB古龍種</option>
     <option value="BABA古龍種">BABA古龍種</option>
     <option value="大連狩獵">大連狩獵</option>
   </select><br/><br/>
   <label for="markerTime">時間：</label>
-  <select id="markerTime" style="width: 100%; font-size: 16px; padding: 12px;">
+  <select id="markerTime">
     <!-- 由 JS 動態產生 -->
   </select><br/><br/>
   <label for="markerType">顏色：</label>
-  <select id="markerType" style="width: 100%; font-size: 16px; padding: 12px;">
+  <select id="markerType">
     <option value="0">⚪ 原始</option>
     <option value="1">🔴 紅</option>
     <option value="2">🔵 藍</option>
@@ -139,18 +194,18 @@
     <option value="4">🟣 紫</option>
   </select><br/><br/>
   <label for="markerRemark">狀態：</label>
-  <select id="markerRemark" style="width: 100%; font-size: 16px; padding: 12px;">
+  <select id="markerRemark">
     <option value="A確認">A確認</option>
     <option value="B確認">B確認</option>
     <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <div style="text-align:right;">
-    <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
+    <button id="saveMarkerBtn">儲存</button>
     <button onclick="
       document.getElementById('markerEditModal').style.display='none';
       const infoPanel = document.getElementById('infoPanel');
       if (infoPanel) infoPanel.style.display = '';
-    " style="font-size: 16px; padding: 8px 16px; margin-left: 12px;">取消</button>
+    ">取消</button>
   </div>
 </div>
 
@@ -245,7 +300,6 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     opt.textContent = timestr;
     markerTime.appendChild(opt);
   });
-  // 如果 totalPoints=1，自動選擇唯一的時間選項
   if (totalPoints === 1 && arr.length === 1) {
     markerTime.value = arr[0];
   } else if (selectedTime) {
@@ -255,28 +309,23 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
 
 // 選擇最近的先前時間
 function getNearestTimeString(marker) {
-  // Get the full time schedule from marker.data.time
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
 
-  // Get current time in local time zone (assumed Asia/Kuala_Lumpur)
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   let minDiff = Infinity;
   let bestDisplayTime = "";
 
-  // Find the closest previous time
   for (const t of times) {
     const m = t.match(/(\d{1,2}):(\d{2})/);
     if (!m) continue;
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
-    let diff = nowMin - total; // Positive diff means time is in the past
-    // Handle times crossing midnight
+    let diff = nowMin - total;
     if (diff < -12 * 60) diff += 24 * 60;
-    // Only consider past times (or exact match)
     if (diff >= 0 && diff < minDiff) {
       minDiff = diff;
       bestDisplayTime = t;
@@ -539,13 +588,11 @@ class MapApp {
     const timeOptions = timeTableByTotalPoints[totalPoints];
     const selectedTimeIndex = timeOptions.indexOf(selectedTime);
 
-    // If the selected time is invalid, do nothing
     if (selectedTimeIndex === -1) {
       console.warn('Invalid time selected for marker:', selectedTime);
       return;
     }
 
-    // Find other markers with the same mapId and totalPoints
     let relatedMarkers = [];
     this.markers.eachLayer(m => {
       if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === totalPoints) {
@@ -553,25 +600,21 @@ class MapApp {
       }
     });
 
-    // Limit to N-1 markers to avoid over-assignment
     const maxRelated = totalPoints - 1;
     if (relatedMarkers.length > maxRelated) {
       alert(`警告：找到多個具有相同 mapId 和 totalPoints=${totalPoints} 的標記，只更新前 ${maxRelated} 個。`);
       relatedMarkers = relatedMarkers.slice(0, maxRelated);
     }
 
-    // Collect used time indices
     const usedIndices = [selectedTimeIndex];
     relatedMarkers.forEach(m => {
       const idx = timeOptions.indexOf(m.data.time);
       if (idx !== -1) usedIndices.push(idx);
     });
 
-    // If N-1 markers have valid times, assign the remaining time to the Nth marker
     if (usedIndices.length >= maxRelated && relatedMarkers.length >= maxRelated) {
       const availableIndices = Array.from({ length: timeOptions.length }, (_, i) => i).filter(i => !usedIndices.includes(i));
       if (availableIndices.length > 0) {
-        // Find the Nth marker (one without a valid time or with a time to be replaced)
         const nthMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1) || 
                          relatedMarkers[relatedMarkers.length - 1];
         if (nthMarker) {
@@ -635,7 +678,6 @@ class MapApp {
             marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
 
-            // Auto-assign time for related markers
             this.autoAssignTimeForRelatedMarkers(marker);
 
             this.updateMarkerScales();
