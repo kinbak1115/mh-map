@@ -539,6 +539,7 @@ initControls() {
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
           <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
+          <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
         `;
         document.getElementById('panelContent').innerHTML = content;
       }
