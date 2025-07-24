@@ -485,49 +485,18 @@ initControls() {
       <option value="4">🟣 紫</option>
       </select>
       <div class="btn-row">
-        <button onclick="app.backupMarkers()">📤 備份</button>
-        <button onclick="app.restoreMarkers()">📥 還原</button>
-      </div>
-      <div class="btn-row">
         <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
       </div>
       <div class="btn-row">
         <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
         <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
       </div>
-      <input type="file" id="restoreFile" style="display:none" accept=".json">
     `;
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
   control.addTo(this.map);
   this.currentMode = "done";
-  document.getElementById('restoreFile').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const imported = JSON.parse(event.target.result);
-        const existing = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-        for (let i = 0; i < existing.length; i++) {
-          const marker = existing[i];
-          const match = imported.find(m =>
-            m.name === marker.name &&
-            Math.abs(m.lat - marker.lat) < 0.00001 &&
-            Math.abs(m.lng - marker.lng) < 0.00001
-          );
-          if (match) marker.type = match.type;
-        }
-        localStorage.setItem('mhnow_markers', JSON.stringify(existing));
-        alert('顏色還原成功，將重新載入地圖。');
-        location.reload();
-      } catch {
-        alert('還原失敗，檔案格式錯誤。');
-      }
-    };
-    reader.readAsText(file);
-  });
 }
 
       updateInfoPanel(data) {
@@ -827,19 +796,6 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           }
         });
         this.filteredTypes = types;
-      }
-
-      backupMarkers() {
-        const data = JSON.stringify(this.markers.getLayers().map(marker => marker.data));
-        const blob = new Blob([data], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'markers_backup.json';
-        link.click();
-      }
-
-      restoreMarkers() {
-        document.getElementById('restoreFile').click();
       }
 
       confirmImportFromGitHub() {
