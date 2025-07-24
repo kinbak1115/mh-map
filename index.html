@@ -341,7 +341,7 @@ class MapApp {
     this.markers.addTo(this.map);
 
     this.initControls();
-    this.loadSavedMarkers();
+    this.l);
     this.initEventListeners();
 
     this.map.on('zoomend', () => this.updateMarkerScales());
@@ -647,12 +647,14 @@ class MapApp {
     this.markers.clearLayers();
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
     saved.forEach(data => {
-      // 如果 totalPoints 為 1，自動設置時間為唯一的選項
-      if (data.totalPoints === 1 && !data.time) {
-        data.time = timeTableByTotalPoints[1][0]; // 自動設置為唯一的時間選項
+      // 如果 totalPoints 為 1，強制設置時間為唯一的選項
+      if (data.totalPoints === 1) {
+        data.time = timeTableByTotalPoints[1][0]; // 設置為唯一的時間選項
       }
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
+    // 確保加載後立即更新標記顯示
+    this.updateMarkerScales();
   }
 
   filterMarkersByTypes() {
