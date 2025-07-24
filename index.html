@@ -128,11 +128,26 @@
   </select><br/><br/>
   <label>時間：</label>
   <select id="markerTime" style="width: 100%; font-size: 16px; padding: 12px;">
-<option value="6:15AM 7:55AM 9:35AM 11:15AM 12:55PM 2:35PM 4:15PM 5:55PM 7:35PM 9:15PM 10:55PM">6:15AM 7:55AM 9:35AM 11:15AM 12:55PM 2:35PM 4:15PM 5:55PM 7:35PM 9:15PM 10:55PM</option>
-<option value="6:40AM 8:20AM 10:00AM 11:40AM 1:20PM 3:00PM 4:40PM 6:20PM 8:00PM 9:40PM 11:20PM">6:40AM 8:20AM 10:00AM 11:40AM 1:20PM 3:00PM 4:40PM 6:20PM 8:00PM 9:40PM 11:20PM</option>
-<option value="7:05AM 8:45AM 10:25AM 12:05PM 1:45PM 3:25PM 5:05PM 6:45PM 8:25PM 10:05PM">7:05AM 8:45AM 10:25AM 12:05PM 1:45PM 3:25PM 5:05PM 6:45PM 8:25PM 10:05PM</option>
-<option value="7:30AM 9:10AM 10:50AM 12:30PM 2:10PM 3:50PM 5:30PM 7:10PM 8:50PM 10:30PM">7:30AM 9:10AM 10:50AM 12:30PM 2:10PM 3:50PM 5:30PM 7:10PM 8:50PM 10:30PM</option> 
+    <option value="6:15AM 7:55AM 9:35AM 11:15AM 12:55PM 2:35PM 4:15PM 5:55PM 7:35PM 9:15PM 10:55PM">6:15AM 7:55AM 9:35AM 11:15AM 12:55PM 2:35PM 4:15PM 5:55PM 7:35PM 9:15PM 10:55PM</option>
+    <option value="6:40AM 8:20AM 10:00AM 11:40AM 1:20PM 3:00PM 4:40PM 6:20PM 8:00PM 9:40PM 11:20PM">6:40AM 8:20AM 10:00AM 11:40AM 1:20PM 3:00PM 4:40PM 6:20PM 8:00PM 9:40PM 11:20PM</option>
+    <option value="7:05AM 8:45AM 10:25AM 12:05PM 1:45PM 3:25PM 5:05PM 6:45PM 8:25PM 10:05PM">7:05AM 8:45AM 10:25AM 12:05PM 1:45PM 3:25PM 5:05PM 6:45PM 8:25PM 10:05PM</option>
+    <option value="7:30AM 9:10AM 10:50AM 12:30PM 2:10PM 3:50PM 5:30PM 7:10PM 8:50PM 10:30PM">7:30AM 9:10AM 10:50AM 12:30PM 2:10PM 3:50PM 5:30PM 7:10PM 8:50PM 10:30PM</option>
   </select><br/><br/>
+  <label for="markerTotalPoints">地图总采集点：</label>
+  <select id="markerTotalPoints" style="width:100%;font-size:16px;padding:12px;">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+  </select>
+  <br/><br/>
+  <label for="markerMapId">地圖編號：</label>
+  <input id="markerMapId" type="number" style="width:100%;font-size:16px;padding:12px;">
+  <br/><br/>
   <!-- 新增：時間1、時間2選擇器 -->
   <label for="markerTime1">時間1（上次選擇）：</label>
   <select id="markerTime1" style="width:100%;font-size:16px;padding:12px;"></select>
@@ -155,14 +170,14 @@
     <option value="AB確認">AB確認</option>
   </select><br/><br/>
   <!-- 新增時間偏差欄位 -->
-<label for="markerOffset">時間偏差（分鐘）：</label>
-<select id="markerOffset" style="width:100%;font-size:16px;padding:12px;">
-  <option value="0">0</option>
-  <option value="1">1</option>
-  <option value="2">2</option>
-  <option value="3">3</option>
-  <option value="4">4</option>
-</select><br/><br/>
+  <label for="markerOffset">時間偏差（分鐘）：</label>
+  <select id="markerOffset" style="width:100%;font-size:16px;padding:12px;">
+    <option value="0">0</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+  </select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn" style="font-size: 16px; padding: 8px 16px;">儲存</button>
     <button onclick="
@@ -178,7 +193,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 3.9.5</div>
+  <div id="version">版本 4.1.0</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -201,6 +216,63 @@ const allTimes = [
   "10:55PM", "11:20PM"
 ];
 
+// 時間表 by totalPoints
+function getTimesByTotalPoints(totalPoints) {
+  const timesTable = {
+    1: [
+      ["06:15","07:05","07:55","08:45","09:35","10:25","11:15","12:05","12:55","13:45","14:35","15:25","16:15","17:05","17:55","18:45","19:35","20:25","21:15","22:05"]
+    ],
+    2: [
+      ["06:15","07:55","08:45","09:35","10:25","11:15","12:05","12:55","13:45","14:35","15:25","16:15","17:05","17:55","18:45","19:35","20:25","21:15","22:05","22:55"],
+      ["07:05","08:45","09:35","10:25","11:15","12:05","12:55","13:45","14:35","15:25","16:15","17:05","17:55","18:45","19:35","20:25","21:15","22:05","22:55"]
+    ],
+    3: [
+      ["06:15","08:45","11:15","13:45","16:15","18:45","21:15"],
+      ["07:05","09:35","12:05","14:35","17:05","19:35","22:05"],
+      ["07:55","10:25","12:55","15:25","17:55","20:25"]
+    ],
+    4: [
+      ["06:15","07:55","09:35","11:15","12:55","14:35","16:15","17:55","19:35","21:15","22:55"],
+      ["06:40","08:20","10:00","11:40","13:20","15:00","16:40","18:20","20:00","21:40","23:20"],
+      ["07:05","08:45","10:25","12:05","13:45","15:25","17:05","18:45","20:25","22:05"],
+      ["07:30","09:10","10:50","12:30","14:10","15:50","17:30","19:10","20:50","22:30"]
+    ],
+    5: [
+      ["06:15","08:20","10:25","12:30","14:35","16:40","18:45","20:50","22:55"],
+      ["06:40","08:45","10:50","12:55","15:00","17:05","19:10","21:15","23:20"],
+      ["07:05","09:10","11:15","13:20","15:25","17:30","19:35","21:40"],
+      ["07:30","09:35","11:40","13:45","15:50","17:55","20:00","22:05"],
+      ["07:55","10:00","12:05","14:10","16:15","18:20","20:25","22:30"]
+    ],
+    6: [
+      ["06:15","08:45","11:15","13:45","16:15","18:45","21:15"],
+      ["06:40","09:10","11:40","14:10","16:40","19:10","21:40"],
+      ["07:05","09:35","12:05","14:35","17:05","19:35","22:05"],
+      ["07:30","10:00","12:30","15:00","17:30","20:00","22:30"],
+      ["07:55","10:25","12:55","15:25","17:55","20:25","22:55"],
+      ["08:20","10:50","13:20","15:50","18:20","20:50","23:20"]
+    ],
+    7: [
+      ["06:15","08:45","11:15","13:45","16:15","18:45","21:15"],
+      ["06:40","09:10","11:40","14:10","16:40","19:10","21:40"],
+      ["07:05","09:35","12:05","14:35","17:05","19:35","22:05"],
+      ["07:30","10:00","12:30","15:00","17:30","20:00","22:30"],
+      ["07:55","10:25","12:55","15:25","17:55","20:25","22:55"],
+      ["08:20","10:50","13:20","15:50","18:20","20:50","23:20"]
+    ],
+    8: [
+      ["06:15","08:45","11:15","13:45","16:15","18:45","21:15"],
+      ["06:40","09:10","11:40","14:10","16:40","19:10","21:40"],
+      ["07:05","09:35","12:05","14:35","17:05","19:35","22:05"],
+      ["07:30","10:00","12:30","15:00","17:30","20:00","22:30"],
+      ["07:55","10:25","12:55","15:25","17:55","20:25","22:55"],
+      ["08:20","10:50","13:20","15:50","18:20","20:50","23:20"]
+    ]
+  };
+  // 預設給第一組
+  return timesTable[totalPoints] ? timesTable[totalPoints][0] : [];
+}
+
     // 時間表對應顏色
 const timeToType = {
   "6:15AM 7:55AM 9:35AM 11:15AM 12:55PM 2:35PM 4:15PM 5:55PM 7:35PM 9:15PM 10:55PM": 1, // 紅
@@ -208,6 +280,82 @@ const timeToType = {
   "7:05AM 8:45AM 10:25AM 12:05PM 1:45PM 3:25PM 5:05PM 6:45PM 8:25PM 10:05PM": 3,         // 綠
   "7:30AM 9:10AM 10:50AM 12:30PM 2:10PM 3:50PM 5:30PM 7:10PM 8:50PM 10:30PM": 4         // 紫
 };
+
+function updateTime1Time2Options() {
+  const markerTime = document.getElementById('markerTime');
+  const markerTime1 = document.getElementById('markerTime1');
+  const markerTime2 = document.getElementById('markerTime2');
+  const markerTotalPoints = document.getElementById('markerTotalPoints');
+  const totalPoints = parseInt(markerTotalPoints.value, 10) || 1;
+
+  // 用 totalPoints 產生時間1選項
+  const times = getTimesByTotalPoints(totalPoints);
+
+  markerTime1.innerHTML = '';
+  times.forEach(t => {
+    const opt1 = document.createElement('option');
+    opt1.value = t;
+    opt1.textContent = t;
+    markerTime1.appendChild(opt1);
+  });
+
+  // 時間2原本邏輯
+  markerTime2.innerHTML = '';
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  allTimes.forEach(t => {
+    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+    if (!m) return;
+    let h = parseInt(m[1], 10);
+    let mm = parseInt(m[2], 10);
+    let ap = m[3].toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    const total = h * 60 + mm;
+    if (total > nowMin) {
+      const opt2 = document.createElement('option');
+      opt2.value = t;
+      opt2.textContent = t;
+      markerTime2.appendChild(opt2);
+    }
+  });
+
+  markerTime1.value = times[0] || '';
+  markerTime2.selectedIndex = -1;
+}
+
+// 綁定：選時間自動選顏色、名稱預設全天古龍種
+document.addEventListener('DOMContentLoaded', function() {
+  updateTime1Time2Options();
+  setInterval(updateTime1Time2Options, 60000);
+
+  document.getElementById('markerTime').addEventListener('change', function() {
+    updateTime1Time2Options();
+    document.getElementById('markerName').value = '全天古龍種';
+    const timestr = this.value;
+    const times = timestr.split(/\s+/).filter(Boolean);
+    const nearest = getNearestTime(timestr);
+    const idx = times.findIndex(t => t === nearest);
+    if (idx !== -1) {
+      const ab = idx % 2 === 0 ? 'A' : 'B';
+      document.getElementById('markerRemark').value = ab + '確認';
+      const time1Select = document.getElementById('markerTime1');
+      if (!time1Select.value) {
+        time1Select.value = nearest;
+      }
+    } else {
+      document.getElementById('markerRemark').value = '';
+    }
+    const type = timeToType[timestr] ?? 0;
+    document.getElementById('markerType').value = type;
+  });
+
+  document.getElementById('markerTotalPoints').addEventListener('change', function() {
+    updateTime1Time2Options();
+  });
+
+  updateTime1Time2Options();
+});
 
     // 工具：給一組時間字串，找出最靠近現在的那一個
     function getNearestTime(timestr) {
@@ -236,111 +384,6 @@ const timeToType = {
       return best;
     }
 
-function updateTimeOptionLabels() {
-  const markerTime = document.getElementById('markerTime');
-  if (!markerTime) return;
-  for (const opt of markerTime.options) {
-    const nearest = getNearestTime(opt.value);
-    // 找出這個最近時間是A還是B
-    let typeLabel = '';
-    if (nearest) {
-      // 用原始字串分割，找到 index
-      const times = opt.value.split(/\s+/).filter(Boolean);
-      const idx = times.findIndex(t => t === nearest);
-      if (idx !== -1) {
-        typeLabel = (idx % 2 === 0) ? '（A）' : '（B）';
-      }
-      opt.textContent = nearest + typeLabel;
-    } else {
-      opt.textContent = opt.value;
-    }
-  }
-}
-
-// 根據主時間表更新時間1/時間2選單（時間2為全部38種）
-function updateTime1Time2Options() {
-  const markerTime = document.getElementById('markerTime');
-  const markerTime1 = document.getElementById('markerTime1');
-  const markerTime2 = document.getElementById('markerTime2');
-  if (!markerTime || !markerTime1 || !markerTime2) return;
-  const times = markerTime.value.split(/\s+/).filter(Boolean);
-
-  // 时间1：主时间表那一组
-  markerTime1.innerHTML = '';
-  times.forEach(t => {
-    const opt1 = document.createElement('option');
-    opt1.value = t;
-    opt1.textContent = t;
-    markerTime1.appendChild(opt1);
-  });
-
-  // 时间2：标准顺序，只显示未来
-  markerTime2.innerHTML = '';
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  allTimes.forEach(t => {
-    const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-    if (!m) return;
-    let h = parseInt(m[1], 10);
-    let mm = parseInt(m[2], 10);
-    let ap = m[3].toUpperCase();
-    if (ap === "PM" && h !== 12) h += 12;
-    if (ap === "AM" && h === 12) h = 0;
-    const total = h * 60 + mm;
-    if (total > nowMin) {
-      const opt2 = document.createElement('option');
-      opt2.value = t;
-      opt2.textContent = t;
-      markerTime2.appendChild(opt2);
-    }
-  });
-
-  // 只设置时间1，时间2不要自动选
-  const nearest = getNearestTime(markerTime.value);
-  markerTime1.value = nearest;
-  markerTime2.selectedIndex = -1; // 关键：让时间2没有选项被选中
-}
-
-// 綁定：選時間自動選顏色、名稱預設全天古龍種
-document.addEventListener('DOMContentLoaded', function() {
-  updateTimeOptionLabels();
-  updateTime1Time2Options();
-  setInterval(updateTimeOptionLabels, 60000);
-
-  // 當主時間選單變動，更新時間1/2選單
-  document.getElementById('markerTime').addEventListener('change', function() {
-    updateTime1Time2Options();
-
-    // 自动设置名称
-    document.getElementById('markerName').value = '全天古龍種';
-
-    const timestr = this.value;
-    const times = timestr.split(/\s+/).filter(Boolean);
-
-    // 自动设置备注
-    const nearest = getNearestTime(timestr);
-    const idx = times.findIndex(t => t === nearest);
-    if (idx !== -1) {
-      const ab = idx % 2 === 0 ? 'A' : 'B';
-      document.getElementById('markerRemark').value = ab + '確認';
-      // 只有时间1为空才自动赋值
-      const time1Select = document.getElementById('markerTime1');
-      if (!time1Select.value) {
-        time1Select.value = nearest;
-      }
-    } else {
-      document.getElementById('markerRemark').value = '';
-    }
-
-    // 自动设置颜色
-    const type = timeToType[timestr] ?? 0;
-    document.getElementById('markerType').value = type;
-  });
-
-  // 初次載入設置時間1/2選單
-  updateTime1Time2Options();
-});
-
     // 工具函數：加分鐘並回傳hh:mmAM/PM格式
     function addMinutesToTimeString(timestr, offset) {
       let m = timestr.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
@@ -361,22 +404,15 @@ document.addEventListener('DOMContentLoaded', function() {
       return `${showh}:${nmm.toString().padStart(2, '0')}${nap}`;
     }
 
-    // === 主要顯示時間的邏輯 ===
 function getNearestTimeString(marker) {
-  // 取得时间表
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-
-  // ABAB/BABA支持
   if (marker.data.name === "ABAB古龍種") {
     times = times.filter((_, idx) => idx % 2 === 0);
   } else if (marker.data.name === "BABA古龍種") {
     times = times.filter((_, idx) => idx % 2 === 1);
   }
-
-  // 时间1和时间2都选了：推规律
   if (marker.data.time1 && marker.data.time2 && marker.data.time) {
     const idx1 = times.findIndex(t => t === marker.data.time1);
-    // 支持时间2为allTimes中的任一时段
     const idx2 = allTimes.findIndex(t => t === marker.data.time2);
     if (idx1 !== -1 && idx2 !== -1 && idx2 !== idx1) {
       const step = idx2 - idx1;
@@ -391,16 +427,12 @@ function getNearestTimeString(marker) {
       }
     }
   }
-
   if (!times.length) return "";
-
-  // ±25分钟内才显示
   const offset = parseInt(marker.data.offsetMinutes || 0, 10);
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   let minDiff = Infinity;
   let bestDisplayTime = "";
-
   for (const t of times) {
     let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
     if (!m) continue;
@@ -423,477 +455,484 @@ function getNearestTimeString(marker) {
   return bestDisplayTime;
 }
 
-    class MapApp {
-      constructor() {
-        this.map = L.map('map', {
-          doubleClickZoom: false
-        });
-        this.map.locate({ setView: true, maxZoom: 16 });
+class MapApp {
+  constructor() {
+    this.map = L.map('map', {
+      doubleClickZoom: false
+    });
+    this.map.locate({ setView: true, maxZoom: 16 });
 
-      this.map.on('locationfound', e => {
-        let maxRadius = 100; // 最多顯示半徑 100 公尺
-        let r = Math.min(e.accuracy / 2, maxRadius);
-        L.circle(e.latlng, {
-          radius: r,
-          color: 'blue',
-          fillOpacity: 0.2
-        }).addTo(this.map);
-      });
+    this.map.on('locationfound', e => {
+      let maxRadius = 100;
+      let r = Math.min(e.accuracy / 2, maxRadius);
+      L.circle(e.latlng, {
+        radius: r,
+        color: 'blue',
+        fillOpacity: 0.2
+      }).addTo(this.map);
+    });
 
-        this.map.on('locationerror', () => {
-          alert("無法取得你的定位，使用預設地點。");
-          this.map.setView([3.0000, 101.6167], 14);
-        });
+    this.map.on('locationerror', () => {
+      alert("無法取得你的定位，使用預設地點。");
+      this.map.setView([3.0000, 101.6167], 14);
+    });
 
-        this.markers = new L.FeatureGroup();
-        this.filteredTypes = [];
-        this.lastMarkerType = 0;
-        this.routeSelecting = false;
-        this.selectedMarkers = [];
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
-        }).addTo(this.map);
-        this.markers.addTo(this.map);
-
-        this.initControls();
-        this.loadSavedMarkers();
-        this.initEventListeners();
-
-        this.map.on('zoomend', () => this.updateMarkerScales());
-        this.updateMarkerScales();
-
-        // 每分鐘自動刷新標記顯示時間
-        setInterval(() => this.updateMarkerScales(), 60 * 1000);
-      }
-
-initControls() {
-  const control = L.control({ position: 'topright' });
-  control.onAdd = () => {
-    const div = L.DomUtil.create('div', 'leaflet-control-custom');
-    div.innerHTML = `
-      <div class="btn-row">
-        <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
-        <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
-      </div>
-      <label>顯示顏色：</label>
-      <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
-      <option value="0">⚪ 原始</option>
-      <option value="1">🔴 紅</option>
-      <option value="2">🔵 藍</option>
-      <option value="3">🟢 綠</option>
-      <option value="4">🟣 紫</option>
-      </select>
-      <div class="btn-row">
-        <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
-      </div>
-      <div class="btn-row">
-        <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
-        <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
-      </div>
-    `;
-    L.DomEvent.disableClickPropagation(div);
-    return div;
-  };
-  control.addTo(this.map);
-  this.currentMode = "done";
-}
-
-      updateInfoPanel(data) {
-        const content = `
-          <p><strong>${data.name}</strong></p>
-          <p>時間：${data.time}</p>
-          <p>時間1：${data.time1 || ''}</p>
-          <p>時間2：${data.time2 || ''}</p>
-          <p>類型：${markerColors[data.type] || '原始'}</p>
-          <p>備註：${data.remark}</p>
-          <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
-          <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
-          <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
-          <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
-        `;
-        document.getElementById('panelContent').innerHTML = content;
-      }
-
-      initEventListeners() {
-        let mapTapped = false;
-        const handleMapTap = (e) => {
-          if (mapTapped) return;
-          mapTapped = true;
-          setTimeout(() => (mapTapped = false), 300);
-          if (this.currentMode === "editMarker") {
-            this.showMarkerForm(e.latlng);
-          }
-        };
-        this.map.on("click", handleMapTap);
-        this.map.on("touchstart", handleMapTap);
-      }
-
-getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-  const iconUrls = {
-    0: iconUrl,
-    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
-    raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
-  };
-
-  let useIconUrl = iconUrls[type];
-  let isRaid = false;
-  if (marker && marker.data && marker.data.name === "大連狩獵") {
-    useIconUrl = iconUrls.raid;
-    isRaid = true;
-  }
-
-  let size = 40 * scale;
-  if (isRaid) {
-    size = size * 0.75;
-  }
-
-  let timeStr = "";
-  if (marker) {
-    if (!(marker.data && marker.data.name === "大連狩獵")) {
-      timeStr = getNearestTimeString(marker);
-    }
-  }
-
-  let timeFontSize = Math.max(10, Math.floor(14 * scale));
-
-  // 檢查備註是否有 f，要畫紅叉
-  let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
-
-  // 淺紅色叉SVG（置中蓋在icon上）
-  const redCrossSVG = `
-    <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
-      <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-      <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-    </svg>
-  `;
-
-  return L.divIcon({
-    className: '',
-    html: `
-      <div class="marker-wrapper" style="position:relative;">
-        <div class="marker-border" style="
-          background-image: url('${useIconUrl}');
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          width: ${size}px;
-          height: ${size}px;
-          position: relative;
-        ">
-          ${showRedCross ? redCrossSVG : ""}
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
-          ${orderNumber !== null ? `
-            <div class="marker-order-badge" style="
-              position: absolute;
-              top: ${-10 * scale}px;
-              left: ${-10 * scale}px;
-              width: ${Math.max(20 * scale, 18)}px;
-              height: ${Math.max(20 * scale, 18)}px;
-              background: #ff6600;
-              color: #fff;
-              border-radius: 50%;
-              font-size: ${Math.max(11 * scale, 12)}px;
-              font-weight: bold;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-              border: ${2 * scale}px solid #fff;
-              z-index: 20;
-            ">${orderNumber+1}</div>
-          ` : ""}
-        </div>
-      </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2]
-  });
-}
-      isMobile() {
-        return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-      }
-
-      updateMarkerScales() {
-        const zoom = this.map.getZoom();
-        const mobile = this.isMobile();
-        let scale = 1.0;
-        if (mobile) { 
-          if (zoom >= 18) scale = 2.0;
-          else if (zoom === 17) scale = 1.6;
-          else if (zoom === 16) scale = 1.2;
-          else if (zoom === 15) scale = 1.0;
-          else if (zoom === 14) scale = 0.6;
-          else scale = 0.3;
-        } else {
-          if (zoom >= 18) scale = 1.0;
-          else if (zoom === 17) scale = 0.9;
-          else if (zoom === 16) scale = 0.8;
-          else if (zoom === 15) scale = 0.5;
-          else if (zoom === 14) scale = 0.3;
-          else scale = 0.3;
-        }
-        this.markers.eachLayer(marker => {
-          let orderNumber = null;
-          if (this.routeSelecting) {
-            const idx = this.selectedMarkers.indexOf(marker);
-            if (idx !== -1) orderNumber = idx;
-          }
-          marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker, orderNumber));
-          const el = marker.getElement();
-          if (el && this.selectedMarkers.includes(marker)) {
-            el.classList.add('markerBorder');
-          }
-        });
-        document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
-      }
-
-      showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘)）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0`);
-        if (input) {
-          const [name, time, type, remark, offsetStr] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-          const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
-          this.lastMarkerType = markerType;
-        }
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
-        document.getElementById('markerEditModal').style.display = 'none';
-      }
-
-      resetAllMarkers() {
-        this.markers.eachLayer(m => {
-          m.setOpacity(0.6);
-          m.setZIndexOffset(0);
-        });
-      }
-
-      addMarker(latlng, data) {
-        // 新增：預設time1/time2資料
-        if (!data.time1 && data.time) {
-          const times = data.time.split(/\s+/).filter(Boolean);
-          data.time1 = times[0] || '';
-          data.time2 = '';
-        }
-        const marker = L.marker(latlng, {
-          icon: this.getCustomIcon(data.type, 1, { data }),
-          draggable: false // remove drag功能
-        });
-        marker.data = data;
-        this.resetAllMarkers();
-        let tapped = false;
-        const handler = (e) => {
-          if (tapped) return;
-          tapped = true;
-          setTimeout(() => tapped = false, 300);
-          this.selectedMarker = marker;
-          if (this.routeSelecting) {
-            const markerElement = marker.getElement();
-            if (this.selectedMarkers.includes(marker)) {
-              this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
-              if (markerElement) markerElement.classList.remove('markerBorder');
-            } else {
-              this.selectedMarkers.push(marker);
-              if (markerElement) markerElement.classList.add('markerBorder');
-            }
-            this.updateMarkerScales();
-            return;
-          }
-          if (this.currentMode === "editMarker") {
-            this.resetAllMarkers();
-            marker.setOpacity(1.0);
-            marker.setZIndexOffset(1000);
-            setTimeout(() => {
-              const infoPanel = document.getElementById('infoPanel');
-              if (infoPanel) infoPanel.style.display = 'none';
-              document.getElementById('markerName').value = marker.data.name;
-              document.getElementById('markerTime').value = marker.data.time;
-              updateTime1Time2Options();
-              document.getElementById('markerTime1').value = marker.data.time1 || '';
-              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
-              document.getElementById('markerType').value = marker.data.type;
-              document.getElementById('markerRemark').value = marker.data.remark;
-              document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
-              document.getElementById('markerEditModal').style.display = 'block';
-              document.getElementById('saveMarkerBtn').onclick = () => {
-                const name = document.getElementById('markerName').value.trim();
-                const time = document.getElementById('markerTime').value;
-                const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
-                const remark = document.getElementById('markerRemark').value.trim();
-                const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
-                const time1 = document.getElementById('markerTime1').value;
-                const time2 = document.getElementById('markerTime2').selectedIndex > -1 ? document.getElementById('markerTime2').value : '';
-                marker.data.name = name;
-                marker.data.time = time;
-                marker.data.type = type;
-                marker.data.remark = remark;
-                marker.data.offsetMinutes = offsetMinutes;
-                marker.data.time1 = time1;
-                marker.data.time2 = time2;
-                marker.setIcon(this.getCustomIcon(type, 1, marker));
-                this.updateMarkerScales();
-                this.saveMarkers();
-                this.updateInfoPanel(marker.data);
-                const infoPanel = document.getElementById('infoPanel');
-                if (infoPanel) infoPanel.style.display = '';
-                document.getElementById('markerEditModal').style.display = 'none';
-              };
-            }, 0);
-          } else {
-            this.resetAllMarkers();
-            marker.setOpacity(1.0);
-            marker.setZIndexOffset(1000);
-            this.updateInfoPanel(marker.data);
-          }
-        };
-        marker.on('click', handler);
-        marker.on('touchstart', handler);
-        // 確認沒 dragend 事件
-        this.selectedMarker = marker;
-        this.markers.addLayer(marker);
-        this.saveMarkers();
-        this.filterMarkersByTypes();
-        this.updateMarkerScales();
-      }
-
-      deleteSelectedMarker() {
-        if (!this.selectedMarker) {
-          alert('請先點選一個標記再刪除');
-          return;
-        }
-        if (confirm('確定要刪除這個標記？')) {
-          this.markers.removeLayer(this.selectedMarker);
-          this.saveMarkers();
-          this.selectedMarker = null;
-          document.getElementById('panelContent').innerText = '請點選地圖上的標記';
-        }
-      }
-
-      saveMarkers() {
-        const saved = [];
-        this.markers.eachLayer(marker => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
-        localStorage.setItem('mhnow_markers', JSON.stringify(saved));
-      }
-
-      loadSavedMarkers() {
-        this.markers.clearLayers();
-        const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-        saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
-      }
-
-      filterMarkersByTypes() {
-        const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
-                              .map(opt => parseInt(opt.value));
-        const types = selected.length ? selected : [0, 1, 2, 3, 4];
-        this.markers.eachLayer(marker => {
-          const icon = marker._icon;
-          if (icon) {
-            icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
-          }
-        });
-        this.filteredTypes = types;
-      }
-
-      confirmImportFromGitHub() {
-        if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
-          if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
-            this.importFromGitHub();
-          }
-        }
-      }
-
-      importFromGitHub() {
-        const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
-        fetch(url)
-          .then(res => res.json())
-          .then(data => {
-            if (!Array.isArray(data)) throw new Error();
-            localStorage.setItem('mhnow_markers', JSON.stringify(data));
-            alert('成功從 GitHub 匯入標記，重新載入地圖。');
-            location.reload();
-          })
-          .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
-      }
-
-toggleEditMode() {
-  if (this.routeSelecting) {
-    app.clearAllMarkerBorders();
+    this.markers = new L.FeatureGroup();
+    this.filteredTypes = [];
+    this.lastMarkerType = 0;
     this.routeSelecting = false;
-    const routeBtn = document.getElementById('routeBtn');
-    if (routeBtn) routeBtn.textContent = '選擇路線';
+    this.selectedMarkers = [];
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>'
+    }).addTo(this.map);
+    this.markers.addTo(this.map);
+
+    this.initControls();
+    this.loadSavedMarkers();
+    this.initEventListeners();
+
+    this.map.on('zoomend', () => this.updateMarkerScales());
+    this.updateMarkerScales();
+
+    setInterval(() => this.updateMarkerScales(), 60 * 1000);
   }
-  if (this.currentMode === "done") {
-    this.currentMode = "editMarker";
-    document.getElementById('editBtn').textContent = "結束編輯";
-  } else {
+
+  initControls() {
+    const control = L.control({ position: 'topright' });
+    control.onAdd = () => {
+      const div = L.DomUtil.create('div', 'leaflet-control-custom');
+      div.innerHTML = `
+        <div class="btn-row">
+          <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
+          <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
+        </div>
+        <label>顯示顏色：</label>
+        <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
+        <option value="0">⚪ 原始</option>
+        <option value="1">🔴 紅</option>
+        <option value="2">🔵 藍</option>
+        <option value="3">🟢 綠</option>
+        <option value="4">🟣 紫</option>
+        </select>
+        <div class="btn-row">
+          <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
+          <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+        </div>
+      `;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    };
+    control.addTo(this.map);
     this.currentMode = "done";
-    document.getElementById('editBtn').textContent = "開始編輯";
-    this.saveMarkers();
-    document.getElementById('markerEditModal').style.display = 'none';
+  }
+
+  updateInfoPanel(data) {
+    const content = `
+      <p><strong>${data.name}</strong></p>
+      <p>時間：${data.time}</p>
+      <p>時間1：${data.time1 || ''}</p>
+      <p>時間2：${data.time2 || ''}</p>
+      <p>類型：${markerColors[data.type] || '原始'}</p>
+      <p>備註：${data.remark}</p>
+      <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
+      <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
+      <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
+      <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
+    `;
+    document.getElementById('panelContent').innerHTML = content;
+  }
+
+  initEventListeners() {
+    let mapTapped = false;
+    const handleMapTap = (e) => {
+      if (mapTapped) return;
+      mapTapped = true;
+      setTimeout(() => (mapTapped = false), 300);
+      if (this.currentMode === "editMarker") {
+        this.showMarkerForm(e.latlng);
+      }
+    };
+    this.map.on("click", handleMapTap);
+    this.map.on("touchstart", handleMapTap);
+  }
+
+  getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+    const iconUrls = {
+      0: iconUrl,
+      1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+      2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+      3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+      4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
+      raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
+    };
+
+    let useIconUrl = iconUrls[type];
+    let isRaid = false;
+    if (marker && marker.data && marker.data.name === "大連狩獵") {
+      useIconUrl = iconUrls.raid;
+      isRaid = true;
+    }
+
+    let size = 40 * scale;
+    if (isRaid) {
+      size = size * 0.75;
+    }
+
+    let timeStr = "";
+    if (marker) {
+      if (!(marker.data && marker.data.name === "大連狩獵")) {
+        timeStr = getNearestTimeString(marker);
+      }
+    }
+
+    let timeFontSize = Math.max(10, Math.floor(14 * scale));
+
+    // 檢查備註是否有 f，要畫紅叉
+    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+
+    // 淺紅色叉SVG
+    const redCrossSVG = `
+      <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
+        <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+        <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    return L.divIcon({
+      className: '',
+      html: `
+        <div class="marker-wrapper" style="position:relative;">
+          <div class="marker-border" style="
+            background-image: url('${useIconUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: ${size}px;
+            height: ${size}px;
+            position: relative;
+          ">
+            ${showRedCross ? redCrossSVG : ""}
+            ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
+            ${orderNumber !== null ? `
+              <div class="marker-order-badge" style="
+                position: absolute;
+                top: ${-10 * scale}px;
+                left: ${-10 * scale}px;
+                width: ${Math.max(20 * scale, 18)}px;
+                height: ${Math.max(20 * scale, 18)}px;
+                background: #ff6600;
+                color: #fff;
+                border-radius: 50%;
+                font-size: ${Math.max(11 * scale, 12)}px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border: ${2 * scale}px solid #fff;
+                z-index: 20;
+              ">${orderNumber+1}</div>
+            ` : ""}
+          </div>
+        </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
+    });
+  }
+
+  isMobile() {
+    return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  }
+
+  updateMarkerScales() {
+    const zoom = this.map.getZoom();
+    const mobile = this.isMobile();
+    let scale = 1.0;
+    if (mobile) { 
+      if (zoom >= 18) scale = 2.0;
+      else if (zoom === 17) scale = 1.6;
+      else if (zoom === 16) scale = 1.2;
+      else if (zoom === 15) scale = 1.0;
+      else if (zoom === 14) scale = 0.6;
+      else scale = 0.3;
+    } else {
+      if (zoom >= 18) scale = 1.0;
+      else if (zoom === 17) scale = 0.9;
+      else if (zoom === 16) scale = 0.8;
+      else if (zoom === 15) scale = 0.5;
+      else if (zoom === 14) scale = 0.3;
+      else scale = 0.3;
+    }
+    this.markers.eachLayer(marker => {
+      let orderNumber = null;
+      if (this.routeSelecting) {
+        const idx = this.selectedMarkers.indexOf(marker);
+        if (idx !== -1) orderNumber = idx;
+      }
+      marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker, orderNumber));
+      const el = marker.getElement();
+      if (el && this.selectedMarkers.includes(marker)) {
+        el.classList.add('markerBorder');
+      }
+    });
+    document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
+  }
+
+  showMarkerForm(latlng) {
+    const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘)）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0`);
+    if (input) {
+      const [name, time, type, remark, offsetStr] = input.split(',').map(s => s.trim());
+      const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
+      const offsetMinutes = parseInt(offsetStr || "0", 10);
+      this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
+      this.lastMarkerType = markerType;
+    }
     const infoPanel = document.getElementById('infoPanel');
     if (infoPanel) infoPanel.style.display = '';
+    document.getElementById('markerEditModal').style.display = 'none';
   }
-  this.updateMarkerScales();
-}
 
-      toggleSelectingRoute() {
-        this.routeSelecting = !this.routeSelecting;
-        const button = document.getElementById('routeBtn');
-        if (this.routeSelecting) {
-          if (this.currentMode !== 'done') {
-            this.currentMode = 'done';
-            const editBtn = document.getElementById('editBtn');
-            if (editBtn) editBtn.textContent = '開始編輯';
-            document.getElementById('markerEditModal').style.display = 'none';
-            const infoPanel = document.getElementById('infoPanel');
-            if (infoPanel) infoPanel.style.display = '';
-          }
-          this.selectedMarkers = [];
-          button.textContent = '完成選擇';
-          this.resetAllMarkers();
+  resetAllMarkers() {
+    this.markers.eachLayer(m => {
+      m.setOpacity(0.6);
+      m.setZIndexOffset(0);
+    });
+  }
+
+  addMarker(latlng, data) {
+    // time1/time2 totalPoints mapId
+    if (!data.time1 && data.time) {
+      const times = data.time.split(/\s+/).filter(Boolean);
+      data.time1 = times[0] || '';
+      data.time2 = '';
+    }
+    if (!data.totalPoints) data.totalPoints = parseInt(document.getElementById('markerTotalPoints').value, 10) || 1;
+    if (!data.mapId) data.mapId = parseInt(document.getElementById('markerMapId').value, 10) || "";
+    const marker = L.marker(latlng, {
+      icon: this.getCustomIcon(data.type, 1, { data }),
+      draggable: false
+    });
+    marker.data = data;
+    this.resetAllMarkers();
+    let tapped = false;
+    const handler = (e) => {
+      if (tapped) return;
+      tapped = true;
+      setTimeout(() => tapped = false, 300);
+      this.selectedMarker = marker;
+      if (this.routeSelecting) {
+        const markerElement = marker.getElement();
+        if (this.selectedMarkers.includes(marker)) {
+          this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+          if (markerElement) markerElement.classList.remove('markerBorder');
         } else {
-          app.clearAllMarkerBorders();
-          button.textContent = '選擇路線';
+          this.selectedMarkers.push(marker);
+          if (markerElement) markerElement.classList.add('markerBorder');
         }
         this.updateMarkerScales();
+        return;
       }
-
-      clearAllMarkerBorders() {
-        this.markers.eachLayer(marker => {
-          const markerElement = marker.getElement();
-          if (markerElement) {
-            markerElement.classList.remove('markerBorder');
-          }
-        });
-        this.selectedMarkers = [];
+      if (this.currentMode === "editMarker") {
+        this.resetAllMarkers();
+        marker.setOpacity(1.0);
+        marker.setZIndexOffset(1000);
+        setTimeout(() => {
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = 'none';
+          document.getElementById('markerName').value = marker.data.name;
+          document.getElementById('markerTime').value = marker.data.time;
+          document.getElementById('markerTotalPoints').value = marker.data.totalPoints || 1;
+          document.getElementById('markerMapId').value = marker.data.mapId || '';
+          updateTime1Time2Options();
+          document.getElementById('markerTime1').value = marker.data.time1 || '';
+          document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
+          document.getElementById('markerType').value = marker.data.type;
+          document.getElementById('markerRemark').value = marker.data.remark;
+          document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
+          document.getElementById('markerEditModal').style.display = 'block';
+          document.getElementById('saveMarkerBtn').onclick = () => {
+            const name = document.getElementById('markerName').value.trim();
+            const time = document.getElementById('markerTime').value;
+            const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+            const remark = document.getElementById('markerRemark').value.trim();
+            const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
+            const totalPoints = parseInt(document.getElementById('markerTotalPoints').value, 10) || 1;
+            const mapId = parseInt(document.getElementById('markerMapId').value, 10) || '';
+            const time1 = document.getElementById('markerTime1').value;
+            const time2 = document.getElementById('markerTime2').selectedIndex > -1 ? document.getElementById('markerTime2').value : '';
+            marker.data.name = name;
+            marker.data.time = time;
+            marker.data.type = type;
+            marker.data.remark = remark;
+            marker.data.offsetMinutes = offsetMinutes;
+            marker.data.time1 = time1;
+            marker.data.time2 = time2;
+            marker.data.totalPoints = totalPoints;
+            marker.data.mapId = mapId;
+            marker.setIcon(this.getCustomIcon(type, 1, marker));
+            this.updateMarkerScales();
+            this.saveMarkers();
+            this.updateInfoPanel(marker.data);
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) infoPanel.style.display = '';
+            document.getElementById('markerEditModal').style.display = 'none';
+          };
+        }, 0);
+      } else {
+        this.resetAllMarkers();
+        marker.setOpacity(1.0);
+        marker.setZIndexOffset(1000);
+        this.updateInfoPanel(marker.data);
       }
+    };
+    marker.on('click', handler);
+    marker.on('touchstart', handler);
+    this.selectedMarker = marker;
+    this.markers.addLayer(marker);
+    this.saveMarkers();
+    this.filterMarkersByTypes();
+    this.updateMarkerScales();
+  }
 
-      openGoogleRoute() {
-        if (!this.selectedMarkers.length) {
-          alert("請先選擇至少一個標記");
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const current = `${position.coords.latitude},${position.coords.longitude}`;
-            const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
-            const route = [current, ...waypoints];
-            const url = `https://www.google.com/maps/dir/${route.join('/')}`;
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            link.click();
-          },
-          () => alert('無法取得你的位置，請開啟定位權限')
-        );
+  deleteSelectedMarker() {
+    if (!this.selectedMarker) {
+      alert('請先點選一個標記再刪除');
+      return;
+    }
+    if (confirm('確定要刪除這個標記？')) {
+      this.markers.removeLayer(this.selectedMarker);
+      this.saveMarkers();
+      this.selectedMarker = null;
+      document.getElementById('panelContent').innerText = '請點選地圖上的標記';
+    }
+  }
+
+  saveMarkers() {
+    const saved = [];
+    this.markers.eachLayer(marker => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
+    localStorage.setItem('mhnow_markers', JSON.stringify(saved));
+  }
+
+  loadSavedMarkers() {
+    this.markers.clearLayers();
+    const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+    saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
+  }
+
+  filterMarkersByTypes() {
+    const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
+                          .map(opt => parseInt(opt.value));
+    const types = selected.length ? selected : [0, 1, 2, 3, 4];
+    this.markers.eachLayer(marker => {
+      const icon = marker._icon;
+      if (icon) {
+        icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
+      }
+    });
+    this.filteredTypes = types;
+  }
+
+  confirmImportFromGitHub() {
+    if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
+      if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
+        this.importFromGitHub();
       }
     }
+  }
 
-    const app = new MapApp();
+  importFromGitHub() {
+    const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data)) throw new Error();
+        localStorage.setItem('mhnow_markers', JSON.stringify(data));
+        alert('成功從 GitHub 匯入標記，重新載入地圖。');
+        location.reload();
+      })
+      .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
+  }
+
+  toggleEditMode() {
+    if (this.routeSelecting) {
+      app.clearAllMarkerBorders();
+      this.routeSelecting = false;
+      const routeBtn = document.getElementById('routeBtn');
+      if (routeBtn) routeBtn.textContent = '選擇路線';
+    }
+    if (this.currentMode === "done") {
+      this.currentMode = "editMarker";
+      document.getElementById('editBtn').textContent = "結束編輯";
+    } else {
+      this.currentMode = "done";
+      document.getElementById('editBtn').textContent = "開始編輯";
+      this.saveMarkers();
+      document.getElementById('markerEditModal').style.display = 'none';
+      const infoPanel = document.getElementById('infoPanel');
+      if (infoPanel) infoPanel.style.display = '';
+    }
+    this.updateMarkerScales();
+  }
+
+  toggleSelectingRoute() {
+    this.routeSelecting = !this.routeSelecting;
+    const button = document.getElementById('routeBtn');
+    if (this.routeSelecting) {
+      if (this.currentMode !== 'done') {
+        this.currentMode = 'done';
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) editBtn.textContent = '開始編輯';
+        document.getElementById('markerEditModal').style.display = 'none';
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel) infoPanel.style.display = '';
+      }
+      this.selectedMarkers = [];
+      button.textContent = '完成選擇';
+      this.resetAllMarkers();
+    } else {
+      app.clearAllMarkerBorders();
+      button.textContent = '選擇路線';
+    }
+    this.updateMarkerScales();
+  }
+
+  clearAllMarkerBorders() {
+    this.markers.eachLayer(marker => {
+      const markerElement = marker.getElement();
+      if (markerElement) {
+        markerElement.classList.remove('markerBorder');
+      }
+    });
+    this.selectedMarkers = [];
+  }
+
+  openGoogleRoute() {
+    if (!this.selectedMarkers.length) {
+      alert("請先選擇至少一個標記");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const current = `${position.coords.latitude},${position.coords.longitude}`;
+        const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
+        const route = [current, ...waypoints];
+        const url = `https://www.google.com/maps/dir/${route.join('/')}`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.click();
+      },
+      () => alert('無法取得你的位置，請開啟定位權限')
+    );
+  }
+}
+
+const app = new MapApp();
   </script>
 </body>
 </html>
