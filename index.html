@@ -531,48 +531,49 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
           </svg>
         `;
 
-        return L.divIcon({
-          className: '',
-          html: `
-            <div class="marker-wrapper" style="position:relative;">
-              <div class="marker-border" style="
-                background-image: url('${useIconUrl}');
-                background-size: contain;
-                background-repeat: no-repeat;
-                background-position: center;
-                width: ${size}px;
-                height: ${size}px;
-                position: relative;
-              ">
-                ${showRedCross ? redCrossSVG : ""}
-                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-ra[...]
-                ${orderNumber !== null ? `
-                  <div class="marker-order-badge" style="
-                    position: absolute;
-                    top: ${-10 * scale}px;
-                    left: ${-10 * scale}px;
-                    width: ${Math.max(20 * scale, 18)}px;
-                    height: ${Math.max(20 * scale, 18)}px;
-                    background: #ff6600;
-                    color: #fff;
-                    border-radius: 50%;
-                    font-size: ${Math.max(11 * scale, 12)}px;
-                    font-weight: bold;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                    border: ${2 * scale}px solid #fff;
-                    z-index: 20;
-                  ">${orderNumber+1}</div>
-                ` : ""}
-              </div>
-            </div>`,
-          iconSize: [size, size],
-          iconAnchor: [size / 2, size / 2],
-          popupAnchor: [0, -size / 2]
-        });
-      }
+return L.divIcon({
+  className: '',
+  html: `
+    <div class="marker-wrapper" style="position:relative;">
+      <div class="marker-border" style="
+        background-image: url('${useIconUrl}');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        width: ${size}px;
+        height: ${size}px;
+        position: relative;
+      ">
+        ${showRedCross ? redCrossSVG : ""}
+        ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:6px;">
+          ${timeStr}
+        </div>` : ""}
+        ${orderNumber !== null ? `
+          <div class="marker-order-badge" style="
+            position: absolute;
+            top: ${-10 * scale}px;
+            left: ${-10 * scale}px;
+            width: ${Math.max(20 * scale, 18)}px;
+            height: ${Math.max(20 * scale, 18)}px;
+            background: #ff6600;
+            color: #fff;
+            border-radius: 50%;
+            font-size: ${Math.max(11 * scale, 12)}px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: ${2 * scale}px solid #fff;
+            z-index: 20;
+          ">${orderNumber+1}</div>
+        ` : ""}
+      </div>
+    </div>`,
+  iconSize: [size, size],
+  iconAnchor: [size / 2, size / 2],
+  popupAnchor: [0, -size / 2]
+});
 
       isMobile() {
         return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
