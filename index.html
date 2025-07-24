@@ -467,7 +467,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
         this.map.on("touchstart", handleMapTap);
       }
 
-getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+function getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
   const iconUrls = {
     0: iconUrl,
@@ -493,7 +493,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   let timeStr = "";
   if (marker) {
     if (!(marker.data && marker.data.name === "大連狩獵")) {
-      timeStr = getNearestTimeString(marker);
+      timeStr = getNearestTimeString(marker); // Assuming getNearestTimeString is defined elsewhere
     }
   }
 
@@ -522,7 +522,20 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
           position: relative;
         ">
           ${showRedCross ? redCrossSVG : ""}
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4[...]
+          ${timeStr ? `
+            <div style="
+              position:absolute;
+              bottom:-18px;
+              left:50%;
+              transform:translateX(-50%);
+              background:rgba(0,0,0,0.75);
+              color:#fff;
+              font-size:${timeFontSize}px;
+              padding:2px 8px;
+              border-radius:4px;
+              white-space: nowrap;
+            ">${timeStr}</div>
+          ` : ""}
           ${orderNumber !== null ? `
             <div class="marker-order-badge" style="
               position: absolute;
@@ -541,7 +554,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
               box-shadow: 0 2px 4px rgba(0,0,0,0.2);
               border: ${2 * scale}px solid #fff;
               z-index: 20;
-            ">${orderNumber+1}</div>
+            ">${orderNumber + 1}</div>
           ` : ""}
         </div>
       </div>`,
