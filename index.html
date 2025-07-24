@@ -341,7 +341,7 @@ class MapApp {
     this.markers.addTo(this.map);
 
     this.initControls();
-    this.l);
+    this.loadSavedMarkers();
     this.initEventListeners();
 
     this.map.on('zoomend', () => this.updateMarkerScales());
