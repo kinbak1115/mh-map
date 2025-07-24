@@ -245,32 +245,38 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     opt.textContent = timestr;
     markerTime.appendChild(opt);
   });
+  // 如果 totalPoints=1，自動選擇唯一的時間選項
   if (totalPoints === 1 && arr.length === 1) {
     markerTime.value = arr[0];
-  } else if (selectedTime && arr.includes(selectedTime)) {
+  } else if (selectedTime) {
     markerTime.value = selectedTime;
   }
 }
 
 // 選擇最近的先前時間
 function getNearestTimeString(marker) {
+  // Get the full time schedule from marker.data.time
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
 
+  // Get current time in local time zone (assumed Asia/Kuala_Lumpur)
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   let minDiff = Infinity;
   let bestDisplayTime = "";
 
+  // Find the closest previous time
   for (const t of times) {
     const m = t.match(/(\d{1,2}):(\d{2})/);
     if (!m) continue;
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
-    let diff = nowMin - total;
+    let diff = nowMin - total; // Positive diff means time is in the past
+    // Handle times crossing midnight
     if (diff < -12 * 60) diff += 24 * 60;
+    // Only consider past times (or exact match)
     if (diff >= 0 && diff < minDiff) {
       minDiff = diff;
       bestDisplayTime = t;
@@ -303,7 +309,7 @@ class MapApp {
     });
 
     this.markers = new L.FeatureGroup();
-    this.filteredTypes = [0, 1, 2, 3, 4]; // 默认显示所有类型
+    this.filteredTypes = [];
     this.lastMarkerType = 0;
     this.routeSelecting = false;
     this.selectedMarkers = [];
@@ -406,8 +412,10 @@ class MapApp {
     }
 
     let timeStr = "";
-    if (marker && marker.data && marker.data.name !== "大連狩獵") {
-      timeStr = getNearestTimeString(marker);
+    if (marker) {
+      if (!(marker.data && marker.data.name === "大連狩獵")) {
+        timeStr = getNearestTimeString(marker);
+      }
     }
 
     let timeFontSize = Math.max(10, Math.floor(14 * scale));
@@ -507,15 +515,8 @@ class MapApp {
     if (input) {
       const [name, time, type, remark, totalPoints, mapId] = input.split(',').map(s => s.trim());
       const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-      const totalPointsNum = parseInt(totalPoints, 10) || 1;
-      const mapIdNum = parseInt(mapId, 10) || 1;
-      const markerData = { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, totalPoints: totalPointsNum, mapId: mapIdNum };
-      
-      // 自動分配時間
-      this.autoAssignTimeForGroupMarkers(null, markerData);
-      
-      // 使用分配後的時間添加標記
-      this.addMarker(latlng, markerData);
+      const data = { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 };
+      this.addMarker(latlng, data);
       this.lastMarkerType = markerType;
     }
     const infoPanel = document.getElementById('infoPanel');
@@ -530,97 +531,108 @@ class MapApp {
     });
   }
 
-  autoAssignTimeForGroupMarkers(marker, markerData = null) {
-    const isAdding = markerData !== null;
-    const totalPoints = isAdding ? (markerData.totalPoints || 1) : (marker.data.totalPoints || 1);
-    if (![2, 3, 4, 5, 6].includes(totalPoints)) {
-      console.log(`Skipping time assignment for totalPoints=${totalPoints} (only 2-6 supported)`);
+  autoAssignTimeForPairedMarker(marker) {
+    // Only handle totalPoints in [2, 3, 4, 5, 6]
+    const validTotalPoints = [2, 3, 4, 5, 6];
+    if (!validTotalPoints.includes(marker.data.totalPoints)) return;
+
+    const selectedTotalPoints = marker.data.totalPoints;
+    const selectedMapId = marker.data.mapId;
+    const timeOptions = timeTableByTotalPoints[selectedTotalPoints];
+    const selectedTime = marker.data.time;
+    const selectedTimeIndex = timeOptions.indexOf(selectedTime);
+
+    // If the selected time is invalid, do nothing
+    if (selectedTimeIndex === -1) {
+      console.warn('Invalid time selected for marker:', selectedTime);
       return;
     }
 
-    const selectedMapId = isAdding ? (markerData.mapId || 1) : marker.data.mapId;
-    const timeOptions = timeTableByTotalPoints[totalPoints] || [];
-    if (!timeOptions.length) {
-      console.error(`No time options available for totalPoints=${totalPoints}`);
-      if (isAdding) markerData.time = "";
-      return;
-    }
-
-    console.log(`Assigning time for mapId=${selectedMapId}, totalPoints=${totalPoints}, isAdding=${isAdding}`);
-
-    // 收集同 mapId 和 totalPoints 的現有標記
-    let groupMarkers = [];
+    // Find all markers with the same mapId and totalPoints
+    let pairedMarkers = [];
     this.markers.eachLayer(m => {
-      if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === totalPoints) {
-        groupMarkers.push(m);
+      if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === selectedTotalPoints) {
+        pairedMarkers.push(m);
       }
     });
-    console.log(`Found ${groupMarkers.length} existing markers for mapId=${selectedMapId}, totalPoints=${totalPoints}`);
 
-    // 獲取已使用的時間表索引
-    const usedTimeIndices = groupMarkers
-      .map(m => timeOptions.indexOf(m.data.time))
-      .filter(idx => idx !== -1);
-    console.log(`Used time indices: ${usedTimeIndices}`);
+    // If no paired markers, no action needed
+    if (pairedMarkers.length === 0) return;
 
-    // 如果是新增標記，選擇一個未使用的時間表
-    if (isAdding) {
-      const inputTimeIndex = timeOptions.indexOf(markerData.time);
-      if (inputTimeIndex !== -1 && !usedTimeIndices.includes(inputTimeIndex)) {
-        console.log(`Using valid input time: ${markerData.time}`);
-        // 保留有效輸入
-      } else {
-        const availableTimeIndex = timeOptions.findIndex((_, idx) => !usedTimeIndices.includes(idx));
-        if (availableTimeIndex === -1) {
-          console.warn(`No available time slots for mapId=${selectedMapId}, totalPoints=${totalPoints}`);
-          alert(`警告：mapId ${selectedMapId} 的 totalPoints=${totalPoints} 標記數量已達到或超過可用時間表數量 (${timeOptions.length})，使用第一個時間表。`);
-          markerData.time = timeOptions[0];
-        } else {
-          markerData.time = timeOptions[availableTimeIndex];
-          console.log(`Assigned new time: ${markerData.time}`);
-        }
+    // Warn if the number of markers (including the edited one) exceeds available schedules
+    if (pairedMarkers.length + 1 > timeOptions.length) {
+      alert(`警告：mapId=${selectedMapId} 和 totalPoints=${selectedTotalPoints} 的標記數量 (${pairedMarkers.length + 1}) 超過可用時間表 (${timeOptions.length})，無法為最後一個標記分配唯一時間表。`);
+      return;
+    }
+
+    // Get used schedules
+    const usedTimeIndices = new Set();
+    usedTimeIndices.add(selectedTimeIndex);
+    pairedMarkers.forEach(m => {
+      const idx = timeOptions.indexOf(m.data.time);
+      if (idx !== -1) usedTimeIndices.add(idx);
+    });
+
+    // Find the last marker in the group (based on layer order)
+    const allMarkersInGroup = [marker, ...pairedMarkers];
+    const lastMarker = allMarkersInGroup.reduce((latest, m) => {
+      const layerIndex = this.markers.getLayers().indexOf(m);
+      if (!latest || layerIndex > this.markers.getLayers().indexOf(latest)) {
+        return m;
+      }
+      return latest;
+    }, null);
+
+    // If the last marker is the edited marker, no need to reassign
+    if (lastMarker === marker) return;
+
+    // Find an unused schedule
+    let availableTimeIndex = -1;
+    for (let i = 0; i < timeOptions.length; i++) {
+      if (!usedTimeIndices.has(i)) {
+        availableTimeIndex = i;
+        break;
+      }
+    }
+
+    // Assign the unused schedule to the last marker
+    if (availableTimeIndex !== -1) {
+      lastMarker.data.time = timeOptions[availableTimeIndex];
+      lastMarker.setIcon(this.getCustomIcon(lastMarker.data.type, 1, lastMarker));
+      // Update info panel if the last marker is selected
+      if (this.selectedMarker === lastMarker) {
+        this.updateInfoPanel(lastMarker.data);
       }
     } else {
-      // 如果是編輯標記，確保其他標記的時間不衝突
-      const selectedTime = marker.data.time;
-      const selectedTimeIndex = timeOptions.indexOf(selectedTime);
-      if (selectedTimeIndex === -1) {
-        console.warn(`Invalid time selected: ${selectedTime}`);
-        return;
-      }
-
-      const markersToUpdate = groupMarkers.filter(m => timeOptions.indexOf(m.data.time) === selectedTimeIndex);
-      let availableIndices = timeOptions.map((_, idx) => idx).filter(idx => !usedTimeIndices.includes(idx) && idx !== selectedTimeIndex);
-
-      markersToUpdate.forEach((m, i) => {
-        if (availableIndices.length === 0) {
-          console.warn(`No available time slots for marker:`, m.data);
-          m.data.time = timeOptions[0];
-        } else {
-          m.data.time = timeOptions[availableIndices[0]];
-          availableIndices = availableIndices.slice(1);
-        }
-        console.log(`Updated marker time to: ${m.data.time}`);
-        m.setIcon(this.getCustomIcon(m.data.type, 1, m));
-        if (this.selectedMarker === m) {
-          this.updateInfoPanel(m.data);
-        }
-      });
+      console.warn('No unused time schedule available for last marker.');
     }
-
-    // 更新所有同組標記的圖標
-    groupMarkers.forEach(m => {
-      m.setIcon(this.getCustomIcon(m.data.type, 1, m));
-      if (this.selectedMarker === m) {
-        this.updateInfoPanel(m.data);
-      }
-    });
   }
 
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    console.log(`Adding marker with data:`, data);
+    // If adding a new marker with totalPoints in [2, 3, 4, 5, 6], assign an unused schedule
+    if ([2, 3, 4, 5, 6].includes(data.totalPoints) && data.time === "現在") {
+      const timeOptions = timeTableByTotalPoints[data.totalPoints];
+      let pairedMarkers = [];
+      this.markers.eachLayer(m => {
+        if (m.data.mapId === data.mapId && m.data.totalPoints === data.totalPoints) {
+          pairedMarkers.push(m);
+        }
+      });
+      const usedTimeIndices = new Set();
+      pairedMarkers.forEach(m => {
+        const idx = timeOptions.indexOf(m.data.time);
+        if (idx !== -1) usedTimeIndices.add(idx);
+      });
+      const availableTimeIndex = timeOptions.findIndex((_, i) => !usedTimeIndices.has(i));
+      if (availableTimeIndex !== -1) {
+        data.time = timeOptions[availableTimeIndex];
+      } else if (timeOptions.length > 0) {
+        data.time = timeOptions[0]; // Fallback to first schedule
+        console.warn(`No unused time schedule for new marker with mapId=${data.mapId}, totalPoints=${data.totalPoints}. Using first schedule.`);
+      }
+    }
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -667,10 +679,9 @@ class MapApp {
             marker.data.type = type;
             marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
-            console.log(`Updated marker with data:`, marker.data);
 
-            // 自動分配時間給同組標記
-            this.autoAssignTimeForGroupMarkers(marker);
+            // Auto-assign time for paired marker if totalPoints in [2, 3, 4, 5, 6]
+            this.autoAssignTimeForPairedMarker(marker);
 
             this.updateMarkerScales();
             this.saveMarkers();
@@ -691,7 +702,8 @@ class MapApp {
     marker.on('touchstart', handler);
     this.selectedMarker = marker;
     this.markers.addLayer(marker);
-    console.log(`Marker added to layer group`);
+    // Auto-assign time for paired markers after adding the new marker
+    this.autoAssignTimeForPairedMarker(marker);
     this.saveMarkers();
     this.filterMarkersByTypes();
     this.updateMarkerScales();
@@ -720,6 +732,7 @@ class MapApp {
     this.markers.clearLayers();
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
     saved.forEach(data => {
+      // 如果 totalPoints=1，強制設置時間為唯一的選項
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
@@ -731,14 +744,14 @@ class MapApp {
   filterMarkersByTypes() {
     const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
                          .map(opt => parseInt(opt.value));
-    this.filteredTypes = selected.length ? selected : [0, 1, 2, 3, 4];
-    console.log(`Filtering markers with types: ${this.filteredTypes}`);
+    const types = selected.length ? selected : [0, 1, 2, 3, 4];
     this.markers.eachLayer(marker => {
       const icon = marker._icon;
       if (icon) {
-        icon.style.visibility = this.filteredTypes.includes(marker.data.type) ? 'visible' : 'hidden';
+        icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
       }
     });
+    this.filteredTypes = types;
   }
 
   confirmImportFromGitHub() {
