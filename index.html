@@ -245,7 +245,12 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     opt.textContent = timestr;
     markerTime.appendChild(opt);
   });
-  if (selectedTime) markerTime.value = selectedTime;
+  // 如果 totalPoints=1，自動選擇唯一的時間選項
+  if (totalPoints === 1 && arr.length === 1) {
+    markerTime.value = arr[0];
+  } else if (selectedTime) {
+    markerTime.value = selectedTime;
+  }
 }
 
 // 工具：給一組時間字串，找出最靠近現在的那一個
@@ -641,7 +646,13 @@ class MapApp {
   loadSavedMarkers() {
     this.markers.clearLayers();
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
-    saved.forEach(data => this.addMarker(L.latLng(data.lat, data.lng), data));
+    saved.forEach(data => {
+      // 如果 totalPoints 為 1，自動設置時間為唯一的選項
+      if (data.totalPoints === 1 && !data.time) {
+        data.time = timeTableByTotalPoints[1][0]; // 自動設置為唯一的時間選項
+      }
+      this.addMarker(L.latLng(data.lat, data.lng), data);
+    });
   }
 
   filterMarkersByTypes() {
