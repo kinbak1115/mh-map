@@ -171,7 +171,7 @@ const timeTableByTotalPoints = {
   ],
   2: [
     "06:15 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05 22:55",
-    "07:05 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05 22:55"
+    "06:40 08:20 09:10 10:00 10:50 11:40 12:30 13:20 14:10 15:00 15:50 16:40 17:30 18:20 19:10 20:00 20:50 21:40 22:30"
   ],
   3: [
     "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
@@ -253,7 +253,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   }
 }
 
-// 清理 getNearestTimeString 相關邏輯
+// 選擇最近的先前時間（移除25分鐘限制）
 function getNearestTimeString(marker) {
   // Get the full time schedule from marker.data.time
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
@@ -266,20 +266,19 @@ function getNearestTimeString(marker) {
   let minDiff = Infinity;
   let bestDisplayTime = "";
 
-  // Find the nearest time within a 25-minute window
+  // Find the closest previous time
   for (const t of times) {
     const m = t.match(/(\d{1,2}):(\d{2})/);
     if (!m) continue;
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
-    let diff = total - nowMin;
+    let diff = nowMin - total; // Positive diff means time is in the past
     // Handle times crossing midnight
-    if (diff > 12 * 60) diff -= 24 * 60;
     if (diff < -12 * 60) diff += 24 * 60;
-    // Only consider times within 25 minutes
-    if (Math.abs(diff) <= 25 && Math.abs(diff) < minDiff) {
-      minDiff = Math.abs(diff);
+    // Only consider past times (or exact match)
+    if (diff >= 0 && diff < minDiff) {
+      minDiff = diff;
       bestDisplayTime = t;
     }
   }
