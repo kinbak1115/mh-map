@@ -540,6 +540,8 @@ initControls() {
           <p>備註：${data.remark}</p>
           <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
           <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
+          <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
+          <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
         `;
         document.getElementById('panelContent').innerHTML = content;
       }
