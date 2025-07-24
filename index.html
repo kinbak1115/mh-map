@@ -575,7 +575,10 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
       }
 
 showMarkerForm(latlng) {
-  const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`);
+  const input = prompt(
+    '新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）',
+    `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`
+  );
   if (input) {
     const [name, time, type, remark, offsetStr, totalPoints, mapId] = input.split(',').map(s => s.trim());
     const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
