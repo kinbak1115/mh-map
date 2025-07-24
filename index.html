@@ -159,7 +159,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.1.2</div>
+<div id="version">版本 4.1.3</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -239,13 +239,20 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTime = document.getElementById('markerTime');
   markerTime.innerHTML = '';
   const arr = timeTableByTotalPoints[totalPoints] || [];
+  // Add "現在" as an option for totalPoints >= 2
+  if (totalPoints >= 2) {
+    const opt = document.createElement('option');
+    opt.value = "現在";
+    opt.textContent = "現在";
+    markerTime.appendChild(opt);
+  }
   arr.forEach(timestr => {
     const opt = document.createElement('option');
     opt.value = timestr;
     opt.textContent = timestr;
     markerTime.appendChild(opt);
   });
-  // 如果 totalPoints=1，自動選擇唯一的時間選項
+  // If totalPoints=1, automatically select the only time option
   if (totalPoints === 1 && arr.length === 1) {
     markerTime.value = arr[0];
   } else if (selectedTime) {
@@ -546,7 +553,7 @@ class MapApp {
 
     const selectedTotalPoints = marker.data.totalPoints;
     const selectedMapId = marker.data.mapId;
-    const timeOptions = timeTableByTotalPoints[selectedTotalPoints];
+    const timeOptions = timeTableByTotalPoints[selectedTotalPoints] || [];
     const selectedTime = marker.data.time;
     const selectedTimeIndex = timeOptions.indexOf(selectedTime);
 
@@ -556,33 +563,87 @@ class MapApp {
       return;
     }
 
-    // Find all markers with the same mapId and totalPoints
+    // Find all markers with the same mapId and totalPoints, excluding those with time = "現在"
     let pairedMarkers = [];
     this.markers.eachLayer(m => {
-      if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === selectedTotalPoints) {
+      if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === selectedTotalPoints && m.data.time !== "現在") {
         pairedMarkers.push(m);
       }
     });
 
-    // If no paired markers, no action needed
-    if (pairedMarkers.length === 0) return;
+    // Include the edited marker in the group for ordering
+    const allMarkersInGroup = [marker, ...pairedMarkers];
 
-    // Warn if the number of markers (including the edited one) exceeds available schedules
-    if (pairedMarkers.length + 1 > timeOptions.length) {
-      alert(`警告：mapId=${selectedMapId} 和 totalPoints=${selectedTotalPoints} 的標記數量 (${pairedMarkers.length + 1}) 超過可用時間表 (${timeOptions.length})，無法為最後一個標記分配唯一時間表。`);
+    // If no other markers with valid times, no action needed unless there are markers with "現在"
+    if (allMarkersInGroup.length === 1) {
+      // Check for markers with time = "現在" to assign a time
+      let markersWithNow = [];
+      this.markers.eachLayer(m => {
+        if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === selectedTotalPoints && m.data.time === "現在") {
+          markersWithNow.push(m);
+        }
+      });
+      if (markersWithNow.length === 0) return;
+
+      // Warn if the total number of markers exceeds available schedules
+      if (allMarkersInGroup.length + markersWithNow.length > timeOptions.length) {
+        alert(`警告：mapId=${selectedMapId} 和 totalPoints=${selectedTotalPoints} 的標記數量 (${allMarkersInGroup.length + markersWithNow.length}) 超過可用時間表 (${timeOptions.length})，無法為最後一個標記分配唯一時間表。`);
+        return;
+      }
+
+      // Get used schedules
+      const usedTimeIndices = new Set([selectedTimeIndex]);
+
+      // Find the last marker among all markers (including those with "現在")
+      const allMarkers = [...allMarkersInGroup, ...markersWithNow];
+      const lastMarker = allMarkers.reduce((latest, m) => {
+        const layerIndex = this.markers.getLayers().indexOf(m);
+        if (!latest || layerIndex > this.markers.getLayers().indexOf(latest)) {
+          return m;
+        }
+        return latest;
+      }, null);
+
+      // If the last marker is the edited marker, no need to reassign
+      if (lastMarker === marker) return;
+
+      // Find an unused schedule
+      let availableTimeIndex = -1;
+      for (let i = 0; i < timeOptions.length; i++) {
+        if (!usedTimeIndices.has(i)) {
+          availableTimeIndex = i;
+          break;
+        }
+      }
+
+      // Assign the unused schedule to the last marker
+      if (availableTimeIndex !== -1) {
+        lastMarker.data.time = timeOptions[availableTimeIndex];
+        lastMarker.setIcon(this.getCustomIcon(lastMarker.data.type, 1, lastMarker));
+        // Update info panel if the last marker is selected
+        if (this.selectedMarker === lastMarker) {
+          this.updateInfoPanel(lastMarker.data);
+        }
+      } else {
+        console.warn('No unused time schedule available for last marker.');
+      }
+      return;
+    }
+
+    // Warn if the total number of markers exceeds available schedules
+    if (allMarkersInGroup.length > timeOptions.length) {
+      alert(`警告：mapId=${selectedMapId} 和 totalPoints=${selectedTotalPoints} 的標記數量 (${allMarkersInGroup.length}) 超過可用時間表 (${timeOptions.length})，無法為最後一個標記分配唯一時間表。`);
       return;
     }
 
     // Get used schedules
-    const usedTimeIndices = new Set();
-    usedTimeIndices.add(selectedTimeIndex);
+    const usedTimeIndices = new Set([selectedTimeIndex]);
     pairedMarkers.forEach(m => {
       const idx = timeOptions.indexOf(m.data.time);
       if (idx !== -1) usedTimeIndices.add(idx);
     });
 
-    // Find the last marker in the group (based on layer order)
-    const allMarkersInGroup = [marker, ...pairedMarkers];
+    // Find the last marker in the group
     const lastMarker = allMarkersInGroup.reduce((latest, m) => {
       const layerIndex = this.markers.getLayers().indexOf(m);
       if (!latest || layerIndex > this.markers.getLayers().indexOf(latest)) {
