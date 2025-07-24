@@ -185,7 +185,7 @@ const timeTableByTotalPoints = {
     "07:30 09:10 10:50 12:30 14:10 15:50 17:30 19:10 20:50 22:30"
   ],
   5: [
-    "06:15 08:20 10:25 12:30 14:35 16:40 18:45 20:50 22:55",
+    "06:15 08:20 10:25 brasile 12:30 14:35 16:40 18:45 20:50 22:55",
     "06:40 08:45 10:50 12:55 15:00 17:05 19:10 21:15 23:20",
     "07:05 09:10 11:15 13:20 15:25 17:30 19:35 21:40",
     "07:30 09:35 11:40 13:45 15:50 17:55 20:00 22:05",
@@ -406,6 +406,8 @@ class MapApp {
       isRaid = true;
     }
 
+ビット
+
     let size = 40 * scale;
     if (isRaid) {
       size = size * 0.75;
@@ -515,10 +517,15 @@ class MapApp {
     if (input) {
       const [name, time, type, remark, totalPoints, mapId] = input.split(',').map(s => s.trim());
       const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-      const markerData = { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 };
+      const totalPointsNum = parseInt(totalPoints, 10) || 1;
+      const mapIdNum = parseInt(mapId, 10) || 1;
+      const markerData = { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, totalPoints: totalPointsNum, mapId: mapIdNum };
+      
       // 自動分配時間
-      this.addMarker(latlng, markerData);
       this.autoAssignTimeForGroupMarkers(null, markerData);
+      
+      // 使用分配後的時間添加標記
+      this.addMarker(latlng, markerData);
       this.lastMarkerType = markerType;
     }
     const infoPanel = document.getElementById('infoPanel');
@@ -541,6 +548,10 @@ class MapApp {
 
     const selectedMapId = isAdding ? (markerData.mapId || 1) : marker.data.mapId;
     const timeOptions = timeTableByTotalPoints[totalPoints] || [];
+    if (!timeOptions.length) {
+      console.warn(`No time options available for totalPoints=${totalPoints}`);
+      return;
+    }
 
     // 收集同 mapId 和 totalPoints 的現有標記
     let groupMarkers = [];
@@ -550,33 +561,30 @@ class MapApp {
       }
     });
 
-    // 如果是新增標記，將新標記的時間添加到已使用時間列表
-    const usedTimeIndices = groupMarkers.map(m => timeOptions.indexOf(m.data.time)).filter(idx => idx !== -1);
-    if (isAdding && markerData.time) {
-      const newTimeIndex = timeOptions.indexOf(markerData.time);
-      if (newTimeIndex !== -1) {
-        usedTimeIndices.push(newTimeIndex);
-      }
-    }
+    // 獲取已使用的時間表索引
+    const usedTimeIndices = groupMarkers
+      .map(m => timeOptions.indexOf(m.data.time))
+      .filter(idx => idx !== -1);
 
-    // 檢查是否超過時間表數量
-    if (usedTimeIndices.length >= timeOptions.length) {
-      alert(`警告：mapId ${selectedMapId} 的 totalPoints=${totalPoints} 標記數量已達到或超過可用時間表數量 (${timeOptions.length})，請檢查或刪除多餘標記。`);
-      return;
-    }
-
-    // 找到第一個未使用的時間表
-    let availableTimeIndex = timeOptions.findIndex((_, idx) => !usedTimeIndices.includes(idx));
-    if (availableTimeIndex === -1) {
-      console.warn('所有時間表都已被使用，選擇第一個時間表作為備用');
-      availableTimeIndex = 0;
-    }
-
-    // 如果是新增標記，更新 markerData.time
+    // 如果是新增標記，選擇一個未使用的時間表
     if (isAdding) {
-      markerData.time = timeOptions[availableTimeIndex];
+      // 檢查用戶輸入的時間是否有效
+      const inputTimeIndex = timeOptions.indexOf(markerData.time);
+      if (inputTimeIndex !== -1 && !usedTimeIndices.includes(inputTimeIndex)) {
+        // 如果輸入的時間有效且未使用，保留它
+        // markerData.time 已設置
+      } else {
+        // 選擇第一個未使用的時間表
+        const availableTimeIndex = timeOptions.findIndex((_, idx) => !usedTimeIndices.includes(idx));
+        if (availableTimeIndex === -1) {
+          alert(`警告：mapId ${selectedMapId} 的 totalPoints=${totalPoints} 標記數量已達到或超過可用時間表數量 (${timeOptions.length})，使用第一個時間表。`);
+          markerData.time = timeOptions[0];
+        } else {
+          markerData.time = timeOptions[availableTimeIndex];
+        }
+      }
     } else {
-      // 如果是編輯標記，檢查是否需要更新其他標記
+      // 如果是編輯標記，確保其他標記的時間不與當前標記衝突
       const selectedTime = marker.data.time;
       const selectedTimeIndex = timeOptions.indexOf(selectedTime);
       if (selectedTimeIndex === -1) {
@@ -584,20 +592,21 @@ class MapApp {
         return;
       }
 
-      // 更新其他標記，確保時間不重複
+      // 找到使用相同時間表的其他標記
       const markersToUpdate = groupMarkers.filter(m => timeOptions.indexOf(m.data.time) === selectedTimeIndex);
+      let availableIndices = timeOptions.map((_, idx) => idx).filter(idx => !usedTimeIndices.includes(idx) && idx !== selectedTimeIndex);
+
       markersToUpdate.forEach((m, i) => {
-        const newTimeIndex = timeOptions.findIndex((_, idx) => !usedTimeIndices.includes(idx) && idx !== selectedTimeIndex);
-        if (newTimeIndex !== -1) {
-          m.data.time = timeOptions[newTimeIndex];
-          m.setIcon(this.getCustomIcon(m.data.type, 1, m));
-          usedTimeIndices.push(newTimeIndex);
-          // 更新資訊面板
-          if (this.selectedMarker === m) {
-            this.updateInfoPanel(m.data);
-          }
-        } else {
+        if (availableIndices.length === 0) {
           console.warn('無可用時間表為標記重新分配時間:', m.data);
+          m.data.time = timeOptions[0]; // 備用時間表
+        } else {
+          m.data.time = timeOptions[availableIndices[0]];
+          availableIndices = availableIndices.slice(1); // 移除已使用的索引
+        }
+        m.setIcon(this.getCustomIcon(m.data.type, 1, m));
+        if (this.selectedMarker === m) {
+          this.updateInfoPanel(m.data);
         }
       });
     }
