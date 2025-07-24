@@ -130,13 +130,7 @@
   <select id="markerTime" style="width: 100%; font-size: 16px; padding: 12px;">
     <!-- 由 JS 動態產生 -->
   </select><br/><br/>
-  <!-- 新增：時間1、時間2選擇器 -->
-  <label for="markerTime1">時間1（上次選擇）：</label>
-  <select id="markerTime1" style="width:100%;font-size:16px;padding:12px;"></select>
-  <br/><br/>
-  <label for="markerTime2">時間2：</label>
-  <select id="markerTime2" style="width:100%;font-size:16px;padding:12px;"></select>
-  <br/><br/>
+  <!-- 已移除時間1、時間2選擇器 -->
   <label for="markerType">顏色：</label>
   <select id="markerType" style="width: 100%; font-size: 16px; padding: 12px;">
     <option value="0">⚪ 原始</option>
@@ -175,7 +169,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 4.1.2</div>
+  <div id="version">版本 4.1.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -321,41 +315,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   if (selectedTime) markerTime.value = selectedTime;
 }
 
-    // 根據主時間表更新時間1/時間2選單（時間2為全部38種）
-    function updateTime1Time2Options() {
-      const markerTime = document.getElementById('markerTime');
-      const markerTime1 = document.getElementById('markerTime1');
-      const markerTime2 = document.getElementById('markerTime2');
-      const times = markerTime.value ? markerTime.value.split(/\s+/).filter(Boolean) : [];
-
-      markerTime1.innerHTML = '';
-      times.forEach(t => {
-        const opt1 = document.createElement('option');
-        opt1.value = t;
-        opt1.textContent = t;
-        markerTime1.appendChild(opt1);
-      });
-
-      markerTime2.innerHTML = '';
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      allTimes.forEach(t => {
-        const m = t.match(/(\d{1,2}):?(\d{2})?/);
-        if (!m) return;
-        let h = parseInt(m[1], 10);
-        let mm = m[2] ? parseInt(m[2],10) : 0;
-        let total = h * 60 + mm;
-        if (total > nowMin) {
-          const opt2 = document.createElement('option');
-          opt2.value = t;
-          opt2.textContent = t;
-          markerTime2.appendChild(opt2);
-        }
-      });
-
-      markerTime1.value = times[0] || '';
-      markerTime2.selectedIndex = -1;
-    }
+    // 已移除 updateTime1Time2Options 函数
 
     // 工具：給一組時間字串，找出最靠近現在的那一個
     function getNearestTime(timestr) {
@@ -401,22 +361,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
       } else if (marker.data.name === "BABA古龍種") {
         times = times.filter((_, idx) => idx % 2 === 1);
       }
-      if (marker.data.time1 && marker.data.time2 && marker.data.time) {
-        const idx1 = times.findIndex(t => t === marker.data.time1);
-        const idx2 = allTimes.findIndex(t => t === marker.data.time2);
-        if (idx1 !== -1 && idx2 !== -1 && idx2 !== idx1) {
-          const step = idx2 - idx1;
-          if (step > 0) {
-            let pattern = [];
-            let pos = idx1;
-            while (pos < times.length) {
-              pattern.push(times[pos]);
-              pos += step;
-            }
-            times = pattern;
-          }
-        }
-      }
+      // 移除时间1和时间2相关逻辑
       if (!times.length) return "";
       const offset = parseInt(marker.data.offsetMinutes || 0, 10);
       const now = new Date();
@@ -521,8 +466,6 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
         const content = `
           <p><strong>${data.name}</strong></p>
           <p>時間：${data.time}</p>
-          <p>時間1：${data.time1 || ''}</p>
-          <p>時間2：${data.time2 || ''}</p>
           <p>類型：${markerColors[data.type] || '原始'}</p>
           <p>備註：${data.remark}</p>
           <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
@@ -602,7 +545,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
                 position: relative;
               ">
                 ${showRedCross ? redCrossSVG : ""}
-                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:5px;">${timeStr}</div>` : ""}
+                ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-ra[...]
                 ${orderNumber !== null ? `
                   <div class="marker-order-badge" style="
                     position: absolute;
@@ -670,12 +613,12 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`);
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`)[...]
         if (input) {
           const [name, time, type, remark, offsetStr, totalPoints, mapId] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
           const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 });
+          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 }[...]
           this.lastMarkerType = markerType;
         }
         const infoPanel = document.getElementById('infoPanel');
@@ -691,11 +634,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
       }
 
       addMarker(latlng, data) {
-        if (!data.time1 && data.time) {
-          const times = data.time.split(/\s+/).filter(Boolean);
-          data.time1 = times[0] || '';
-          data.time2 = '';
-        }
+        // 已移除 time1、time2 相关逻辑
         if (!data.totalPoints) data.totalPoints = 1;
         if (!data.mapId) data.mapId = 1;
         const marker = L.marker(latlng, {
@@ -731,9 +670,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
               if (infoPanel) infoPanel.style.display = 'none';
               document.getElementById('markerName').value = marker.data.name;
               updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
-              updateTime1Time2Options();
-              document.getElementById('markerTime1').value = marker.data.time1 || '';
-              document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
+              // 已移除 updateTime1Time2Options
               document.getElementById('markerType').value = marker.data.type;
               document.getElementById('markerRemark').value = marker.data.remark;
               document.getElementById('markerOffset').value = marker.data.offsetMinutes || 0;
@@ -744,15 +681,11 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
                 const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
                 const remark = document.getElementById('markerRemark').value.trim();
                 const offsetMinutes = parseInt(document.getElementById('markerOffset').value || "0", 10);
-                const time1 = document.getElementById('markerTime1').value;
-                const time2 = document.getElementById('markerTime2').selectedIndex > -1 ? document.getElementById('markerTime2').value : '';
                 marker.data.name = name;
                 marker.data.time = time;
                 marker.data.type = type;
                 marker.data.remark = remark;
                 marker.data.offsetMinutes = offsetMinutes;
-                marker.data.time1 = time1;
-                marker.data.time2 = time2;
                 // totalPoints/mapId 不可編輯，維持原值
                 marker.setIcon(this.getCustomIcon(type, 1, marker));
                 this.updateMarkerScales();
@@ -915,10 +848,10 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     document.addEventListener('DOMContentLoaded', function() {
       // 預設載入 totalPoints=1 時間選項
       updateTimeOptionsForEdit(1, '');
-      updateTime1Time2Options();
+      // 已移除 updateTime1Time2Options
 
       document.getElementById('markerTime').addEventListener('change', function() {
-        updateTime1Time2Options();
+        // 已移除 updateTime1Time2Options
       });
     });
 
