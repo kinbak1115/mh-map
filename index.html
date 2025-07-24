@@ -574,19 +574,29 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
         document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
       }
 
-      showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`)[...]
-        if (input) {
-          const [name, time, type, remark, offsetStr, totalPoints, mapId] = input.split(',').map(s => s.trim());
-          const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-          const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 }[...]
-          this.lastMarkerType = markerType;
-        }
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = '';
-        document.getElementById('markerEditModal').style.display = 'none';
-      }
+showMarkerForm(latlng) {
+  const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`);
+  if (input) {
+    const [name, time, type, remark, offsetStr, totalPoints, mapId] = input.split(',').map(s => s.trim());
+    const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
+    const offsetMinutes = parseInt(offsetStr || "0", 10);
+    this.addMarker(latlng, {
+      name,
+      time,
+      type: markerType,
+      remark,
+      lat: latlng.lat,
+      lng: latlng.lng,
+      offsetMinutes,
+      totalPoints: parseInt(totalPoints, 10) || 1,
+      mapId: parseInt(mapId, 10) || 1
+    });
+    this.lastMarkerType = markerType;
+  }
+  const infoPanel = document.getElementById('infoPanel');
+  if (infoPanel) infoPanel.style.display = '';
+  document.getElementById('markerEditModal').style.display = 'none';
+}
 
       resetAllMarkers() {
         this.markers.eachLayer(m => {
