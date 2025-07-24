@@ -175,96 +175,94 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記</div>
   </div>
-  <div id="version">版本 4.1.1</div>
+  <div id="version">版本 4.1.2</div>
   <div id="zoomDisplay">Zoom: -</div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script>
-    // 固定 mapId/totalPoints
-    const MAP_ID = 999;
-    const TOTAL_POINTS = 4;
-
-    // 依照 totalPoints 設定所有時間表（每組一個 option，空白代表不用）
+    // 所有時間表
     const timeTableByTotalPoints = {
       1: [
-        "06:15AM 07:05AM 07:55AM 08:45AM 09:35AM 10:25AM 11:15AM 12:05PM 12:55PM 13:45PM 14:35PM 15:25PM 16:15PM 17:05PM 17:55PM 18:45PM 19:35PM 20:25PM 21:15PM 22:05PM"
+        "06:15 07:05 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05",
       ],
       2: [
-        "06:15AM 07:55AM 08:45AM 09:35AM 10:25AM 11:15AM 12:05PM 12:55PM 13:45PM 14:35PM 15:25PM 16:15PM 17:05PM 17:55PM 18:45PM 19:35PM 20:25PM 21:15PM 22:05PM 22:55PM",
-        "07:05AM 08:45AM 09:35AM 10:25AM 11:15AM 12:05PM 12:55PM 13:45PM 14:35PM 15:25PM 16:15PM 17:05PM 17:55PM 18:45PM 19:35PM 20:25PM 21:15PM 22:05PM 22:55PM"
+        "06:15 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05 22:55",
+        "07:05 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05 22:55"
       ],
       3: [
-        "06:15AM 08:45AM 11:15AM 13:45PM 16:15PM 18:45PM 21:15PM",
-        "07:05AM 09:35AM 12:05PM 14:35PM 17:05PM 19:35PM 22:05PM",
-        "07:55AM 10:25AM 12:55PM 15:25PM 17:55PM 20:25PM"
+        "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+        "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+        "07:55 10:25 12:55 15:25 17:55 20:25"
       ],
       4: [
-        "06:15AM 07:55AM 09:35AM 11:15AM 12:55PM 14:35PM 16:15PM 17:55PM 19:35PM 21:15PM 22:55PM",
-        "06:40AM 08:20AM 10:00AM 11:40AM 13:20PM 15:00PM 16:40PM 18:20PM 20:00PM 21:40PM 23:20PM",
-        "07:05AM 08:45AM 10:25AM 12:05PM 13:45PM 15:25PM 17:05PM 18:45PM 20:25PM 22:05PM",
-        "07:30AM 09:10AM 10:50AM 12:30PM 14:10PM 15:50PM 17:30PM 19:10PM 20:50PM 22:30PM"
+        "06:15 07:55 09:35 11:15 12:55 14:35 16:15 17:55 19:35 21:15 22:55",
+        "06:40 08:20 10:00 11:40 13:20 15:00 16:40 18:20 20:00 21:40 23:20",
+        "07:05 08:45 10:25 12:05 13:45 15:25 17:05 18:45 20:25 22:05",
+        "07:30 09:10 10:50 12:30 14:10 15:50 17:30 19:10 20:50 22:30"
       ],
-      5: [
-        "06:15AM 08:20AM 10:25AM 12:30PM 14:35PM 16:40PM 18:45PM 20:50PM 22:55PM",
-        "06:40AM 08:45AM 10:50AM 12:55PM 15:00PM 17:05PM 19:10PM 21:15PM 23:20PM",
-        "07:05AM 09:10AM 11:15AM 13:20PM 15:25PM 17:30PM 19:35PM 21:40PM",
-        "07:30AM 09:35AM 11:40AM 13:45PM 15:50PM 17:55PM 20:00PM 22:05PM",
-        "07:55AM 10:00AM 12:05PM 14:10PM 16:15PM 18:20PM 20:25PM 22:30PM"
-      ],
-      6: [
-        "06:15AM 08:45AM 11:15AM 13:45PM 16:15PM 18:45PM 21:15PM",
-        "06:40AM 09:10AM 11:40AM 14:10PM 16:40PM 19:10PM 21:40PM",
-        "07:05AM 09:35AM 12:05PM 14:35PM 17:05PM 19:35PM 22:05PM",
-        "07:30AM 10:00AM 12:30PM 15:00PM 17:30PM 20:00PM 22:30PM",
-        "07:55AM 10:25AM 12:55PM 15:25PM 17:55PM 20:25PM 22:55PM",
-        "08:20AM 10:50AM 13:20PM 15:50PM 18:20PM 20:50PM 23:20PM"
-      ],
-      7: [
-        "06:15AM 08:45AM 11:15AM 13:45PM 16:15PM 18:45PM 21:15PM",
-        "06:40AM 09:10AM 11:40AM 14:10PM 16:40PM 19:10PM 21:40PM",
-        "07:05AM 09:35AM 12:05PM 14:35PM 17:05PM 19:35PM 22:05PM",
-        "07:30AM 10:00AM 12:30PM 15:00PM 17:30PM 20:00PM 22:30PM",
-        "07:55AM 10:25AM 12:55PM 15:25PM 17:55PM 20:25PM 22:55PM",
-        "08:20AM 10:50AM 13:20PM 15:50PM 18:20PM 20:50PM 23:20PM"
-      ],
-      8: [
-        "06:15AM 08:45AM 11:15AM 13:45PM 16:15PM 18:45PM 21:15PM",
-        "06:40AM 09:10AM 11:40AM 14:10PM 16:40PM 19:10PM 21:40PM",
-        "07:05AM 09:35AM 12:05PM 14:35PM 17:05PM 19:35PM 22:05PM",
-        "07:30AM 10:00AM 12:30PM 15:00PM 17:30PM 20:00PM 22:30PM",
-        "07:55AM 10:25AM 12:55PM 15:25PM 17:55PM 20:25PM 22:55PM",
-        "08:20AM 10:50AM 13:20PM 15:50PM 18:20PM 20:50PM 23:20PM"
-      ]
+       5: [
+    "06:15 08:20 10:25 12:30 14:35 16:40 18:45 20:50 22:55",
+    "06:40 08:45 10:50 12:55 15:00 17:05 19:10 21:15 23:20",
+    "07:05 09:10 11:15 13:20 15:25 17:30 19:35 21:40",
+    "07:30 09:35 11:40 13:45 15:50 17:55 20:00 22:05",
+    "07:55 10:00 12:05 14:10 16:15 18:20 20:25 22:30"
+  ],
+  6: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ],
+  7: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ],
+  8: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ]
     };
 
     const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
 
     // 所有38種時段
     const allTimes = [
-      "6:15AM", "6:40AM", "7:05AM", "7:30AM",
-      "7:55AM", "8:20AM", "8:45AM", "9:10AM",
-      "9:35AM", "10:00AM", "10:25AM", "10:50AM",
-      "11:15AM", "11:40AM", "12:05PM", "12:30PM",
-      "12:55PM", "1:20PM", "1:45PM", "2:10PM",
-      "2:35PM", "3:00PM", "3:25PM", "3:50PM",
-      "4:15PM", "4:40PM", "5:05PM", "5:30PM",
-      "5:55PM", "6:20PM", "6:45PM", "7:10PM",
-      "7:35PM", "8:00PM", "8:25PM", "8:50PM",
-      "9:15PM", "9:40PM", "10:05PM", "10:30PM",
-      "10:55PM", "11:20PM"
+      "06:15", "06:40", "07:05", "07:30",
+      "07:55", "08:20", "08:45", "09:10",
+      "09:35", "10:00", "10:25", "10:50",
+      "11:15", "11:40", "12:05", "12:30",
+      "12:55", "13:20", "13:45", "14:10",
+      "14:35", "15:00", "15:25", "15:50",
+      "16:15", "16:40", "17:05", "17:30",
+      "17:55", "18:20", "18:45", "19:10",
+      "19:35", "20:00", "20:25", "20:50",
+      "21:15", "21:40", "22:05", "22:30",
+      "22:55", "23:20"
     ];
 
     // === 時間選項生成 ===
-    function updateTimeOptions() {
+    function updateTimeOptionsForEdit(totalPoints, selectedTime) {
       const markerTime = document.getElementById('markerTime');
       markerTime.innerHTML = '';
-      const arr = timeTableByTotalPoints[TOTAL_POINTS] || [];
+      const arr = timeTableByTotalPoints[totalPoints] || [];
       arr.forEach(timestr => {
         const opt = document.createElement('option');
         opt.value = timestr;
         opt.textContent = timestr;
         markerTime.appendChild(opt);
       });
+      // 若該標記有 time 屬性則預選
+      if (selectedTime) markerTime.value = selectedTime;
     }
 
     // 根據主時間表更新時間1/時間2選單（時間2為全部38種）
@@ -286,14 +284,11 @@
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
       allTimes.forEach(t => {
-        const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        const m = t.match(/(\d{1,2}):?(\d{2})?/);
         if (!m) return;
         let h = parseInt(m[1], 10);
-        let mm = parseInt(m[2], 10);
-        let ap = m[3].toUpperCase();
-        if (ap === "PM" && h !== 12) h += 12;
-        if (ap === "AM" && h === 12) h = 0;
-        const total = h * 60 + mm;
+        let mm = m[2] ? parseInt(m[2],10) : 0;
+        let total = h * 60 + mm;
         if (total > nowMin) {
           const opt2 = document.createElement('option');
           opt2.value = t;
@@ -315,13 +310,10 @@
       let minDiff = Infinity;
       let best = '';
       for (const t of times) {
-        const m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        const m = t.match(/(\d{1,2}):?(\d{2})?/);
         if (!m) continue;
         let h = parseInt(m[1], 10);
-        let mm = parseInt(m[2], 10);
-        let ap = m[3].toUpperCase();
-        if (ap === "PM" && h !== 12) h += 12;
-        if (ap === "AM" && h === 12) h = 0;
+        let mm = m[2] ? parseInt(m[2],10) : 0;
         let total = h * 60 + mm;
         let diff = Math.abs(total - nowMin);
         if (diff > 12*60) diff = 24*60 - diff;
@@ -334,22 +326,16 @@
     }
 
     function addMinutesToTimeString(timestr, offset) {
-      let m = timestr.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+      let m = timestr.match(/(\d{1,2}):?(\d{2})?/);
       if (!m) return timestr;
       let h = parseInt(m[1], 10);
-      let mm = parseInt(m[2], 10);
-      let ap = m[3].toUpperCase();
-      if (ap === "PM" && h !== 12) h += 12;
-      if (ap === "AM" && h === 12) h = 0;
+      let mm = m[2] ? parseInt(m[2],10) : 0;
       let total = h * 60 + mm + offset;
       if (total < 0) total += 24 * 60;
       if (total >= 24 * 60) total -= 24 * 60;
       let nh = Math.floor(total / 60);
       let nmm = total % 60;
-      let nap = nh >= 12 ? "PM" : "AM";
-      let showh = nh % 12;
-      if (showh === 0) showh = 12;
-      return `${showh}:${nmm.toString().padStart(2, '0')}${nap}`;
+      return `${nh.toString().padStart(2, '0')}:${nmm.toString().padStart(2, '0')}`;
     }
 
     function getNearestTimeString(marker) {
@@ -382,13 +368,10 @@
       let minDiff = Infinity;
       let bestDisplayTime = "";
       for (const t of times) {
-        let m = t.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+        let m = t.match(/(\d{1,2}):?(\d{2})?/);
         if (!m) continue;
         let h = parseInt(m[1], 10);
-        let mm = parseInt(m[2], 10);
-        let ap = m[3].toUpperCase();
-        if (ap === "PM" && h !== 12) h += 12;
-        if (ap === "AM" && h === 12) h = 0;
+        let mm = m[2] ? parseInt(m[2],10) : 0;
         let total = h * 60 + mm + offset;
         if (total < 0) total += 24 * 60;
         if (total >= 24 * 60) total -= 24 * 60;
@@ -402,16 +385,6 @@
       }
       return bestDisplayTime;
     }
-
-    // 綁定
-    document.addEventListener('DOMContentLoaded', function() {
-      updateTimeOptions();
-      updateTime1Time2Options();
-
-      document.getElementById('markerTime').addEventListener('change', function() {
-        updateTime1Time2Options();
-      });
-    });
 
     class MapApp {
       constructor() {
@@ -498,8 +471,8 @@
           <p>備註：${data.remark}</p>
           <p>時間偏差：${data.offsetMinutes || 0} 分鐘</p>
           <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
-          <p>地圖編號：${MAP_ID}</p>
-          <p>地图总采集点：${TOTAL_POINTS}</p>
+          <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
+          <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
         `;
         document.getElementById('panelContent').innerHTML = content;
       }
@@ -641,12 +614,12 @@
       }
 
       showMarkerForm(latlng) {
-        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘)）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0`);
+        const input = prompt('新增採集點（名稱, 時間, 顏色(0-4), 備註, 時間偏差(分鐘), 總點數, 地圖編號）', `採集點, 現在, ${this.lastMarkerType}, 未確認, 0, 1, 1`);
         if (input) {
-          const [name, time, type, remark, offsetStr] = input.split(',').map(s => s.trim());
+          const [name, time, type, remark, offsetStr, totalPoints, mapId] = input.split(',').map(s => s.trim());
           const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
           const offsetMinutes = parseInt(offsetStr || "0", 10);
-          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes });
+          this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, offsetMinutes, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 });
           this.lastMarkerType = markerType;
         }
         const infoPanel = document.getElementById('infoPanel');
@@ -667,8 +640,8 @@
           data.time1 = times[0] || '';
           data.time2 = '';
         }
-        data.totalPoints = TOTAL_POINTS;
-        data.mapId = MAP_ID;
+        if (!data.totalPoints) data.totalPoints = 1;
+        if (!data.mapId) data.mapId = 1;
         const marker = L.marker(latlng, {
           icon: this.getCustomIcon(data.type, 1, { data }),
           draggable: false
@@ -701,7 +674,7 @@
               const infoPanel = document.getElementById('infoPanel');
               if (infoPanel) infoPanel.style.display = 'none';
               document.getElementById('markerName').value = marker.data.name;
-              document.getElementById('markerTime').value = marker.data.time;
+              updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
               updateTime1Time2Options();
               document.getElementById('markerTime1').value = marker.data.time1 || '';
               document.getElementById('markerTime2').selectedIndex = marker.data.time2 ? Array.from(document.getElementById('markerTime2').options).findIndex(opt => opt.value === marker.data.time2) : -1;
@@ -724,6 +697,7 @@
                 marker.data.offsetMinutes = offsetMinutes;
                 marker.data.time1 = time1;
                 marker.data.time2 = time2;
+                // totalPoints/mapId 不可編輯，維持原值
                 marker.setIcon(this.getCustomIcon(type, 1, marker));
                 this.updateMarkerScales();
                 this.saveMarkers();
@@ -801,11 +775,6 @@
           .then(res => res.json())
           .then(data => {
             if (!Array.isArray(data)) throw new Error();
-            // 強制加上 mapId/totalPoints
-            data.forEach(d => {
-              d.totalPoints = TOTAL_POINTS;
-              d.mapId = MAP_ID;
-            });
             localStorage.setItem('mhnow_markers', JSON.stringify(data));
             alert('成功從 GitHub 匯入標記，重新載入地圖。');
             location.reload();
@@ -886,6 +855,16 @@
         );
       }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 預設載入 totalPoints=1 時間選項
+      updateTimeOptionsForEdit(1, '');
+      updateTime1Time2Options();
+
+      document.getElementById('markerTime').addEventListener('change', function() {
+        updateTime1Time2Options();
+      });
+    });
 
     const app = new MapApp();
   </script>
