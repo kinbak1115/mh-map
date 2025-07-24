@@ -255,31 +255,69 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
 
 // 清理 getNearestTimeString 相關邏輯
 function getNearestTimeString(marker) {
+  // Get the time string and split into individual times
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-  if (marker.data.name === "ABAB古龍種") {
+  const isTotalPointsTwo = marker.data.totalPoints === 2;
+  const scheduleIndex = marker.data.scheduleIndex; // 0 or 1 for totalPoints = 2
+
+  // Filter times based on marker name and schedule index
+  if (isTotalPointsTwo && scheduleIndex !== undefined) {
+    const fullTimes = timeTableByTotalPoints[2][scheduleIndex].split(/\s+/).filter(Boolean);
+    if (marker.data.name === "ABAB古龍種") {
+      times = fullTimes.filter((_, idx) => idx % 2 === 0);
+    } else if (marker.data.name === "BABA古龍種") {
+      times = fullTimes.filter((_, idx) => idx % 2 === 1);
+    } else {
+      times = fullTimes;
+    }
+  } else if (marker.data.name === "ABAB古龍種") {
     times = times.filter((_, idx) => idx % 2 === 0);
   } else if (marker.data.name === "BABA古龍種") {
     times = times.filter((_, idx) => idx % 2 === 1);
   }
+
   if (!times.length) return "";
+
+  // Find the nearest time
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   let minDiff = Infinity;
   let bestDisplayTime = "";
+  let secondBestTime = "";
+
   for (const t of times) {
     let m = t.match(/(\d{1,2}):?(\d{2})?/);
     if (!m) continue;
     let h = parseInt(m[1], 10);
-    let mm = m[2] ? parseInt(m[2],10) : 0;
+    let mm = m[2] ? parseInt(m[2], 10) : 0;
     let total = h * 60 + mm;
     let diff = total - nowMin;
-    if (Math.abs(diff) <= 25) {
-      if (Math.abs(diff) < Math.abs(minDiff)) {
-        minDiff = diff;
-        bestDisplayTime = t;
+    if (diff < -12 * 60) diff += 24 * 60; // Handle times crossing midnight
+    else if (diff > 12 * 60) diff -= 24 * 60;
+
+    if (Math.abs(diff) <= 25 && Math.abs(diff) < Math.abs(minDiff)) {
+      secondBestTime = bestDisplayTime;
+      minDiff = diff;
+      bestDisplayTime = t;
+    }
+  }
+
+  // For totalPoints = 2, check paired marker to avoid duplicate times
+  if (isTotalPointsTwo && bestDisplayTime) {
+    const pairedMarker = this.markers.getLayers().find(m =>
+      m !== marker &&
+      m.data.mapId === marker.data.mapId &&
+      m.data.totalPoints === 2
+    );
+    if (pairedMarker) {
+      const pairedTime = getNearestTimeString.call(this, pairedMarker);
+      if (pairedTime === bestDisplayTime && secondBestTime) {
+        // If the best time matches the paired marker's time, use the second best
+        bestDisplayTime = secondBestTime;
       }
     }
   }
+
   return bestDisplayTime;
 }
 
@@ -411,7 +449,7 @@ class MapApp {
     let timeStr = "";
     if (marker) {
       if (!(marker.data && marker.data.name === "大連狩獵")) {
-        timeStr = getNearestTimeString(marker);
+        timeStr = getNearestTimeString.call(this, marker);
       }
     }
 
@@ -512,7 +550,25 @@ class MapApp {
     if (input) {
       const [name, time, type, remark, totalPoints, mapId] = input.split(',').map(s => s.trim());
       const markerType = Math.min(Math.max(parseInt(type) || 0, 0), 4);
-      this.addMarker(latlng, { name, time, type: markerType, remark, lat: latlng.lat, lng: latlng.lng, totalPoints: parseInt(totalPoints, 10) || 1, mapId: parseInt(mapId, 10) || 1 });
+      const markerData = {
+        name,
+        time,
+        type: markerType,
+        remark,
+        lat: latlng.lat,
+        lng: latlng.lng,
+        totalPoints: parseInt(totalPoints, 10) || 1,
+        mapId: parseInt(mapId, 10) || 1
+      };
+      // Assign scheduleIndex for totalPoints = 2
+      if (markerData.totalPoints === 2) {
+        const pairedMarkers = this.markers.getLayers().filter(m =>
+          m.data.mapId === markerData.mapId && m.data.totalPoints === 2
+        );
+        markerData.scheduleIndex = pairedMarkers.length === 0 ? 0 : 1;
+        markerData.time = timeTableByTotalPoints[2][markerData.scheduleIndex];
+      }
+      this.addMarker(latlng, markerData);
       this.lastMarkerType = markerType;
     }
     const infoPanel = document.getElementById('infoPanel');
@@ -542,6 +598,9 @@ class MapApp {
       return;
     }
 
+    // Update the marker's scheduleIndex
+    marker.data.scheduleIndex = selectedTimeIndex;
+
     // Find other markers with the same mapId and totalPoints = 2
     let pairedMarkers = [];
     this.markers.eachLayer(m => {
@@ -560,6 +619,7 @@ class MapApp {
       const pairedMarker = pairedMarkers[0];
       const alternativeTimeIndex = selectedTimeIndex === 0 ? 1 : 0;
       pairedMarker.data.time = timeOptions[alternativeTimeIndex];
+      pairedMarker.data.scheduleIndex = alternativeTimeIndex;
       pairedMarker.setIcon(this.getCustomIcon(pairedMarker.data.type, 1, pairedMarker));
     }
   }
@@ -667,6 +727,13 @@ class MapApp {
       // 如果 totalPoints=1，強制設置時間為唯一的選項
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
+      } else if (data.totalPoints === 2 && !data.scheduleIndex) {
+        // Assign scheduleIndex for existing markers if missing
+        const pairedMarkers = saved.filter(m =>
+          m.mapId === data.mapId && m.totalPoints === 2 && m !== data
+        );
+        data.scheduleIndex = pairedMarkers.length === 0 ? 0 : 1;
+        data.time = timeTableByTotalPoints[2][data.scheduleIndex];
       }
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
@@ -700,6 +767,16 @@ class MapApp {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
+        // Assign scheduleIndex for totalPoints = 2 in imported data
+        data.forEach((markerData, index) => {
+          if (markerData.totalPoints === 2 && !markerData.scheduleIndex) {
+            const pairedMarkers = data.filter(m =>
+              m.mapId === markerData.mapId && m.totalPoints === 2 && m !== markerData
+            );
+            markerData.scheduleIndex = pairedMarkers.length === 0 ? 0 : 1;
+            markerData.time = timeTableByTotalPoints[2][markerData.scheduleIndex];
+          }
+        });
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
         location.reload();
