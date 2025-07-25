@@ -271,12 +271,18 @@ function getTimePeriod(totalPoints, selectedTimetableString) {
   return index !== -1 ? (index + 1).toString() : "-";
 }
 
-// === 更新時間選項 ===
+// === 更新時間選項 (Modified to not auto-select) ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
   const timePeriodInput = document.getElementById('timePeriod');
-  markerTimeSelect.innerHTML = '';
-  timePeriodInput.value = ''; // Clear time period initially
+  markerTimeSelect.innerHTML = ''; // Clear existing options
+  timePeriodInput.value = ''; // Ensure time period is empty initially
+
+  // Add a default "Please select" option
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = ''; // Empty value
+  defaultOpt.textContent = '請選擇時間';
+  markerTimeSelect.appendChild(defaultOpt);
 
   const arr = timeTableByTotalPoints[totalPoints] || [];
   arr.forEach(timestr => {
@@ -286,25 +292,29 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     markerTimeSelect.appendChild(opt);
   });
 
-  // Set selected value if available
+  // Set the selected value based on the marker's existing time
   if (selectedTime) {
     markerTimeSelect.value = selectedTime;
-  } else if (totalPoints === 1 && arr.length === 1) {
-    markerTimeSelect.value = arr[0]; // For single timetable, select it by default
+  } else {
+    markerTimeSelect.value = ''; // Explicitly set to empty if no time is selected for the marker
   }
-
-
-  // Update time period when the dropdown value changes
-  markerTimeSelect.onchange = () => {
-    const currentSelectedTimetableString = markerTimeSelect.value;
-    timePeriodInput.value = getTimePeriod(totalPoints, currentSelectedTimetableString);
-  };
 
   // Set initial time period if a selection was made
   if (markerTimeSelect.value) {
     timePeriodInput.value = getTimePeriod(totalPoints, markerTimeSelect.value);
   }
+
+  // Update time period when the dropdown value changes
+  markerTimeSelect.onchange = () => {
+    const currentSelectedTimetableString = markerTimeSelect.value;
+    if (currentSelectedTimetableString === '') {
+      timePeriodInput.value = ''; // Clear if "請選擇時間" is picked
+    } else {
+      timePeriodInput.value = getTimePeriod(totalPoints, currentSelectedTimetableString);
+    }
+  };
 }
+
 
 // === 更新 remark 選項 ===
 function updateRemarkOptionsForEdit(remark) {
@@ -590,7 +600,7 @@ class MapApp {
               iconUrl = defaultElderIconUrl; // Set to default Elder Dragon
             } else if (slotState === 'B') {
               iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // Set to Blue Elder Dragon
-            } else if (slotState === '?') { // <--- ADDED THIS CONDITION
+            } else if (slotState === '?') {
               iconUrl = defaultElderIconUrl; // If '?' means default Elder Dragon
             }
             // If slotState is anything else not explicitly handled, iconUrl remains gather.png or previous
@@ -839,7 +849,9 @@ class MapApp {
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
     saved.forEach(data => {
       if (data.totalPoints === 1) {
-        data.time = timeTableByTotalPoints[1][0];
+        // Keep this if you always want single-point markers to have a default time
+        // data.time = timeTableByTotalPoints[1][0];
+        // Otherwise, remove it to leave time empty for new point 1 markers
       }
       delete data.name;
       data.type = 0;
@@ -954,7 +966,8 @@ class MapApp {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  updateTimeOptionsForEdit(1, '');
+  // We no longer need to call updateTimeOptionsForEdit here with a default value,
+  // as it's handled when a marker is clicked in edit mode.
 });
 
 const app = new MapApp();
