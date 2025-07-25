@@ -281,7 +281,7 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
     if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      period = i % 2 === 0 ? "2" : "1"; // Reversed for all totalPoints
+      period = i % 2 === 0 ? "1" : "2"; // Fix: Even indices -> "1", odd -> "2"
       break;
     }
   }
