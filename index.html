@@ -582,89 +582,121 @@ class MapApp {
     // 移除手动添加标记的点击/触摸事件监听
   }
 
-  getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-    const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
-    const iconUrls = {
-      0: iconUrl,
-      1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-      2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-      3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-      4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
-      raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
-    };
+getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+  const iconUrls = {
+    0: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png',
+    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
+    raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
+  };
 
-    let useIconUrl = iconUrls[type];
-    let isRaid = false;
-    if (marker && marker.data && marker.data.name === "大連狩獵") {
-      useIconUrl = iconUrls.raid;
-      isRaid = true;
-    }
-
-    let size = 40 * scale;
-    if (isRaid) {
-      size = size * 0.75;
-    }
-
-    let timeStr = "";
-    if (marker) {
-      if (!(marker.data && marker.data.name === "大連狩獵")) {
-        timeStr = getNearestTimeString(marker);
+  let useIconUrl = iconUrls[type];
+  let isRaid = false;
+  if (marker && marker.data && marker.data.name === "大連狩獵") {
+    useIconUrl = iconUrls.raid;
+    isRaid = true;
+  } else if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
+    // Check if the marker is in an ancient dragon state based on remark and time
+    const remark = marker.data.remark;
+    const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+    if (times.length && remark.includes('確認')) {
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let currentSlot = -1;
+      for (let i = 0; i < times.length; i++) {
+        const [h, m] = times[i].split(':').map(Number);
+        const timeMin = h * 60 + m;
+        const nextTime = times[i + 1] || times[0];
+        const [nh, nm] = nextTime.split(':').map(Number);
+        let nextTimeMin = nh * 60 + nm;
+        if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+        if (nowMin >= timeMin && nowMin < nextTimeMin) {
+          currentSlot = i;
+          break;
+        }
+      }
+      if (currentSlot >= 0) {
+        // Map remark pattern (e.g., "? A ? A") to the current slot
+        const patternMatch = remark.match(/([?AB\s]+)確認/);
+        if (patternMatch) {
+          const pattern = patternMatch[1].trim().split(/\s+/);
+          const patternLength = pattern.length;
+          const slotState = pattern[currentSlot % patternLength];
+          if (slotState === 'A') {
+            useIconUrl = iconUrls[4]; // Use elder.png for ancient dragon state
+          }
+        }
       }
     }
-
-    let timeFontSize = Math.max(10, Math.floor(14 * scale));
-
-    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
-
-    const redCrossSVG = `
-      <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
-        <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-        <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-      </svg>
-    `;
-
-    return L.divIcon({
-      className: '',
-      html: `
-        <div class="marker-wrapper" style="position:relative;">
-          <div class="marker-border" style="
-            background-image: url('${useIconUrl}');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            width: ${size}px;
-            height: ${size}px;
-            position: relative;
-          ">
-            ${showRedCross ? redCrossSVG : ""}
-            ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4px;white-space:nowrap;">${timeStr}</div>` : ""}
-            ${orderNumber !== null ? `
-              <div class="marker-order-badge" style="
-                position: absolute;
-                top: ${-10 * scale}px;
-                left: ${-10 * scale}px;
-                width: ${Math.max(20 * scale, 18)}px;
-                height: ${Math.max(20 * scale, 18)}px;
-                background: #ff6600;
-                color: #fff;
-                border-radius: 50%;
-                font-size: ${Math.max(11 * scale, 12)}px;
-                font-weight: bold;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                border: ${2 * scale}px solid #fff;
-                z-index: 20;
-              ">${orderNumber+1}</div>
-            ` : ""}
-          </div>
-        </div>`,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size / 2],
-      popupAnchor: [0, -size / 2]
-    });
   }
+
+  let size = 40 * scale;
+  if (isRaid) {
+    size = size * 0.75;
+  }
+
+  let timeStr = "";
+  if (marker) {
+    if (!(marker.data && marker.data.name === "大連狩獵")) {
+      timeStr = getNearestTimeString(marker);
+    }
+  }
+
+  let timeFontSize = Math.max(10, Math.floor(14 * scale));
+
+  let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+
+  const redCrossSVG = `
+    <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
+      <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+      <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+    </svg>
+  `;
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div class="marker-wrapper" style="position:relative;">
+        <div class="marker-border" style="
+          background-image: url('${useIconUrl}');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          width: ${size}px;
+          height: ${size}px;
+          position: relative;
+        ">
+          ${showRedCross ? redCrossSVG : ""}
+          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4px;white-space:nowrap;">${timeStr}</div>` : ""}
+          ${orderNumber !== null ? `
+            <div class="marker-order-badge" style="
+              position: absolute;
+              top: ${-10 * scale}px;
+              left: ${-10 * scale}px;
+              width: ${Math.max(20 * scale, 18)}px;
+              height: ${Math.max(20 * scale, 18)}px;
+              background: #ff6600;
+              color: #fff;
+              border-radius: 50%;
+              font-size: ${Math.max(11 * scale, 12)}px;
+              font-weight: bold;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+              border: ${2 * scale}px solid #fff;
+              z-index: 20;
+            ">${orderNumber+1}</div>
+          ` : ""}
+        </div>
+      </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2]
+  });
+}
 
   isMobile() {
     return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
