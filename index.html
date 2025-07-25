@@ -91,18 +91,15 @@
     .info-panel {
       height: auto;
       width: 260px;
-      background: white;
+      background: auto;
+      background-color: white;
       padding: 14px 20px;
       border-radius: 8px;
       margin: auto 0px auto;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0, 0,0,0.2);
       font-size: 16px;
       font-family: inherit;
       z-index: 1000;
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      display: block !important; /* 强制显示 */
     }
     .info-panel h3 {
       margin-top: auto;
@@ -196,14 +193,12 @@
     <button onclick="
       document.getElementById('markerEditModal').style.display='none';
       const infoPanel = document.getElementById('infoPanel');
-      if (infoPanel) {
-        infoPanel.style.display = 'block';
-        console.log('Info panel restored on modal cancel');
-      }
+      if (infoPanel) infoPanel.style.display = '';
     ">取消</button>
   </div>
 </div>
 
+<div id="map"></div>
 <div id="infoPanel" class="info-panel">
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
@@ -435,13 +430,6 @@ class MapApp {
     this.map.on('zoomend', () => this.updateMarkerScales());
     this.updateMarkerScales();
 
-    // 确保信息面板在初始化时可见
-    const infoPanel = document.getElementById('infoPanel');
-    if (infoPanel) {
-      infoPanel.style.display = 'block';
-      console.log('Info panel initialized to visible');
-    }
-
     setInterval(() => this.updateMarkerScales(), 60 * 1000);
   }
 
@@ -559,14 +547,7 @@ class MapApp {
       <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
       <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
     `;
-    const infoPanel = document.getElementById('infoPanel');
-    if (infoPanel) {
-      infoPanel.style.display = 'block';
-      document.getElementById('panelContent').innerHTML = content;
-      console.log('Info panel updated and set to visible');
-    } else {
-      console.error('Info panel element not found');
-    }
+    document.getElementById('panelContent').innerHTML = content;
   }
 
   initEventListeners() {
@@ -574,8 +555,10 @@ class MapApp {
   }
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
+    // 默认图标为 gather.png
     let iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
 
+    // 检查是否应使用古龙图标 (elder.png 或 blueelder.png)
     if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
       const remark = marker.data.remark;
       const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
@@ -589,22 +572,23 @@ class MapApp {
           const nextTime = times[i + 1] || times[0];
           const [nh, nm] = nextTime.split(':').map(Number);
           let nextTimeMin = nh * 60 + nm;
-          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // 处理跨夜时间
           if (nowMin >= timeMin && nowMin < nextTimeMin) {
             currentSlot = i;
             break;
           }
         }
         if (currentSlot >= 0) {
+          // 解析备注模式，例如 "? B ? B"
           const patternMatch = remark.match(/([?AB\s]+)確認/);
           if (patternMatch) {
             const pattern = patternMatch[1].trim().split(/\s+/);
             const patternLength = pattern.length;
             const slotState = pattern[currentSlot % patternLength];
             if (slotState === 'A') {
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'; // A 使用 elder.png
             } else if (slotState === 'B') {
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png';
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // B 使用 blueelder.png
             }
           }
         }
@@ -710,7 +694,7 @@ class MapApp {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
     if (!data.remark) data.remark = '';
-    data.type = 0;
+    data.type = 0; // 强制使用默认图标
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(1, { data }),
       draggable: false
@@ -741,10 +725,7 @@ class MapApp {
         marker.setZIndexOffset(1000);
         setTimeout(() => {
           const infoPanel = document.getElementById('infoPanel');
-          if (infoPanel) {
-            infoPanel.style.display = 'none';
-            console.log('Info panel hidden for edit modal');
-          }
+          if (infoPanel) infoPanel.style.display = 'none';
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           updateRemarkOptionsForEdit(marker.data.remark);
           document.getElementById('markerEditModal').style.display = 'block';
@@ -760,6 +741,8 @@ class MapApp {
             this.updateMarkerScales();
             this.saveMarkers();
             this.updateInfoPanel(marker.data);
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) infoPanel.style.display = '';
             document.getElementById('markerEditModal').style.display = 'none';
           };
         }, 0);
@@ -848,7 +831,7 @@ class MapApp {
         data.time = timeTableByTotalPoints[1][0];
       }
       delete data.name;
-      data.type = 0;
+      data.type = 0; // 强制使用默认图标
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
     this.updateMarkerScales();
@@ -870,7 +853,7 @@ class MapApp {
         if (!Array.isArray(data)) throw new Error();
         data.forEach(item => {
           delete item.name;
-          item.type = 0;
+          item.type = 0; // 强制使用默认图标
         });
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
@@ -895,10 +878,7 @@ class MapApp {
       this.saveMarkers();
       document.getElementById('markerEditModal').style.display = 'none';
       const infoPanel = document.getElementById('infoPanel');
-      if (infoPanel) {
-        infoPanel.style.display = 'block';
-        console.log('Info panel restored on edit mode exit');
-      }
+      if (infoPanel) infoPanel.style.display = '';
     }
     this.updateMarkerScales();
   }
@@ -913,10 +893,7 @@ class MapApp {
         if (editBtn) editBtn.textContent = '開始編輯';
         document.getElementById('markerEditModal').style.display = 'none';
         const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) {
-          infoPanel.style.display = 'block';
-          console.log('Info panel restored on route mode enter');
-        }
+        if (infoPanel) infoPanel.style.display = '';
       }
       this.selectedMarkers = [];
       button.textContent = '完成選擇';
@@ -924,11 +901,6 @@ class MapApp {
     } else {
       this.clearAllMarkerBorders();
       button.textContent = '選擇路線';
-      const infoPanel = document.getElementById('infoPanel');
-      if (infoPanel) {
-        infoPanel.style.display = 'block';
-        console.log('Info panel restored on route mode exit');
-      }
     }
     this.updateMarkerScales();
   }
@@ -966,11 +938,6 @@ class MapApp {
 
 document.addEventListener('DOMContentLoaded', function() {
   updateTimeOptionsForEdit(1, '');
-  const infoPanel = document.getElementById('infoPanel');
-  if (infoPanel) {
-    infoPanel.style.display = 'block';
-    console.log('Info panel set to visible on DOM load');
-  }
 });
 
 const app = new MapApp();
