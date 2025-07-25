@@ -248,7 +248,7 @@ const timeTableByTotalPoints = {
   ]
 };
 
-// 所有38種時段
+// All 38 time slots (not directly used for display, but good for reference)
 const allTimes = [
   "06:15", "06:40", "07:05", "07:30",
   "07:55", "08:20", "08:45", "09:10",
@@ -263,66 +263,79 @@ const allTimes = [
   "22:55", "23:20"
 ];
 
-// === 計算時間段 ===
-function getTimePeriod(totalPoints, timetable, currentTime) {
-  const times = timetable.split(/\s+/).filter(Boolean);
-  if (!times.length) return "-";
+// === 計算時間段 (Modified to find index) ===
+function getTimePeriod(totalPoints, selectedTimeStr) {
+  const timetablesForPoints = timeTableByTotalPoints[totalPoints];
+  if (!timetablesForPoints || timetablesForPoints.length === 0) return "-";
 
-  const now = currentTime || new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-
-  // Define a buffer time in minutes (e.g., 9 minutes before the scheduled time)
-  // This will make the logo appear from (Scheduled Time - bufferMinutes)
-  const bufferMinutes = 9;
-
-  let period = "-";
-  for (let i = 0; i < times.length; i++) {
-    const [h, m] = times[i].split(':').map(Number);
-    const timeMin = h * 60 + m;
-
-    // Calculate the start of the display window for the logo
-    let displayWindowStartMin = timeMin - bufferMinutes;
-    if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60; // Handle overnight times
-
-    const nextTime = times[i + 1] || times[0];
-    const [nh, nm] = nextTime.split(':').map(Number);
-    let nextTimeMin = nh * 60 + nm;
-    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Adjust for next day if it wraps around
-
-    // Check if current time is within the buffered window or the actual time slot
-    if (nowMin >= displayWindowStartMin && nowMin < nextTimeMin) {
-      period = i % 2 === 0 ? "1" : "2";
-      break;
+  // Iterate through all possible timetable arrays for the given totalPoints
+  for (const timetable of timetablesForPoints) {
+    const times = timetable.split(/\s+/).filter(Boolean);
+    const index = times.indexOf(selectedTimeStr);
+    if (index !== -1) {
+      // Found the time, return its 1-based index (period)
+      return (index + 1).toString();
     }
   }
-
-  return period;
+  return "-"; // Time not found in any timetable for this totalPoints
 }
 
 // === 更新時間選項 ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
-  const markerTime = document.getElementById('markerTime');
-  markerTime.innerHTML = '';
+  const markerTimeSelect = document.getElementById('markerTime');
+  const timePeriodInput = document.getElementById('timePeriod');
+  markerTimeSelect.innerHTML = '';
+  timePeriodInput.value = ''; // Clear time period when options are updated
+
   const arr = timeTableByTotalPoints[totalPoints] || [];
   arr.forEach(timestr => {
     const opt = document.createElement('option');
     opt.value = timestr;
     opt.textContent = timestr;
-    markerTime.appendChild(opt);
+    markerTimeSelect.appendChild(opt);
   });
+
   if (totalPoints === 1 && arr.length === 1) {
-    markerTime.value = arr[0];
+    markerTimeSelect.value = arr[0];
   } else if (selectedTime) {
-    markerTime.value = selectedTime;
+    markerTimeSelect.value = selectedTime;
   }
 
-  const timePeriodInput = document.getElementById('timePeriod');
-  if (timePeriodInput && arr.length > 0) {
-    const timetable = markerTime.value || arr[0]; // Use the selected time, or default to the first
-    timePeriodInput.value = getTimePeriod(totalPoints, timetable);
-  } else {
-    timePeriodInput.value = "-";
+  // Set initial time period if a time is already selected
+  if (markerTimeSelect.value) {
+    timePeriodInput.value = getTimePeriod(totalPoints, markerTimeSelect.value.split(/\s+/)[0]); // Pass only the first time string for period
   }
+
+  // Add event listener for when the time selection changes
+  markerTimeSelect.onchange = () => {
+    // For "時間段", we need to find the index of the selected time string within its specific timetable.
+    // The select's value is the full timetable string (e.g., "06:15 08:45..."),
+    // but the actual "time period" refers to which specific time slot in that string.
+    // Since the "period" depends on which *list* of times is active (e.g., first list, second list),
+    // and `getTimePeriod` needs a single time, we need to extract the specific time.
+    // Given the structure, `markerTimeSelect.value` will be one of the full timetable strings.
+    // The `getTimePeriod` function should find the index of the specific time *within that list*.
+    // Let's assume the user only picks one actual time from the full string in the popup for now.
+    // This part might need further clarification if "period" means something else.
+
+    // Re-evaluate how "時間段" is derived. If the dropdown shows full time strings
+    // (like "06:15 08:45 11:15 13:45 16:15 18:45 21:15"), then "時間段" for "13:45"
+    // implies finding the index of "13:45" within *that specific selected string*.
+
+    // Let's simplify and make getTimePeriod directly take the full timetable string
+    // and find the index of the *first* time in it if the selectedTime isn't passed explicitly.
+    // For this context, it seems "時間段" refers to the index of the selected *timetable string* itself
+    // within the array of timetables for a given totalPoints, if `selectedTime` is actually a single time like "13:45".
+    // If markerTimeSelect.value is the *full time string*, like "06:15 08:45...", then it doesn't make sense to find a single time like 13:45 in it directly
+    // based on the current getTimePeriod definition.
+    // Let's modify `getTimePeriod` to return the index of the `selectedTimeStr` *within the provided timetable string*.
+    // And `updateTimeOptionsForEdit` will populate `timePeriodInput` based on the *currently selected full time string*.
+
+    const currentSelectedTimetableString = markerTimeSelect.value;
+    // Assuming the "period" is based on the index of the *selected full time string* from the options
+    const indexInOptions = arr.indexOf(currentSelectedTimetableString);
+    timePeriodInput.value = indexInOptions !== -1 ? (indexInOptions + 1).toString() : "-";
+  };
 }
 
 // === 更新 remark 選項 ===
@@ -362,7 +375,7 @@ function updateRemarkOptionsForEdit(remark) {
   markerRemark.value = remark || '';
 }
 
-// === 選擇最近的先前時間 ===
+// === 選擇最近的先前時間 (Original logic for marker display remains for time prediction) ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -580,12 +593,14 @@ class MapApp {
           const timeMin = h * 60 + m;
 
           let displayWindowStartMin = timeMin - bufferMinutes;
-          if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60; // Handle overnight times
+          // Handle overnight times for the display window start
+          if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60;
 
           const nextTime = times[i + 1] || times[0];
           const [nh, nm] = nextTime.split(':').map(Number);
           let nextTimeMin = nh * 60 + nm;
-          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Adjust for next day if it wraps around
+          // Adjust for next day if it wraps around
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
 
           if (nowMin >= displayWindowStartMin && nowMin < nextTimeMin) {
             currentSlot = i;
