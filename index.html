@@ -257,27 +257,18 @@ const allTimes = [
   "12:55", "13:20", "13:45", "14:10",
   "14:35", "15:00", "15:25", "15:50",
   "16:15", "16:40", "17:05", "17:30",
-  "17:55", "18:20", "18:45", "19:10",
-  "19:35", "20:00", "20:25", "20:50",
+  "17:55", "18:20", "20:25", "20:50",
   "21:15", "21:40", "22:05", "22:30",
   "22:55", "23:20"
 ];
 
-// === 計算時間段 (Modified to find index) ===
-function getTimePeriod(totalPoints, selectedTimeStr) {
+// === 計算時間段 (Modified to find index of a selected timetable string) ===
+function getTimePeriod(totalPoints, selectedTimetableString) {
   const timetablesForPoints = timeTableByTotalPoints[totalPoints];
   if (!timetablesForPoints || timetablesForPoints.length === 0) return "-";
 
-  // Iterate through all possible timetable arrays for the given totalPoints
-  for (const timetable of timetablesForPoints) {
-    const times = timetable.split(/\s+/).filter(Boolean);
-    const index = times.indexOf(selectedTimeStr);
-    if (index !== -1) {
-      // Found the time, return its 1-based index (period)
-      return (index + 1).toString();
-    }
-  }
-  return "-"; // Time not found in any timetable for this totalPoints
+  const index = timetablesForPoints.indexOf(selectedTimetableString);
+  return index !== -1 ? (index + 1).toString() : "-";
 }
 
 // === 更新時間選項 ===
@@ -285,7 +276,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
   const timePeriodInput = document.getElementById('timePeriod');
   markerTimeSelect.innerHTML = '';
-  timePeriodInput.value = ''; // Clear time period when options are updated
+  timePeriodInput.value = ''; // Clear time period initially
 
   const arr = timeTableByTotalPoints[totalPoints] || [];
   arr.forEach(timestr => {
@@ -295,47 +286,24 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     markerTimeSelect.appendChild(opt);
   });
 
-  if (totalPoints === 1 && arr.length === 1) {
-    markerTimeSelect.value = arr[0];
-  } else if (selectedTime) {
+  // Set selected value if available
+  if (selectedTime) {
     markerTimeSelect.value = selectedTime;
+  } else if (totalPoints === 1 && arr.length === 1) {
+    markerTimeSelect.value = arr[0]; // For single timetable, select it by default
   }
 
-  // Set initial time period if a time is already selected
-  if (markerTimeSelect.value) {
-    timePeriodInput.value = getTimePeriod(totalPoints, markerTimeSelect.value.split(/\s+/)[0]); // Pass only the first time string for period
-  }
 
-  // Add event listener for when the time selection changes
+  // Update time period when the dropdown value changes
   markerTimeSelect.onchange = () => {
-    // For "時間段", we need to find the index of the selected time string within its specific timetable.
-    // The select's value is the full timetable string (e.g., "06:15 08:45..."),
-    // but the actual "time period" refers to which specific time slot in that string.
-    // Since the "period" depends on which *list* of times is active (e.g., first list, second list),
-    // and `getTimePeriod` needs a single time, we need to extract the specific time.
-    // Given the structure, `markerTimeSelect.value` will be one of the full timetable strings.
-    // The `getTimePeriod` function should find the index of the specific time *within that list*.
-    // Let's assume the user only picks one actual time from the full string in the popup for now.
-    // This part might need further clarification if "period" means something else.
-
-    // Re-evaluate how "時間段" is derived. If the dropdown shows full time strings
-    // (like "06:15 08:45 11:15 13:45 16:15 18:45 21:15"), then "時間段" for "13:45"
-    // implies finding the index of "13:45" within *that specific selected string*.
-
-    // Let's simplify and make getTimePeriod directly take the full timetable string
-    // and find the index of the *first* time in it if the selectedTime isn't passed explicitly.
-    // For this context, it seems "時間段" refers to the index of the selected *timetable string* itself
-    // within the array of timetables for a given totalPoints, if `selectedTime` is actually a single time like "13:45".
-    // If markerTimeSelect.value is the *full time string*, like "06:15 08:45...", then it doesn't make sense to find a single time like 13:45 in it directly
-    // based on the current getTimePeriod definition.
-    // Let's modify `getTimePeriod` to return the index of the `selectedTimeStr` *within the provided timetable string*.
-    // And `updateTimeOptionsForEdit` will populate `timePeriodInput` based on the *currently selected full time string*.
-
     const currentSelectedTimetableString = markerTimeSelect.value;
-    // Assuming the "period" is based on the index of the *selected full time string* from the options
-    const indexInOptions = arr.indexOf(currentSelectedTimetableString);
-    timePeriodInput.value = indexInOptions !== -1 ? (indexInOptions + 1).toString() : "-";
+    timePeriodInput.value = getTimePeriod(totalPoints, currentSelectedTimetableString);
   };
+
+  // Set initial time period if a selection was made
+  if (markerTimeSelect.value) {
+    timePeriodInput.value = getTimePeriod(totalPoints, markerTimeSelect.value);
+  }
 }
 
 // === 更新 remark 選項 ===
@@ -375,7 +343,7 @@ function updateRemarkOptionsForEdit(remark) {
   markerRemark.value = remark || '';
 }
 
-// === 選擇最近的先前時間 (Original logic for marker display remains for time prediction) ===
+// === 選擇最近的先前時間 ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -576,6 +544,9 @@ class MapApp {
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
     let iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
+    // Base Elder Dragon icon (non-blue)
+    const defaultElderIconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
+
     // Check if the marker has a remark that is not 'f' and includes '確認'
     if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
       const remark = marker.data.remark;
@@ -614,11 +585,15 @@ class MapApp {
             const pattern = patternMatch[1].trim().split(/\s+/);
             const patternLength = pattern.length;
             const slotState = pattern[currentSlot % patternLength];
+
             if (slotState === 'A') {
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
+              iconUrl = defaultElderIconUrl; // Set to default Elder Dragon
             } else if (slotState === 'B') {
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png';
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // Set to Blue Elder Dragon
+            } else if (slotState === '?') { // <--- ADDED THIS CONDITION
+              iconUrl = defaultElderIconUrl; // If '?' means default Elder Dragon
             }
+            // If slotState is anything else not explicitly handled, iconUrl remains gather.png or previous
           }
         }
       }
