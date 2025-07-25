@@ -148,6 +148,11 @@
     #markerEditModal button:hover {
       background: #e0e0e0;
     }
+    #timePeriodDisplay {
+      font-size: 20px;
+      margin-bottom: 14px;
+      color: #333;
+    }
     @media (max-width: 600px) {
       #markerEditModal {
         width: 90%;
@@ -165,6 +170,9 @@
         font-size: 28px;
         padding: 18px 36px;
         min-height: 64px;
+      }
+      #timePeriodDisplay {
+        font-size: 24px;
       }
     }
   </style>
@@ -184,7 +192,8 @@
   <label for="markerTime">時間：</label>
   <select id="markerTime">
     <!-- 由 JS 動態產生 -->
-  </select><br/><br/>
+  </select><br/>
+  <div id="timePeriodDisplay">當前時段：-</div><br/>
   <label for="markerType">顏色：</label>
   <select id="markerType">
     <option value="0">⚪ 原始</option>
@@ -215,7 +224,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.5</div>
+<div id="version">版本 4.2.6</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -290,6 +299,18 @@ const allTimes = [
   "22:55", "23:20"
 ];
 
+// === 判斷時間段（A/B/C 等） ===
+function getTimePeriodLabel(totalPoints, time) {
+  if (!time || !timeTableByTotalPoints[totalPoints]) return '-';
+  const timeTables = timeTableByTotalPoints[totalPoints];
+  for (let i = 0; i < timeTables.length; i++) {
+    if (timeTables[i] === time) {
+      return String.fromCharCode(65 + i); // 0 -> A, 1 -> B, 2 -> C, ...
+    }
+  }
+  return '-';
+}
+
 // === 時間選項生成 ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTime = document.getElementById('markerTime');
@@ -306,6 +327,9 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   } else if (selectedTime) {
     markerTime.value = selectedTime;
   }
+  // 更新時段顯示
+  const timePeriodDisplay = document.getElementById('timePeriodDisplay');
+  timePeriodDisplay.textContent = `當前時段：${getTimePeriodLabel(totalPoints, markerTime.value)}`;
 }
 
 // === 更新 remark 選項 ===
@@ -623,7 +647,11 @@ class MapApp {
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
           updateRemarkOptionsForEdit(marker.data.remark); // 動態更新 remark 選項
-          document.getElementById('markerEditModal').style.display = 'block';
+          // 動態更新時段顯示
+          document.getElementById('markerTime').onchange = () => {
+            const timePeriodDisplay = document.getElementById('timePeriodDisplay');
+            timePeriodDisplay.textContent = `當前時段：${getTimePeriodLabel(marker.data.totalPoints, document.getElementById('markerTime').value)}`;
+          };
           document.getElementById('saveMarkerBtn').onclick = () => {
             const name = document.getElementById('markerName').value.trim();
             const time = document.getElementById('markerTime').value;
