@@ -198,7 +198,7 @@
     <option value="A確認">A確認</option>
     <option value="B確認">B確認</option>
     <option value="AB確認">AB確認</option>
-    <!-- 動態添加 remark（如 "f"） -->
+    <!-- 動態添加 remark（如 "f" 顯示為 "無法接觸/無法古龍"） -->
   </select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
@@ -215,7 +215,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.4</div>
+<div id="version">版本 4.2.5</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -313,7 +313,7 @@ function updateRemarkOptionsForEdit(remark) {
   const markerRemark = document.getElementById('markerRemark');
   const defaultOptions = ['A確認', 'B確認', 'AB確認'];
   markerRemark.innerHTML = '';
-  
+
   // 添加默认选项
   defaultOptions.forEach(optValue => {
     const opt = document.createElement('option');
@@ -322,8 +322,14 @@ function updateRemarkOptionsForEdit(remark) {
     markerRemark.appendChild(opt);
   });
 
-  // 如果 remark 不是默认选项（如 "f"），动态添加
-  if (remark && !defaultOptions.includes(remark)) {
+  // 如果 remark 为 "f"，添加选项显示为“無法接觸/無法古龍”，值仍为 "f"
+  if (remark === 'f') {
+    const opt = document.createElement('option');
+    opt.value = 'f';
+    opt.textContent = '無法接觸/無法古龍';
+    markerRemark.appendChild(opt);
+  } else if (remark && !defaultOptions.includes(remark)) {
+    // 其他非默认选项，原样显示
     const opt = document.createElement('option');
     opt.value = remark;
     opt.textContent = remark;
@@ -438,11 +444,13 @@ class MapApp {
   }
 
   updateInfoPanel(data) {
+    // 将 remark "f" 显示为“無法接觸/無法古龍”
+    const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
     const content = `
       <p><strong>${data.name}</strong></p>
       <p>時間：${data.time}</p>
       <p>類型：${markerColors[data.type] || '原始'}</p>
-      <p>備註：${data.remark || ''}</p>
+      <p>備註：${displayRemark}</p>
       <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
       <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
       <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
