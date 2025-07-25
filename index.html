@@ -517,6 +517,7 @@ class MapApp {
     this.markers = new L.FeatureGroup();
     this.routeSelecting = false;
     this.selectedMarkers = [];
+    this.unavailableMarkers = {}; // 用於追蹤暫時打叉的標記及其恢復時間
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://carto.com/">CARTO</a>'
@@ -530,8 +531,11 @@ class MapApp {
     this.map.on('zoomend', () => this.updateMarkerScales());
     this.updateMarkerScales();
 
-    // 每分鐘更新標記比例以反映基於時間的圖標變化
-    setInterval(() => this.updateMarkerScales(), 60 * 1000);
+    // 每分鐘更新標記比例以反映基於時間的圖標變化，並檢查打叉標記狀態
+    setInterval(() => {
+        this.updateMarkerScales();
+        this.checkUnavailableMarkers(); // 新增的檢查函數
+    }, 60 * 1000); // 每分鐘執行一次
   }
 
   initControls() {
@@ -551,6 +555,9 @@ class MapApp {
         <div class="btn-row">
           <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
           <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="app.markSelectedMarkerUnavailable()" id="unavailableBtn">❌ 標記不可用 (50分)</button>
         </div>
       `;
       L.DomEvent.disableClickPropagation(div);
@@ -645,7 +652,12 @@ class MapApp {
       console.error('Info panel element not found in DOM');
       return;
     }
-    const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
+    let displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
+    if (data.unavailableUntil && new Date().getTime() < data.unavailableUntil) {
+        const remainingTime = Math.ceil((data.unavailableUntil - new Date().getTime()) / 60000);
+        displayRemark = `已打叉 (${remainingTime} 分鐘) - ${displayRemark}`;
+    }
+
     const content = `
       <p>時間：${data.time || ''}</p>
       <p>備註：${displayRemark}</p>
@@ -667,8 +679,14 @@ class MapApp {
     // 預設古龍圖標 (非藍色)
     const defaultElderIconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
 
-    // 檢查標記是否有備註且不是 'f' 且包含 '確認'
-    if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
+    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+    let isTemporarilyUnavailable = marker && marker.data && marker.data.unavailableUntil && new Date().getTime() < marker.data.unavailableUntil;
+
+    // 如果標記暫時不可用，強制顯示采集點圖標和紅叉
+    if (isTemporarilyUnavailable) {
+        iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png'; // 强制用回采集点
+        showRedCross = true; // 强制顯示紅叉
+    } else if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
       const remark = marker.data.remark;
       const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
@@ -732,7 +750,7 @@ class MapApp {
     // 使用新的 getNearestTimeString，它會根據30分鐘規則返回空字串或時間
     let timeStr = getNearestTimeString(marker || { data: {} });
     let timeFontSize = Math.max(10, Math.floor(14 * scale));
-    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+    
 
     const redCrossSVG = `
       <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
@@ -807,6 +825,7 @@ class MapApp {
       else if (zoom === 14) scale = 0.3;
       else scale = 0.3;
     }
+    document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
     this.markers.eachLayer(marker => {
       let orderNumber = null;
       if (this.routeSelecting) {
@@ -821,7 +840,6 @@ class MapApp {
         el.classList.remove('markerBorder');
       }
     });
-    document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
   }
 
   addMarker(latlng, data) {
@@ -1070,6 +1088,43 @@ class MapApp {
       },
       () => alert('無法取得你的位置，請開啟定位權限')
     );
+  }
+
+  // === 新增：標記不可用功能 ===
+  markSelectedMarkerUnavailable() {
+    if (!this.selectedMarker) {
+      alert("請先點選一個標記！");
+      return;
+    }
+
+    if (confirm("確定要將此標記標記為 50 分鐘內不可用嗎？它將會顯示采集點圖標並帶有紅叉。")) {
+      const endTime = new Date().getTime() + (50 * 60 * 1000); // 50 分鐘後的毫秒數
+      this.selectedMarker.data.unavailableUntil = endTime;
+      this.saveMarkers();
+      this.updateMarkerScales(); // 強制更新圖標
+
+      // 更新資訊面板以顯示剩餘時間
+      this.updateInfoPanel(this.selectedMarker.data);
+
+      alert("標記已設定為 50 分鐘內不可用。");
+    }
+  }
+
+  // 新增：檢查並恢復不可用標記
+  checkUnavailableMarkers() {
+      const now = new Date().getTime();
+      this.markers.eachLayer(marker => {
+          if (marker.data.unavailableUntil && now >= marker.data.unavailableUntil) {
+              // 時間到了，移除不可用狀態
+              delete marker.data.unavailableUntil;
+              this.saveMarkers(); // 保存更改
+              this.updateMarkerScales(); // 更新圖標
+              if (this.selectedMarker === marker) {
+                  this.updateInfoPanel(marker.data); // 如果是選中的標記，更新資訊面板
+              }
+              console.log(`Marker at ${marker.getLatLng().lat},${marker.getLatLng().lng} is now available again.`);
+          }
+      });
   }
 }
 
