@@ -301,9 +301,11 @@ function getCurrentActiveSlotOddEvenStatus(markerData) {
 // --- 結束新增輔助函數 ---
 
 
-// === 更新時間選項 (Modified to not auto-select and not handle timePeriodInput change) ===
-function updateTimeOptionsForEdit(totalPoints, selectedTime) {
+// === 更新時間選項 (現在包含選擇排程後立即更新時間段的邏輯) ===
+function updateTimeOptionsForEdit(totalPoints, initialSelectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
+  const timePeriodInput = document.getElementById('timePeriod'); // 獲取時間段輸入框
+
   markerTimeSelect.innerHTML = ''; // 清除現有選項
 
   // 添加一個預設的「請選擇」選項
@@ -320,13 +322,23 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     markerTimeSelect.appendChild(opt);
   });
 
-  // 根據標記現有時間設定選中值
-  if (selectedTime) {
-    markerTimeSelect.value = selectedTime;
+  // 設定選中值
+  if (initialSelectedTime) {
+    markerTimeSelect.value = initialSelectedTime;
   } else {
     markerTimeSelect.value = ''; // 如果標記沒有時間，則明確設定為空
   }
-  // 這裡不再處理 timePeriodInput 的更新，因為它現在由 getCurrentActiveSlotOddEvenStatus 獨立計算
+
+  // === 在這裡添加 onchange 事件監聽器，當選擇時間排程時立即更新時間段 ===
+  markerTimeSelect.onchange = () => {
+    const selectedTimeSchedule = markerTimeSelect.value;
+    const tempMarkerData = { time: selectedTimeSchedule }; // 創建臨時數據對象
+    timePeriodInput.value = getCurrentActiveSlotOddEvenStatus(tempMarkerData);
+  };
+
+  // === 初始加載時，也根據選中的時間（或無選中）更新時間段 ===
+  const initialTempMarkerData = { time: markerTimeSelect.value };
+  timePeriodInput.value = getCurrentActiveSlotOddEvenStatus(initialTempMarkerData);
 }
 
 // === 更新 remark 選項 ===
@@ -767,14 +779,11 @@ class MapApp {
             console.log('Hiding info panel for edit mode');
             infoPanel.style.display = 'none';
           }
-          // 更新時間選項 (不自動選中)
+          // 更新時間選項，並在選中時自動更新時間段
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           // 更新備註選項
           updateRemarkOptionsForEdit(marker.data.remark);
           
-          // 計算並設定「時間段」為當前活躍時段的奇偶狀態
-          document.getElementById('timePeriod').value = getCurrentActiveSlotOddEvenStatus(marker.data);
-
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const time = document.getElementById('markerTime').value;
