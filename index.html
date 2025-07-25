@@ -193,7 +193,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記標記</div>
   </div>
-  <div id="version">版本 4.3.1</div>
+  <div id="version">版本 4.3.3</div>
   <div id="zoomDisplay">Zoom: -</div>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
@@ -407,9 +407,9 @@ function getNearestTimeString(marker) {
   if (!times.length) return "";
 
   const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  let minDiff = Infinity;
+  let minAbsDiff = Infinity;
   let bestDisplayTime = "";
 
   for (const t of times) {
@@ -420,14 +420,25 @@ function getNearestTimeString(marker) {
     }
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
-    const total = h * 60 + mm;
-    let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60; // 調整跨午夜的時間差
-    if (diff > 12 * 60) diff -= 24 * 60; // 調整跨午夜的時間差
+    const scheduleMinutes = h * 60 + mm;
+
+    let diff = scheduleMinutes - nowMinutes; // 計算排程時間與當前時間的差值（分鐘）
+
+    // 處理跨午夜的情況，使時間差在 -12小時 到 +12小時之間
+    if (diff > 12 * 60) {
+      diff -= 24 * 60; // 如果差值超過12小時，往前推一天
+    } else if (diff < -12 * 60) {
+      diff += 24 * 60; // 如果差值小於-12小時，往後推一天
+    }
+
     const absDiff = Math.abs(diff);
-    if (absDiff < minDiff) {
-      minDiff = absDiff;
-      bestDisplayTime = t;
+
+    // 只考慮絕對時間差小於或等於 30 分鐘的時間
+    if (absDiff <= 30) {
+      if (absDiff < minAbsDiff) {
+        minAbsDiff = absDiff;
+        bestDisplayTime = t;
+      }
     }
   }
 
@@ -666,6 +677,7 @@ class MapApp {
     }
 
     let size = 40 * scale;
+    // 使用新的 getNearestTimeString，它會根據30分鐘規則返回空字串或時間
     let timeStr = getNearestTimeString(marker || { data: {} });
     let timeFontSize = Math.max(10, Math.floor(14 * scale));
     let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
