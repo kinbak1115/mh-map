@@ -198,6 +198,9 @@
     <option value="A確認">A確認</option>
     <option value="B確認">B確認</option>
     <option value="AB確認">AB確認</option>
+    <option value="A確認F">A確認F</option>
+    <option value="B確認F">B確認F</option>
+    <option value="AB確認F">AB確認F</option>
   </select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
@@ -214,7 +217,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.2</div>
+<div id="version">版本 4.2.3</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -559,6 +562,7 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
+    if (typeof data.remark !== 'string') data.remark = ''; // Ensure remark is a string
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -593,7 +597,7 @@ class MapApp {
           document.getElementById('markerName').value = marker.data.name;
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
-          document.getElementById('markerRemark').value = marker.data.remark;
+          document.getElementById('markerRemark').value = marker.data.remark || '';
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const name = document.getElementById('markerName').value.trim();
@@ -603,12 +607,10 @@ class MapApp {
             marker.data.name = name;
             marker.data.time = time;
             marker.data.type = type;
-            marker.data.remark = remark;
+            marker.data.remark = remark || ''; // Ensure remark is a string
             marker.setIcon(this.getCustomIcon(type, 1, marker));
-
             this.autoAssignTimeForRelatedMarkers(marker);
-
-            this.updateMarkerScales();
+            this.updateMarkerScales(); // Ensure all markers are refreshed
             this.saveMarkers();
             this.updateInfoPanel(marker.data);
             const infoPanel = document.getElementById('infoPanel');
