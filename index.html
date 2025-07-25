@@ -281,13 +281,7 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
     if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      // Custom rule for totalPoints: 3 with timetable "06:15 08:45 11:15 13:45 16:15 18:45 21:15"
-      if (totalPoints === 3 && timetable === "06:15 08:45 11:15 13:45 16:15 18:45 21:15") {
-        period = (i === 1 || i === 5) ? "2" : "1";
-      } else {
-        // Default rule for other cases
-        period = i % 2 === 0 ? "1" : "2";
-      }
+      period = i % 2 === 0 ? "2" : "1"; // Reversed for all totalPoints
       break;
     }
   }
@@ -860,7 +854,7 @@ class MapApp {
           delete item.name;
           item.type = 0;
         });
-        localStorage.setItem('mhnow_markers', JSON.stringify(saved));
+        localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
         location.reload();
       })
