@@ -476,7 +476,7 @@ class MapApp {
 
     if (!this.accuracyCircle) {
       this.accuracyCircle = L.circle(latlng, {
-        radius: radius,
+        radius: radius;
         color: 'blue',
         fillOpacity: 0.2,
         weight: 1
@@ -563,7 +563,43 @@ class MapApp {
   }
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
-    const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
+    let iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // 默认非古龙图标
+
+    if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
+      // 检查是否已确认且为古龙
+      const remark = marker.data.remark;
+      const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+      if (times.length && remark.includes('確認')) {
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        let currentSlot = -1;
+        for (let i = 0; i < times.length; i++) {
+          const [h, m] = times[i].split(':').map(Number);
+          const timeMin = h * 60 + m;
+          const nextTime = times[i + 1] || times[0];
+          const [nh, nm] = nextTime.split(':').map(Number);
+          let nextTimeMin = nh * 60 + nm;
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
+          if (nowMin >= timeMin && nowMin < nextTimeMin) {
+            currentSlot = i;
+            break;
+          }
+        }
+        if (currentSlot >= 0) {
+          // 提取 remark 模式并检查当前时间槽
+          const patternMatch = remark.match(/([?AB\s]+)確認/);
+          if (patternMatch) {
+            const pattern = patternMatch[1].trim().split(/\s+/);
+            const patternLength = pattern.length;
+            const slotState = pattern[currentSlot % patternLength];
+            if (slotState === 'A') {
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'; // 古龙图标
+            }
+          }
+        }
+      }
+    }
+
     let size = 40 * scale;
     let timeStr = getNearestTimeString(marker || { data: {} });
 
