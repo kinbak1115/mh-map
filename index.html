@@ -370,7 +370,7 @@ function updateRemarkOptionsForEdit(remark) {
   markerRemark.value = remark || '';
 }
 
-// === 選擇最近的未來時間（30分鐘內） ===
+// === 選擇最近的先前時間 ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -499,9 +499,9 @@ class MapApp {
     // Create or update accuracy circle
     if (!this.accuracyCircle) {
       this.accuracyCircle = L.circle(latlng, {
-        radius: radius;
-        color: 'blue';
-        fillOpacity: 0.2;
+        radius: radius,
+        color: 'blue',
+        fillOpacity: 0.2,
         weight: 1
       }).addTo(this.map);
     } else {
