@@ -217,7 +217,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.8</div>
+<div id="version">版本 4.2.9</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -410,16 +410,12 @@ class MapApp {
     });
     this.map.locate({ setView: true, maxZoom: 16 });
 
-    this.map.on('locationfound', e => {
-      let maxRadius = 100;
-      let r = Math.min(e.accuracy / 2, maxRadius);
-      L.circle(e.latlng, {
-        radius: r,
-        color: 'blue',
-        fillOpacity: 0.2
-      }).addTo(this.map);
-    });
+    this.userMarker = null; // Marker for user's current location
+    this.accuracyCircle = null; // Circle for location accuracy
+    this.watchId = null; // ID for watchPosition
+    this.isTracking = false; // Tracking state
 
+    this.map.on('locationfound', e => this.updateUserLocation(e));
     this.map.on('locationerror', () => {
       alert("無法取得你的定位，使用預設地點。");
       this.map.setView([3.0000, 101.6167], 14);
@@ -455,6 +451,9 @@ class MapApp {
           <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
           <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
         </div>
+        <div class="btn-row">
+          <button onclick="app.toggleTracking()" id="trackBtn">開啟即時定位</button>
+        </div>
         <label>顯示顏色：</label>
         <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
           <option value="0">⚪ 原始</option>
@@ -476,6 +475,89 @@ class MapApp {
     };
     control.addTo(this.map);
     this.currentMode = "done";
+  }
+
+  updateUserLocation(e) {
+    const latlng = e.latlng;
+    const maxRadius = 100;
+    const radius = Math.min(e.accuracy / 2, maxRadius);
+
+    // Create or update user marker
+    if (!this.userMarker) {
+      this.userMarker = L.marker(latlng, {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="background: blue; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+          iconSize: [12, 12],
+          iconAnchor: [6, 6]
+        }),
+        zIndexOffset: 1000
+      }).addTo(this.map);
+    } else {
+      this.userMarker.setLatLng(latlng);
+    }
+
+    // Create or update accuracy circle
+    if (!this.accuracyCircle) {
+      this.accuracyCircle = L.circle(latlng, {
+        radius: radius,
+        color: 'blue',
+        fillOpacity: 0.2,
+        weight: 1
+      }).addTo(this.map);
+    } else {
+      this.accuracyCircle.setLatLng(latlng);
+      this.accuracyCircle.setRadius(radius);
+    }
+
+    // Center map on first location or if tracking is active
+    if (!this.isTracking) {
+      this.map.setView(latlng, this.map.getZoom() || 16);
+    }
+  }
+
+  toggleTracking() {
+    this.isTracking = !this.isTracking;
+    const trackBtn = document.getElementById('trackBtn');
+    if (this.isTracking) {
+      trackBtn.textContent = '關閉即時定位';
+      if (navigator.geolocation) {
+        this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const e = {
+              latlng: L.latLng(position.coords.latitude, position.coords.longitude),
+              accuracy: position.coords.accuracy
+            };
+            this.updateUserLocation(e);
+          },
+          () => {
+            alert('無法取得你的位置，請檢查定位權限');
+            this.stopTracking();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        alert('你的瀏覽器不支援地理定位');
+        this.stopTracking();
+      }
+    } else {
+      this.stopTracking();
+    }
+  }
+
+  stopTracking() {
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+    this.isTracking = false;
+    const trackBtn = document.getElementById('trackBtn');
+    if (trackBtn) trackBtn.textContent = '開啟即時定位';
+    // Optionally keep the last known position marker and circle
   }
 
   updateInfoPanel(data) {
@@ -818,7 +900,7 @@ class MapApp {
 
   toggleEditMode() {
     if (this.routeSelecting) {
-      app.clearAllMarkerBorders();
+      this.clearAllMarkerBorders();
       this.routeSelecting = false;
       const routeBtn = document.getElementById('routeBtn');
       if (routeBtn) routeBtn.textContent = '選擇路線';
@@ -853,7 +935,7 @@ class MapApp {
       button.textContent = '完成選擇';
       this.resetAllMarkers();
     } else {
-      app.clearAllMarkerBorders();
+      this.clearAllMarkerBorders();
       button.textContent = '選擇路線';
     }
     this.updateMarkerScales();
