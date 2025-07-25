@@ -298,11 +298,7 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
     if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      if (totalPoints === 2) {
-        period = i % 2 === 0 ? "1" : "2"; // For totalPoints=2, pattern is 121212...
-      } else {
-        period = (i + 1).toString(); // Sequential period number
-      }
+      period = i % 2 === 0 ? "1" : "2"; // Always alternate between "1" and "2"
       break;
     }
   }
