@@ -303,7 +303,7 @@ function getCurrentActiveSlotOddEvenStatus(markerData) {
  * 從一個完整的時間排程字串中，找到與當前時間最接近的那個單一時間點。
  * 考慮已過去時間比即將到來時間有 30 分鐘優勢的邏輯。
  * @param {string} scheduleString 完整的時間排程字串 (e.g., "06:15 07:05 07:55")。
- * @returns {string} 最接近的時間點字串 (e.g., "07:55")。如果無有效時間則返回空字串。
+ * @returns {string} 最接近的時間點字串 (e.e., "07:55")。如果無有效時間則返回空字串。
  */
 function getNearestTimePointInSchedule(scheduleString) {
   const times = scheduleString.split(/\s+/).filter(Boolean);
@@ -511,7 +511,8 @@ class MapApp {
     this.map.on('locationfound', e => this.updateUserLocation(e));
     this.map.on('locationerror', () => {
       alert("無法取得你的定位，使用預設地點。");
-      this.map.setView([3.0000, 101.6167], 14);
+      // 預設地點使用鄧吉爾的座標 (Dengkil, Selangor, Malaysia)
+      this.map.setView([2.9238, 101.6669], 14); 
     });
 
     this.markers = new L.FeatureGroup();
@@ -548,6 +549,7 @@ class MapApp {
         </div>
         <div class="btn-row">
           <button onclick="app.toggleTracking()" id="trackBtn">開啟即時定位</button>
+          <button onclick="app.returnToCurrentLocation()" id="locateBtn">📍 返回當前位置</button>
         </div>
         <div class="btn-row">
           <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
@@ -598,6 +600,8 @@ class MapApp {
       this.accuracyCircle.setRadius(radius);
     }
 
+    // 當找到位置時，如果不是正在追蹤模式，則首次設定視圖
+    // 如果是正在追蹤模式，則由 watchPosition 處理地圖中心
     if (!this.isTracking) {
       this.map.setView(latlng, this.map.getZoom() || 16);
     }
@@ -616,6 +620,7 @@ class MapApp {
               accuracy: position.coords.accuracy
             };
             this.updateUserLocation(e);
+            this.map.setView(e.latlng, this.map.getZoom() || 16); // 在追蹤模式下持續更新地圖中心
           },
           () => {
             alert('無法取得你的位置，請檢查定位權限');
@@ -644,6 +649,41 @@ class MapApp {
     this.isTracking = false;
     const trackBtn = document.getElementById('trackBtn');
     if (trackBtn) trackBtn.textContent = '開啟即時定位';
+  }
+
+  // 新增：返回當前位置的方法
+  returnToCurrentLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+          this.map.setView(latlng, this.map.getZoom() || 16); // 保持當前縮放等級或設定為 16
+          if (!this.userMarker) { // 如果沒有使用者標記，也創建一個
+            this.userMarker = L.marker(latlng, {
+              icon: L.divIcon({
+                className: '',
+                html: '<div style="background: blue; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+              }),
+              zIndexOffset: 1000
+            }).addTo(this.map);
+          } else {
+            this.userMarker.setLatLng(latlng);
+          }
+        },
+        () => {
+          alert('無法取得你的位置，請檢查定位權限。');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      alert('你的瀏覽器不支援地理定位。');
+    }
   }
 
   updateInfoPanel(data) {
@@ -1090,7 +1130,7 @@ class MapApp {
     );
   }
 
-  // === 新增：標記不可用功能 ===
+  // === 標記不可用功能 ===
   markSelectedMarkerUnavailable() {
     if (!this.selectedMarker) {
       alert("請先點選一個標記！");
@@ -1110,7 +1150,7 @@ class MapApp {
     }
   }
 
-  // 新增：檢查並恢復不可用標記
+  // 檢查並恢復不可用標記
   checkUnavailableMarkers() {
       const now = new Date().getTime();
       this.markers.eachLayer(marker => {
