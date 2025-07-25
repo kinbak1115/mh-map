@@ -207,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.22</div>
+<div id="version">版本 4.2.23</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -392,8 +392,8 @@ function getNearestTimeString(marker) {
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
     let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60;
-    if (diff >= 0 && diff < minDiff) {
+    if (diff < -12 * 60) diff += 24 * 60; // Handle overnight wrap
+    if (diff >= 0 && diff < minDiff && diff <= 30) { // Only include times within 30 minutes
       minDiff = diff;
       bestDisplayTime = t;
     }
@@ -926,7 +926,7 @@ class MapApp {
     const button = document.getElementById('routeBtn');
     if (this.routeSelecting) {
       if (this.currentMode !== 'done') {
-        this.currentMode();
+        this.currentMode = 'done';
         const editBtn = document.getElementById('editBtn');
         if (editBtn) editBtn.textContent = '開始編輯';
         document.getElementById('markerEditModal').style.display = 'none';
@@ -936,12 +936,12 @@ class MapApp {
       this.selectedMarkers = [];
       button.textContent = '完成選擇';
       this.resetAllMarkers();
-  } else {
-      this.clearAllMarkersBorders();
-      button.setContent = '選擇路線';
+    } else {
+      this.clearAllMarkerBorders();
+      button.textContent = '選擇路線';
     }
     this.updateMarkerScales();
-}
+  }
 
   clearAllMarkerBorders() {
     this.markers.eachLayer(marker => {
@@ -969,9 +969,7 @@ class MapApp {
         link.target = '_blank';
         link.click();
       },
-      () => {
-        alert('無法取得你的位置，請開啟定位權限')
-      }
+      () => alert('無法取得你的位置，請開啟定位權限')
     );
   }
 }
