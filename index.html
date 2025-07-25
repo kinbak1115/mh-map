@@ -148,10 +148,6 @@
     #markerEditModal button:hover {
       background: #e0e0e0;
     }
-    #currentTimeSlot {
-      margin-bottom: 14px;
-      font-size: 20px;
-    }
     @media (max-width: 600px) {
       #markerEditModal {
         width: 90%;
@@ -169,9 +165,6 @@
         font-size: 28px;
         padding: 18px 36px;
         min-height: 64px;
-      }
-      #currentTimeSlot {
-        font-size: 24px;
       }
     }
   </style>
@@ -207,7 +200,6 @@
     <option value="AB確認">AB確認</option>
     <!-- 動態添加 remark（如 "f" 顯示為 "無法接觸/無法古龍"） -->
   </select><br/><br/>
-  <div id="currentTimeSlot">當前時間段：-</div>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
     <button onclick="
@@ -223,7 +215,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.1.2</div>
+<div id="version">版本 4.2.7</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -297,38 +289,6 @@ const allTimes = [
   "21:15", "21:40", "22:05", "22:30",
   "22:55", "23:20"
 ];
-
-// === 計算當前時間段 ===
-function getCurrentTimeSlot(totalPoints) {
-  const timeTables = timeTableByTotalPoints[totalPoints] || [];
-  if (timeTables.length === 0) return 1; // 無時間表，默認 1
-  if (totalPoints === 1) return 1; // totalPoints = 1 只有一個時間表
-
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-
-  let minDiff = Infinity;
-  let selectedSlot = 1;
-
-  timeTables.forEach((timeStr, index) => {
-    const times = timeStr.split(/\s+/).filter(Boolean);
-    times.forEach(t => {
-      const m = t.match(/(\d{1,2}):(\d{2})/);
-      if (!m) return;
-      const h = parseInt(m[1], 10);
-      const mm = parseInt(m[2], 10);
-      const total = h * 60 + mm;
-      let diff = Math.abs(nowMin - total);
-      if (diff > 12 * 60) diff = 24 * 60 - diff; // 處理跨日情況
-      if (diff < minDiff) {
-        minDiff = diff;
-        selectedSlot = index + 1; // 時間段從 1 開始
-      }
-    });
-  });
-
-  return selectedSlot;
-}
 
 // === 時間選項生成 ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
@@ -419,8 +379,8 @@ class MapApp {
       let maxRadius = 100;
       let r = Math.min(e.accuracy / 2, maxRadius);
       L.circle(e.latlng, {
-        radius: r;
-        color: 'blue';
+        radius: r,
+        color: 'blue',
         fillOpacity: 0.2
       }).addTo(this.map);
     });
@@ -662,10 +622,7 @@ class MapApp {
           document.getElementById('markerName').value = marker.data.name;
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
-          updateRemarkOptionsForEdit(marker.data.remark);
-          // 更新當前時間段顯示
-          const timeSlot = getCurrentTimeSlot(marker.data.totalPoints || 1);
-          document.getElementById('currentTimeSlot').textContent = `當前時間段：${timeSlot}`;
+          updateRemarkOptionsForEdit(marker.data.remark); // 動態更新 remark 選項
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const name = document.getElementById('markerName').value.trim();
