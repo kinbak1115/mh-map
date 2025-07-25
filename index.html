@@ -184,7 +184,7 @@
     <select id="markerRemark">
     </select><br><br>
     <div style="text-align:right;">
-      <button id="saveMarkerBtn">儲存</button>
+      <button id="saveMarkerBtn" style="display:none;">儲存</button>
       <button onclick="document.getElementById('markerEditModal').style.display='none';const infoPanel=document.getElementById('infoPanel');if(infoPanel)infoPanel.style.display='block';">取消</button>
     </div>
   </div>
@@ -193,7 +193,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記標記</div>
   </div>
-  <div id="version">版本 4.3.0</div>
+  <div id="version">版本 4.3.1</div>
   <div id="zoomDisplay">Zoom: -</div>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
@@ -242,7 +242,7 @@ const timeTableByTotalPoints = {
     "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
     "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
     "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
-    "07:30 10:00 12:30 15:00 17:30 19:10 20:50 22:30",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
     "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
     "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
   ]
@@ -341,7 +341,7 @@ function updateTimeOptionsForEdit(totalPoints, initialSelectedTime) {
   timePeriodInput.value = getCurrentActiveSlotOddEvenStatus(initialTempMarkerData);
 }
 
-// === 更新 remark 選項 (現在包含選擇狀態後立即自動儲存的邏輯) ===
+// === 更新 remark 選項 (新增自動保存和關閉編輯欄的邏輯) ===
 function updateRemarkOptionsForEdit(remark) {
   const markerRemark = document.getElementById('markerRemark');
   const defaultOptions = [
@@ -377,15 +377,26 @@ function updateRemarkOptionsForEdit(remark) {
 
   markerRemark.value = remark || '';
 
-  // === 在這裡添加 onchange 事件監聽器，當選擇狀態時立即自動儲存 ===
+  // === 新增：當狀態變更時，自動保存並關閉編輯欄 ===
   markerRemark.onchange = () => {
     if (app.selectedMarker) { // 確保有選中的標記
+      const time = document.getElementById('markerTime').value;
       const newRemark = markerRemark.value.trim();
-      app.selectedMarker.data.remark = newRemark; // 更新標記數據
+
+      app.selectedMarker.data.time = time;
+      app.selectedMarker.data.remark = newRemark;
       app.selectedMarker.setIcon(app.getCustomIcon(1, app.selectedMarker)); // 更新標記圖標
+      app.autoAssignTimeForRelatedMarkers(app.selectedMarker); // 自動分配相關標記時間
+      app.updateMarkerScales(); // 更新所有標記的比例和邊框
+      app.saveMarkers(); // 保存到 localStorage
+
+      // 關閉編輯欄
+      document.getElementById('markerEditModal').style.display = 'none';
+      const infoPanel = document.getElementById('infoPanel');
+      if (infoPanel) {
+        infoPanel.style.display = 'block';
+      }
       app.updateInfoPanel(app.selectedMarker.data); // 更新資訊面板
-      app.saveMarkers(); // 自動儲存所有標記
-      console.log(`標記 ${app.selectedMarker.data.lat.toFixed(4)},${app.selectedMarker.data.lng.toFixed(4)} 的狀態已自動儲存為: ${newRemark}`);
     }
   };
 }
@@ -793,30 +804,12 @@ class MapApp {
           }
           // 更新時間選項，並在選中時自動更新時間段
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
-          // 更新備註選項，並添加自動儲存邏輯
+          // 更新備註選項 (現在它會自動保存並關閉彈窗)
           updateRemarkOptionsForEdit(marker.data.remark);
           
           document.getElementById('markerEditModal').style.display = 'block';
-          document.getElementById('saveMarkerBtn').onclick = () => {
-            const time = document.getElementById('markerTime').value;
-            // 這裡不再從 markerRemark 獲取值，因為 onchange 已經處理了
-            // const remark = document.getElementById('markerRemark').value.trim(); 
-            
-            // 由於 remark 已經在 updateRemarkOptionsForEdit 的 onchange 事件中更新並儲存，
-            // 這裡只需處理 time 的儲存。
-            marker.data.time = time;
-            // marker.data.remark = remark; // 這行不再需要
-            marker.setIcon(this.getCustomIcon(1, marker));
-            this.autoAssignTimeForRelatedMarkers(marker);
-            this.updateMarkerScales();
-            this.saveMarkers();
-            this.updateInfoPanel(marker.data);
-            document.getElementById('markerEditModal').style.display = 'none';
-            if (infoPanel) {
-              console.log('Restoring info panel after edit');
-              infoPanel.style.display = 'block';
-            }
-          };
+          // 移除 saveMarkerBtn 的 onclick 處理，因為保存現在由 remark 的 onchange 觸發
+          document.getElementById('saveMarkerBtn').onclick = null; 
         }, 0);
       } else {
         console.log('Normal mode, updating info panel');
