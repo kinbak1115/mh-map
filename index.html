@@ -241,8 +241,8 @@ const timeTableByTotalPoints = {
   8: [
     "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
     "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
-    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
-    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:05 09:35 12:05 14:35 17:05 18:45 20:25 22:05",
+    "07:30 09:10 10:50 12:30 14:10 15:50 17:30 19:10 20:50 22:30",
     "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
     "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
   ]
@@ -299,83 +299,78 @@ function getCurrentActiveSlotOddEvenStatus(markerData) {
   return ((currentSlotIndex % 2) + 1).toString();
 }
 
-// === 選擇最近的排程時間字符串 (用於編輯欄中的時間選項) ===
-function getNearestScheduleString(totalPoints, initialSelectedTime) {
-  const allSchedules = timeTableByTotalPoints[totalPoints] || [];
-  if (!allSchedules.length) return "";
+/**
+ * 從一個完整的時間排程字串中，找到與當前時間最接近的那個單一時間點。
+ * @param {string} scheduleString 完整的時間排程字串 (e.g., "06:15 07:05 07:55")。
+ * @returns {string} 最接近的時間點字串 (e.g., "07:55")。如果無有效時間則返回空字串。
+ */
+function getNearestTimePointInSchedule(scheduleString) {
+  const times = scheduleString.split(/\s+/).filter(Boolean);
+  if (!times.length) return "";
 
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  let minTimeDiff = Infinity;
-  let nearestSchedule = "";
+  let minAbsDiff = Infinity;
+  let nearestTimePoint = "";
 
-  // 優先檢查 initialSelectedTime，如果它存在於所有排程中，就直接選它
-  if (initialSelectedTime && allSchedules.includes(initialSelectedTime)) {
-    return initialSelectedTime;
-  }
+  for (const t of times) {
+    const m = t.match(/(\d{1,2}):(\d{2})/);
+    if (!m) continue;
 
-  // 如果 initialSelectedTime 不存在或者為空，則尋找與當前時間最近的排程
-  for (const schedule of allSchedules) {
-    const timesInSchedule = schedule.split(/\s+/).filter(Boolean);
-    if (!timesInSchedule.length) continue;
+    const h = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const schedulePointMinutes = h * 60 + mm;
 
-    for (const timeStr of timesInSchedule) {
-      const parts = timeStr.match(/(\d{1,2}):(\d{2})/);
-      if (!parts) continue;
+    let diff = schedulePointMinutes - nowMinutes;
 
-      const h = parseInt(parts[1], 10);
-      const m = parseInt(parts[2], 10);
-      const schedulePointMinutes = h * 60 + m;
+    // 考慮跨午夜的情況，使時間差在 -12小時 到 +12小時之間
+    if (diff > 12 * 60) {
+      diff -= 24 * 60;
+    } else if (diff < -12 * 60) {
+      diff += 24 * 60;
+    }
 
-      let diff = schedulePointMinutes - nowMinutes;
+    const absDiff = Math.abs(diff);
 
-      // 考慮跨午夜的情況，使時間差在 -12小時 到 +12小時之間
-      if (diff > 12 * 60) {
-        diff -= 24 * 60;
-      } else if (diff < -12 * 60) {
-        diff += 24 * 60;
-      }
-
-      const absDiff = Math.abs(diff);
-
-      if (absDiff < minTimeDiff) {
-        minTimeDiff = absDiff;
-        nearestSchedule = schedule;
-      }
+    if (absDiff < minAbsDiff) {
+      minAbsDiff = absDiff;
+      nearestTimePoint = t;
     }
   }
-  return nearestSchedule;
+  return nearestTimePoint;
 }
 
 
-// === 更新時間選項 (現在只顯示最接近的時間) ===
+// === 更新時間選項 (現在每個選項顯示最接近的時間點) ===
 function updateTimeOptionsForEdit(totalPoints, initialSelectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
   const timePeriodInput = document.getElementById('timePeriod');
 
   markerTimeSelect.innerHTML = ''; // 清除現有選項
 
-  // 獲取最接近的排程時間字串來作為選項
-  const nearestTimeSchedule = getNearestScheduleString(totalPoints, initialSelectedTime);
+  // 添加一個預設的「請選擇」選項
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = ''; // 空值
+  defaultOpt.textContent = '請選擇時間排程'; // 更明確的提示
+  markerTimeSelect.appendChild(defaultOpt);
 
-  if (nearestTimeSchedule) {
+  const arr = timeTableByTotalPoints[totalPoints] || [];
+  arr.forEach(fullScheduleString => {
     const opt = document.createElement('option');
-    opt.value = nearestTimeSchedule;
-    opt.textContent = nearestTimeSchedule; // 顯示完整的排程字串
+    opt.value = fullScheduleString; // value 仍然是完整的排程字串
+    opt.textContent = getNearestTimePointInSchedule(fullScheduleString); // 顯示最接近的單一時間點
     markerTimeSelect.appendChild(opt);
-    markerTimeSelect.value = nearestTimeSchedule;
+  });
+
+  // 設定選中值
+  if (initialSelectedTime) {
+    markerTimeSelect.value = initialSelectedTime;
   } else {
-    // 如果沒有找到最近的時間排程，或者 initialSelectedTime 不存在
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = '';
-    defaultOpt.textContent = '無可用時間排程';
-    markerTimeSelect.appendChild(defaultOpt);
-    markerTimeSelect.value = '';
+    markerTimeSelect.value = ''; // 如果標記沒有時間，則明確設定為空
   }
 
   // === 在這裡添加 onchange 事件監聽器，當選擇時間排程時立即更新時間段 ===
-  // 由於現在只有一個選項，這個 onchange 主要用於確保時間段同步更新
   markerTimeSelect.onchange = () => {
     const selectedTimeSchedule = markerTimeSelect.value;
     const tempMarkerData = { time: selectedTimeSchedule };
