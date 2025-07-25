@@ -148,10 +148,9 @@
     #markerEditModal button:hover {
       background: #e0e0e0;
     }
-    #timePeriodDisplay {
-      font-size: 20px;
+    #currentTimeSlot {
       margin-bottom: 14px;
-      color: #333;
+      font-size: 20px;
     }
     @media (max-width: 600px) {
       #markerEditModal {
@@ -171,7 +170,7 @@
         padding: 18px 36px;
         min-height: 64px;
       }
-      #timePeriodDisplay {
+      #currentTimeSlot {
         font-size: 24px;
       }
     }
@@ -192,8 +191,7 @@
   <label for="markerTime">時間：</label>
   <select id="markerTime">
     <!-- 由 JS 動態產生 -->
-  </select><br/>
-  <div id="timePeriodDisplay">當前時段：-</div><br/>
+  </select><br/><br/>
   <label for="markerType">顏色：</label>
   <select id="markerType">
     <option value="0">⚪ 原始</option>
@@ -209,6 +207,7 @@
     <option value="AB確認">AB確認</option>
     <!-- 動態添加 remark（如 "f" 顯示為 "無法接觸/無法古龍"） -->
   </select><br/><br/>
+  <div id="currentTimeSlot">當前時間段：-</div>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
     <button onclick="
@@ -299,16 +298,36 @@ const allTimes = [
   "22:55", "23:20"
 ];
 
-// === 判斷時間段（A/B/C 等） ===
-function getTimePeriodLabel(totalPoints, time) {
-  if (!time || !timeTableByTotalPoints[totalPoints]) return '-';
-  const timeTables = timeTableByTotalPoints[totalPoints];
-  for (let i = 0; i < timeTables.length; i++) {
-    if (timeTables[i] === time) {
-      return String.fromCharCode(65 + i); // 0 -> A, 1 -> B, 2 -> C, ...
-    }
-  }
-  return '-';
+// === 計算當前時間段 ===
+function getCurrentTimeSlot(totalPoints) {
+  const timeTables = timeTableByTotalPoints[totalPoints] || [];
+  if (timeTables.length === 0) return 1; // 無時間表，默認 1
+  if (totalPoints === 1) return 1; // totalPoints = 1 只有一個時間表
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  let minDiff = Infinity;
+  let selectedSlot = 1;
+
+  timeTables.forEach((timeStr, index) => {
+    const times = timeStr.split(/\s+/).filter(Boolean);
+    times.forEach(t => {
+      const m = t.match(/(\d{1,2}):(\d{2})/);
+      if (!m) return;
+      const h = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const total = h * 60 + mm;
+      let diff = Math.abs(nowMin - total);
+      if (diff > 12 * 60) diff = 24 * 60 - diff; // 處理跨日情況
+      if (diff < minDiff) {
+        minDiff = diff;
+        selectedSlot = index + 1; // 時間段從 1 開始
+      }
+    });
+  });
+
+  return selectedSlot;
 }
 
 // === 時間選項生成 ===
@@ -327,9 +346,6 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   } else if (selectedTime) {
     markerTime.value = selectedTime;
   }
-  // 更新時段顯示
-  const timePeriodDisplay = document.getElementById('timePeriodDisplay');
-  timePeriodDisplay.textContent = `當前時段：${getTimePeriodLabel(totalPoints, markerTime.value)}`;
 }
 
 // === 更新 remark 選項 ===
@@ -403,8 +419,8 @@ class MapApp {
       let maxRadius = 100;
       let r = Math.min(e.accuracy / 2, maxRadius);
       L.circle(e.latlng, {
-        radius: r,
-        color: 'blue',
+        radius: r;
+        color: 'blue';
         fillOpacity: 0.2
       }).addTo(this.map);
     });
@@ -419,7 +435,6 @@ class MapApp {
     this.lastMarkerType = 0;
     this.routeSelecting = false;
     this.selectedMarkers = [];
-    this.currentMode = "done"; // 確保初始模式為 done
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://carto.com/">CARTO</a>'
@@ -465,6 +480,7 @@ class MapApp {
       return div;
     };
     control.addTo(this.map);
+    this.currentMode = "done";
   }
 
   updateInfoPanel(data) {
@@ -618,10 +634,11 @@ class MapApp {
     });
     marker.data = data;
     this.resetAllMarkers();
-
+    let tapped = false;
     const handler = (e) => {
-      e.preventDefault(); // 防止觸控設備上的預設行為
-      console.log('Marker clicked, currentMode:', this.currentMode); // 調試日誌
+      if (tapped) return;
+      tapped = true;
+      setTimeout(() => tapped = false, 300);
       this.selectedMarker = marker;
       if (this.routeSelecting) {
         const markerElement = marker.getElement();
@@ -639,43 +656,38 @@ class MapApp {
         this.resetAllMarkers();
         marker.setOpacity(1.0);
         marker.setZIndexOffset(1000);
-        const infoPanel = document.getElementById('infoPanel');
-        if (infoPanel) infoPanel.style.display = 'none';
-        document.getElementById('markerName').value = marker.data.name;
-        updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
-        document.getElementById('markerType').value = marker.data.type;
-        updateRemarkOptionsForEdit(marker.data.remark);
-        // 動態更新時段顯示
-        document.getElementById('markerTime').onchange = () => {
-          const timePeriodDisplay = document.getElementById('timePeriodDisplay');
-          timePeriodDisplay.textContent = `當前時段：${getTimePeriodLabel(marker.data.totalPoints, document.getElementById('markerTime').value)}`;
-        };
-        const modal = document.getElementById('markerEditModal');
-        if (modal) {
-          console.log('Showing modal'); // 調試日誌
-          modal.style.display = 'block';
-        } else {
-          console.error('Modal element not found'); // 調試日誌
-        }
-        document.getElementById('saveMarkerBtn').onclick = () => {
-          const name = document.getElementById('markerName').value.trim();
-          const time = document.getElementById('markerTime').value;
-          const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
-          const remark = document.getElementById('markerRemark').value.trim();
-          marker.data.name = name;
-          marker.data.time = time;
-          marker.data.type = type;
-          marker.data.remark = remark; // 保存用戶選擇的 remark（包括 "f"）
-          marker.setIcon(this.getCustomIcon(type, 1, marker));
+        setTimeout(() => {
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = 'none';
+          document.getElementById('markerName').value = marker.data.name;
+          updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
+          document.getElementById('markerType').value = marker.data.type;
+          updateRemarkOptionsForEdit(marker.data.remark);
+          // 更新當前時間段顯示
+          const timeSlot = getCurrentTimeSlot(marker.data.totalPoints || 1);
+          document.getElementById('currentTimeSlot').textContent = `當前時間段：${timeSlot}`;
+          document.getElementById('markerEditModal').style.display = 'block';
+          document.getElementById('saveMarkerBtn').onclick = () => {
+            const name = document.getElementById('markerName').value.trim();
+            const time = document.getElementById('markerTime').value;
+            const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+            const remark = document.getElementById('markerRemark').value.trim();
+            marker.data.name = name;
+            marker.data.time = time;
+            marker.data.type = type;
+            marker.data.remark = remark; // 保存用戶選擇的 remark（包括 "f"）
+            marker.setIcon(this.getCustomIcon(type, 1, marker));
 
-          this.autoAssignTimeForRelatedMarkers(marker);
+            this.autoAssignTimeForRelatedMarkers(marker);
 
-          this.updateMarkerScales();
-          this.saveMarkers();
-          this.updateInfoPanel(marker.data);
-          if (infoPanel) infoPanel.style.display = '';
-          modal.style.display = 'none';
-        };
+            this.updateMarkerScales();
+            this.saveMarkers();
+            this.updateInfoPanel(marker.data);
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) infoPanel.style.display = '';
+            document.getElementById('markerEditModal').style.display = 'none';
+          };
+        }, 0);
       } else {
         this.resetAllMarkers();
         marker.setOpacity(1.0);
@@ -796,8 +808,7 @@ class MapApp {
     if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
       if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
         this.importFromGitHub();
-     ének
-
+      }
     }
   }
 
@@ -816,7 +827,7 @@ class MapApp {
 
   toggleEditMode() {
     if (this.routeSelecting) {
-      this.clearAllMarkerBorders();
+      app.clearAllMarkerBorders();
       this.routeSelecting = false;
       const routeBtn = document.getElementById('routeBtn');
       if (routeBtn) routeBtn.textContent = '選擇路線';
@@ -824,7 +835,6 @@ class MapApp {
     if (this.currentMode === "done") {
       this.currentMode = "editMarker";
       document.getElementById('editBtn').textContent = "結束編輯";
-      console.log('Switched to editMarker mode'); // 調試日誌
     } else {
       this.currentMode = "done";
       document.getElementById('editBtn').textContent = "開始編輯";
@@ -832,7 +842,6 @@ class MapApp {
       document.getElementById('markerEditModal').style.display = 'none';
       const infoPanel = document.getElementById('infoPanel');
       if (infoPanel) infoPanel.style.display = '';
-      console.log('Switched to done mode'); // 調試日誌
     }
     this.updateMarkerScales();
   }
@@ -853,7 +862,7 @@ class MapApp {
       button.textContent = '完成選擇';
       this.resetAllMarkers();
     } else {
-      this.clearAllMarkerBorders();
+      app.clearAllMarkerBorders();
       button.textContent = '選擇路線';
     }
     this.updateMarkerScales();
