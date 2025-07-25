@@ -370,7 +370,7 @@ function updateRemarkOptionsForEdit(remark) {
   markerRemark.value = remark || '';
 }
 
-// === 選擇最近的先前時間 ===
+// === 選擇最近的未來時間（30分鐘內） ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -386,13 +386,23 @@ function getNearestTimeString(marker) {
     if (!m) continue;
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
-    const total = h * 60 + mm;
-    let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60; // Handle overnight wrap
-    if (diff >= 0 && diff < minDiff && diff <= 30) { // Only include times within 30 minutes
+    let total = h * 60 + mm;
+    
+    // Calculate time difference, considering overnight wrap
+    let diff = total - nowMin;
+    if (diff < -12 * 60) diff += 24 * 60; // Handle times in the next day
+    if (diff > 12 * 60) diff -= 24 * 60;   // Handle times in the previous day
+
+    // Select future times within 30 minutes
+    if (diff >= 0 && diff <= 30 && diff < minDiff) {
       minDiff = diff;
       bestDisplayTime = t;
     }
+  }
+
+  // If no future time is found within 30 minutes, return first time
+  if (!bestDisplayTime && times.length) {
+    return times[0]; // Return first time for the next cycle
   }
 
   return bestDisplayTime;
@@ -494,9 +504,9 @@ class MapApp {
     // Create or update accuracy circle
     if (!this.accuracyCircle) {
       this.accuracyCircle = L.circle(latlng, {
-        radius: radius,
-        color: 'blue',
-        fillOpacity: 0.2,
+        radius: radius;
+        color: 'blue';
+        fillOpacity: 0.2;
         weight: 1
       }).addTo(this.map);
     } else {
