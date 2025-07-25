@@ -207,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 26</div>
+<div id="version">版本 27</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -783,9 +783,7 @@ class MapApp {
             marker.data.type = type;
             marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
-
             this.autoAssignTimeForRelatedMarkers(marker);
-
             this.updateMarkerScales();
             this.saveMarkers();
             this.updateInfoPanel(marker.data);
@@ -868,7 +866,7 @@ class MapApp {
 
   saveMarkers() {
     const saved = [];
-    this.markers.eachLayer(marker Sabine => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
+    this.markers.eachLayer(marker => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
     localStorage.setItem('mhnow_markers', JSON.stringify(saved));
   }
 
@@ -879,7 +877,6 @@ class MapApp {
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
-      // Remove name from loaded data to ensure consistency
       delete data.name;
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
@@ -913,7 +910,6 @@ class MapApp {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
-        // Remove name from imported data
         data.forEach(item => delete item.name);
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
