@@ -547,19 +547,7 @@ class MapApp {
   }
 
   initEventListeners() {
-    this.map.on('click', (e) => {
-      if (this.currentMode === 'editMarker') {
-        const mapId = this.markers.getLayers().length + 1;
-        const data = {
-          type: 0,
-          time: timeTableByTotalPoints[1][0] || '',
-          remark: '',
-          totalPoints: 1,
-          mapId: mapId
-        };
-        this.addMarker(e.latlng, data);
-      }
-    });
+    // 移除单击或双击添加标记的事件监听器，仅保留其他交互
   }
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
