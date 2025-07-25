@@ -193,7 +193,7 @@
     <h3>標記資訊</h3>
     <div id="panelContent">請點選地圖上的標記標記</div>
   </div>
-  <div id="version">版本 4.3.3</div>
+  <div id="version">版本 4.2.23</div>
   <div id="zoomDisplay">Zoom: -</div>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
@@ -248,7 +248,7 @@ const timeTableByTotalPoints = {
   ]
 };
 
-// --- 新增輔助函數 ---
+// --- 輔助函數 ---
 /**
  * 根據標記的時間排程和當前實時時間，判斷當前活躍時段的奇偶狀態 (1 或 2)。
  * @param {object} markerData 包含 'time' 屬性的標記資料。
@@ -298,41 +298,87 @@ function getCurrentActiveSlotOddEvenStatus(markerData) {
   // 返回 1 表示奇數位置 (索引 0, 2, 4...)，2 表示偶數位置 (索引 1, 3, 5...)
   return ((currentSlotIndex % 2) + 1).toString();
 }
-// --- 結束新增輔助函數 ---
+
+// === 選擇最近的排程時間字符串 (用於編輯欄中的時間選項) ===
+function getNearestScheduleString(totalPoints, initialSelectedTime) {
+  const allSchedules = timeTableByTotalPoints[totalPoints] || [];
+  if (!allSchedules.length) return "";
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  let minTimeDiff = Infinity;
+  let nearestSchedule = "";
+
+  // 優先檢查 initialSelectedTime，如果它存在於所有排程中，就直接選它
+  if (initialSelectedTime && allSchedules.includes(initialSelectedTime)) {
+    return initialSelectedTime;
+  }
+
+  // 如果 initialSelectedTime 不存在或者為空，則尋找與當前時間最近的排程
+  for (const schedule of allSchedules) {
+    const timesInSchedule = schedule.split(/\s+/).filter(Boolean);
+    if (!timesInSchedule.length) continue;
+
+    for (const timeStr of timesInSchedule) {
+      const parts = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if (!parts) continue;
+
+      const h = parseInt(parts[1], 10);
+      const m = parseInt(parts[2], 10);
+      const schedulePointMinutes = h * 60 + m;
+
+      let diff = schedulePointMinutes - nowMinutes;
+
+      // 考慮跨午夜的情況，使時間差在 -12小時 到 +12小時之間
+      if (diff > 12 * 60) {
+        diff -= 24 * 60;
+      } else if (diff < -12 * 60) {
+        diff += 24 * 60;
+      }
+
+      const absDiff = Math.abs(diff);
+
+      if (absDiff < minTimeDiff) {
+        minTimeDiff = absDiff;
+        nearestSchedule = schedule;
+      }
+    }
+  }
+  return nearestSchedule;
+}
 
 
-// === 更新時間選項 (現在包含選擇排程後立即更新時間段的邏輯) ===
+// === 更新時間選項 (現在只顯示最接近的時間) ===
 function updateTimeOptionsForEdit(totalPoints, initialSelectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
-  const timePeriodInput = document.getElementById('timePeriod'); // 獲取時間段輸入框
+  const timePeriodInput = document.getElementById('timePeriod');
 
   markerTimeSelect.innerHTML = ''; // 清除現有選項
 
-  // 添加一個預設的「請選擇」選項
-  const defaultOpt = document.createElement('option');
-  defaultOpt.value = ''; // 空值
-  defaultOpt.textContent = '請選擇時間';
-  markerTimeSelect.appendChild(defaultOpt);
+  // 獲取最接近的排程時間字串來作為選項
+  const nearestTimeSchedule = getNearestScheduleString(totalPoints, initialSelectedTime);
 
-  const arr = timeTableByTotalPoints[totalPoints] || [];
-  arr.forEach(timestr => {
+  if (nearestTimeSchedule) {
     const opt = document.createElement('option');
-    opt.value = timestr;
-    opt.textContent = timestr;
+    opt.value = nearestTimeSchedule;
+    opt.textContent = nearestTimeSchedule; // 顯示完整的排程字串
     markerTimeSelect.appendChild(opt);
-  });
-
-  // 設定選中值
-  if (initialSelectedTime) {
-    markerTimeSelect.value = initialSelectedTime;
+    markerTimeSelect.value = nearestTimeSchedule;
   } else {
-    markerTimeSelect.value = ''; // 如果標記沒有時間，則明確設定為空
+    // 如果沒有找到最近的時間排程，或者 initialSelectedTime 不存在
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '無可用時間排程';
+    markerTimeSelect.appendChild(defaultOpt);
+    markerTimeSelect.value = '';
   }
 
   // === 在這裡添加 onchange 事件監聽器，當選擇時間排程時立即更新時間段 ===
+  // 由於現在只有一個選項，這個 onchange 主要用於確保時間段同步更新
   markerTimeSelect.onchange = () => {
     const selectedTimeSchedule = markerTimeSelect.value;
-    const tempMarkerData = { time: selectedTimeSchedule }; // 創建臨時數據對象
+    const tempMarkerData = { time: selectedTimeSchedule };
     timePeriodInput.value = getCurrentActiveSlotOddEvenStatus(tempMarkerData);
   };
 
@@ -340,6 +386,7 @@ function updateTimeOptionsForEdit(totalPoints, initialSelectedTime) {
   const initialTempMarkerData = { time: markerTimeSelect.value };
   timePeriodInput.value = getCurrentActiveSlotOddEvenStatus(initialTempMarkerData);
 }
+
 
 // === 更新 remark 選項 (新增自動保存和關閉編輯欄的邏輯) ===
 function updateRemarkOptionsForEdit(remark) {
@@ -369,6 +416,7 @@ function updateRemarkOptionsForEdit(remark) {
     opt.textContent = '無法接觸/無法古龍';
     markerRemark.appendChild(opt);
   } else if (remark && !defaultOptions.includes(remark)) {
+    // 處理舊的或自定義的 remark 情況
     const opt = document.createElement('option');
     opt.value = remark;
     opt.textContent = remark;
@@ -380,10 +428,10 @@ function updateRemarkOptionsForEdit(remark) {
   // === 新增：當狀態變更時，自動保存並關閉編輯欄 ===
   markerRemark.onchange = () => {
     if (app.selectedMarker) { // 確保有選中的標記
-      const time = document.getElementById('markerTime').value;
+      const time = document.getElementById('markerTime').value; // 獲取當前時間下拉選單的值
       const newRemark = markerRemark.value.trim();
 
-      app.selectedMarker.data.time = time;
+      app.selectedMarker.data.time = time; // 保存完整時間排程字串
       app.selectedMarker.data.remark = newRemark;
       app.selectedMarker.setIcon(app.getCustomIcon(1, app.selectedMarker)); // 更新標記圖標
       app.autoAssignTimeForRelatedMarkers(app.selectedMarker); // 自動分配相關標記時間
@@ -656,7 +704,7 @@ class MapApp {
           }
         }
 
- if (currentSlot >= 0) {
+        if (currentSlot >= 0) {
           const patternMatch = remark.match(/([?AB\s]+)確認/);
           if (patternMatch) {
             const pattern = patternMatch[1].trim().split(/\s+/);
@@ -668,8 +716,8 @@ class MapApp {
             } else if (slotState === 'B') {
               iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // 設定為藍色古龍
             } else if (slotState === '?') {
-              // *** 新增的邏輯：如果 slotState 是 '?'，保持 iconUrl 為 gather.png 或不變，即不顯示古龍圖標 ***
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png'; // 或讓它繼續使用初始值
+              // 如果是 '?'，則不顯示古龍圖標，保持為 gather.png
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
             }
             // 如果 slotState 是其他未明確處理的字符，iconUrl 保持 gather.png 或之前的值
           }
