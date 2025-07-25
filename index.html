@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -271,17 +272,27 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
   const now = currentTime || new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
+  // Define a buffer time in minutes (e.g., 9 minutes before the scheduled time)
+  // This will make the logo appear from (Scheduled Time - bufferMinutes)
+  const bufferMinutes = 9;
+
   let period = "-";
   for (let i = 0; i < times.length; i++) {
     const [h, m] = times[i].split(':').map(Number);
     const timeMin = h * 60 + m;
+
+    // Calculate the start of the display window for the logo
+    let displayWindowStartMin = timeMin - bufferMinutes;
+    if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60; // Handle overnight times
+
     const nextTime = times[i + 1] || times[0];
     const [nh, nm] = nextTime.split(':').map(Number);
     let nextTimeMin = nh * 60 + nm;
-    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
+    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Adjust for next day if it wraps around
 
-    if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      period = i % 2 === 0 ? "1" : "2"; // Fix: Even indices -> "1", odd -> "2"
+    // Check if current time is within the buffered window or the actual time slot
+    if (nowMin >= displayWindowStartMin && nowMin < nextTimeMin) {
+      period = i % 2 === 0 ? "1" : "2";
       break;
     }
   }
@@ -308,7 +319,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
 
   const timePeriodInput = document.getElementById('timePeriod');
   if (timePeriodInput && arr.length > 0) {
-    const timetable = arr[0];
+    const timetable = markerTime.value || arr[0]; // Use the selected time, or default to the first
     timePeriodInput.value = getTimePeriod(totalPoints, timetable);
   } else {
     timePeriodInput.value = "-";
@@ -373,8 +384,8 @@ function getNearestTimeString(marker) {
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
     let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60;
-    if (diff > 12 * 60) diff -= 24 * 60;
+    if (diff < -12 * 60) diff += 24 * 60; // Adjust for times spanning midnight
+    if (diff > 12 * 60) diff -= 24 * 60; // Adjust for times spanning midnight
     const absDiff = Math.abs(diff);
     if (absDiff < minDiff) {
       minDiff = absDiff;
@@ -419,6 +430,7 @@ class MapApp {
     this.map.on('zoomend', () => this.updateMarkerScales());
     this.updateMarkerScales();
 
+    // Update marker scales every minute to reflect time-based icon changes
     setInterval(() => this.updateMarkerScales(), 60 * 1000);
   }
 
@@ -552,25 +564,36 @@ class MapApp {
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
     let iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
+    // Check if the marker has a remark that is not 'f' and includes '確認'
     if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
       const remark = marker.data.remark;
       const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+
+      // Only apply Elder Dragon logic if there are times and the remark is a confirmation pattern
       if (times.length && remark.includes('確認')) {
         const now = new Date();
         const nowMin = now.getHours() * 60 + now.getMinutes();
+        const bufferMinutes = 9; // Buffer to show the icon earlier
+
         let currentSlot = -1;
         for (let i = 0; i < times.length; i++) {
           const [h, m] = times[i].split(':').map(Number);
           const timeMin = h * 60 + m;
+
+          let displayWindowStartMin = timeMin - bufferMinutes;
+          if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60; // Handle overnight times
+
           const nextTime = times[i + 1] || times[0];
           const [nh, nm] = nextTime.split(':').map(Number);
           let nextTimeMin = nh * 60 + nm;
-          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
-          if (nowMin >= timeMin && nowMin < nextTimeMin) {
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Adjust for next day if it wraps around
+
+          if (nowMin >= displayWindowStartMin && nowMin < nextTimeMin) {
             currentSlot = i;
             break;
           }
         }
+
         if (currentSlot >= 0) {
           const patternMatch = remark.match(/([?AB\s]+)確認/);
           if (patternMatch) {
@@ -803,8 +826,8 @@ class MapApp {
     if (usedIndices.length >= maxRelated && relatedMarkers.length >= maxRelated) {
       const availableIndices = Array.from({ length: timeOptions.length }, (_, i) => i).filter(i => !usedIndices.includes(i));
       if (availableIndices.length > 0) {
-        const nthMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1) || 
-                         relatedMarkers[relatedMarkers.length - 1];
+        const nthMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1) ||
+                           relatedMarkers[relatedMarkers.length - 1];
         if (nthMarker) {
           nthMarker.data.time = timeOptions[availableIndices[0]];
           nthMarker.setIcon(this.getCustomIcon(1, nthMarker));
