@@ -207,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.25</div>
+<div id="version">版本 26</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -227,7 +227,740 @@ const timeTableByTotalPoints = {
   4: [
     "06:15 07:55 09:35 11:15 12:55 14:35 16:15 17:55 19:35 21:15 22:55",
     "06:40 08:20 10:00 11:40 13:20 15:00 16:40 18:20 20:00 21:40 23:20",
-    "07:05 08:45 10:25 12 revising: true;
+    "07:05 08:45 10:25 12:05 13:45 15:25 17:05 18:45 20:25 22:05",
+    "07:30 09:10 10:50 12:30 14:10 15:50 17:30 19:10 20:50 22:30"
+  ],
+  5: [
+    "06:15 08:20 10:25 12:30 14:35 16:40 18:45 20:50 22:55",
+    "06:40 08:45 10:50 12:55 15:00 17:05 19:10 21:15 23:20",
+    "07:05 09:10 11:15 13:20 15:25 17:30 19:35 21:40",
+    "07:30 09:35 11:40 13:45 15:50 17:55 20:00 22:05",
+    "07:55 10:00 12:05 14:10 16:15 18:20 20:25 22:30"
+  ],
+  6: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ],
+  7: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ],
+  8: [
+    "06:15 08:45 11:15 13:45 16:15 18:45 21:15",
+    "06:40 09:10 11:40 14:10 16:40 19:10 21:40",
+    "07:05 09:35 12:05 14:35 17:05 19:35 22:05",
+    "07:30 10:00 12:30 15:00 17:30 20:00 22:30",
+    "07:55 10:25 12:55 15:25 17:55 20:25 22:55",
+    "08:20 10:50 13:20 15:50 18:20 20:50 23:20"
+  ]
+};
+
+const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
+
+// 所有38種時段
+const allTimes = [
+  "06:15", "06:40", "07:05", "07:30",
+  "07:55", "08:20", "08:45", "09:10",
+  "09:35", "10:00", "10:25", "10:50",
+  "11:15", "11:40", "12:05", "12:30",
+  "12:55", "13:20", "13:45", "14:10",
+  "14:35", "15:00", "15:25", "15:50",
+  "16:15", "16:40", "17:05", "17:30",
+  "17:55", "18:20", "18:45", "19:10",
+  "19:35", "20:00", "20:25", "20:50",
+  "21:15", "21:40", "22:05", "22:30",
+  "22:55", "23:20"
+];
+
+// === 計算時間段 ===
+function getTimePeriod(totalPoints, timetable, currentTime) {
+  const times = timetable.split(/\s+/).filter(Boolean);
+  if (!times.length) {
+    console.warn('No valid times in timetable:', timetable);
+    return "-";
+  }
+
+  const now = currentTime || new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  let period = "-";
+  for (let i = 0; i < times.length; i++) {
+    const timeMatch = times[i].match(/(\d{1,2}):(\d{2})/);
+    if (!timeMatch) {
+      console.warn('Invalid time format:', times[i]);
+      continue;
+    }
+    const [h, m] = timeMatch.slice(1).map(Number);
+    const timeMin = h * 60 + m;
+    const nextTime = times[i + 1] || times[0];
+    const nextTimeMatch = nextTime.match(/(\d{1,2}):(\d{2})/);
+    if (!nextTimeMatch) {
+      console.warn('Invalid next time format:', nextTime);
+      continue;
+    }
+    const [nh, nm] = nextTimeMatch.slice(1).map(Number);
+    let nextTimeMin = nh * 60 + nm;
+    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+
+    if (nowMin >= timeMin && nowMin < nextTimeMin) {
+      period = i % 2 === 0 ? "1" : "2"; // Alternating pattern 1, 2, 1, 2, ...
+      break;
+    }
+  }
+
+  return period;
+}
+
+// === 更新時間選項 ===
+function updateTimeOptionsForEdit(totalPoints, selectedTime) {
+  const markerTime = document.getElementById('markerTime');
+  if (!markerTime) {
+    console.error('markerTime element not found');
+    return;
+  }
+  markerTime.innerHTML = '';
+  const arr = timeTableByTotalPoints[totalPoints] || [];
+  if (!arr.length) {
+    console.warn('No timetable for totalPoints:', totalPoints);
+  }
+  arr.forEach(timestr => {
+    const opt = document.createElement('option');
+    opt.value = timestr;
+    opt.textContent = timestr;
+    markerTime.appendChild(opt);
+  });
+  if (totalPoints === 1 && arr.length === 1) {
+    markerTime.value = arr[0];
+  } else if (selectedTime && arr.includes(selectedTime)) {
+    markerTime.value = selectedTime;
+  }
+
+  // 更新時間段顯示
+  const timePeriodInput = document.getElementById('timePeriod');
+  if (timePeriodInput && arr.length > 0) {
+    const timetable = arr[0]; // Use the first timetable for totalPoints
+    timePeriodInput.value = getTimePeriod(totalPoints, timetable);
+  } else {
+    if (timePeriodInput) timePeriodInput.value = "-";
+  }
+}
+
+// === 更新 remark 選項 ===
+function updateRemarkOptionsForEdit(remark) {
+  const markerRemark = document.getElementById('markerRemark');
+  const defaultOptions = [
+    'A ? A ? 確認',
+    '? A ? A 確認',
+    'B ? B ? 確認',
+    '? B ? B 確認',
+    'A A A A確認',
+    'A B A B確認',
+    'B B B B確認',
+    'B A B A確認'
+  ];
+  markerRemark.innerHTML = '';
+
+  defaultOptions.forEach(optValue => {
+    const opt = document.createElement('option');
+    opt.value = optValue;
+    opt.textContent = optValue;
+    markerRemark.appendChild(opt);
+  });
+
+  if (remark === 'f') {
+    const opt = document.createElement('option');
+    opt.value = 'f';
+    opt.textContent = '無法接觸/無法古龍';
+    markerRemark.appendChild(opt);
+  } else if (remark && !defaultOptions.includes(remark)) {
+    const opt = document.createElement('option');
+    opt.value = remark;
+    opt.textContent = remark;
+    markerRemark.appendChild(opt);
+  }
+
+  markerRemark.value = remark || '';
+}
+
+// === 選擇最近的先前時間 ===
+function getNearestTimeString(marker) {
+  const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+  if (!times.length) {
+    console.warn('No valid times for marker:', marker.data);
+    return "";
+  }
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  let minDiff = Infinity;
+  let bestDisplayTime = "";
+
+  for (const t of times) {
+    const m = t.match(/(\d{1,2}):(\d{2})/);
+    if (!m) {
+      console.warn('Invalid time format:', t);
+      continue;
+    }
+    const h = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    const total = h * 60 + mm;
+    let diff = nowMin - total;
+    if (diff < -12 * 60) diff += 24 * 60; // Handle overnight wrap
+    if (diff >= 0 && diff < minDiff && diff <= 30) { // Only include times within 30 minutes
+      minDiff = diff;
+      bestDisplayTime = t;
+    }
+  }
+
+  return bestDisplayTime;
+}
+
+class MapApp {
+  constructor() {
+    this.map = L.map('map', {
+      doubleClickZoom: false
+    });
+    this.map.locate({ setView: true, maxZoom: 16 });
+
+    this.userMarker = null; // Marker for user's current location
+    this.accuracyCircle = null; // Circle for location accuracy
+    this.watchId = null; // ID for watchPosition
+    this.isTracking = false; // Tracking state
+
+    this.map.on('locationfound', e => this.updateUserLocation(e));
+    this.map.on('locationerror', () => {
+      alert("無法取得你的定位，使用預設地點。");
+      this.map.setView([3.0000, 101.6167], 14);
+    });
+
+    this.markers = new L.FeatureGroup();
+    this.filteredTypes = [];
+    this.lastMarkerType = 0;
+    this.routeSelecting = false;
+    this.selectedMarkers = [];
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://carto.com/">CARTO</a>'
+    }).addTo(this.map);
+    this.markers.addTo(this.map);
+
+    this.initControls();
+    this.loadSavedMarkers();
+    this.initEventListeners();
+
+    this.map.on('zoomend', () => this.updateMarkerScales());
+    this.updateMarkerScales();
+
+    setInterval(() => this.updateMarkerScales(), 60 * 1000);
+  }
+
+  initControls() {
+    const control = L.control({ position: 'topright' });
+    control.onAdd = () => {
+      const div = L.DomUtil.create('div', 'leaflet-control-custom');
+      div.innerHTML = `
+        <div class="btn-row">
+          <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="app.toggleTracking()" id="trackBtn">開啟即時定位</button>
+        </div>
+        <label>顯示顏色：</label>
+        <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
+          <option value="0">⚪ 原始</option>
+          <option value="1">🔴 紅</option>
+          <option value="2">🔵 藍</option>
+          <option value="3">🟢 綠</option>
+          <option value="4">🟣 紫</option>
+        </select>
+        <div class="btn-row">
+          <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="app.toggleSelectingRoute()" id="routeBtn">選擇路線</button>
+          <button onclick="app.openGoogleRoute()">🗺️ Google 地圖路線</button>
+        </div>
+      `;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    };
+    control.addTo(this.map);
+    this.currentMode = "done";
+  }
+
+  updateUserLocation(e) {
+    const latlng = e.latlng;
+    const maxRadius = 100;
+    const radius = Math.min(e.accuracy / 2, maxRadius);
+
+    // Create or update user marker
+    if (!this.userMarker) {
+      this.userMarker = L.marker(latlng, {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="background: blue; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div>',
+          iconSize: [12, 12],
+          iconAnchor: [6, 6]
+        }),
+        zIndexOffset: 1000
+      }).addTo(this.map);
+    } else {
+      this.userMarker.setLatLng(latlng);
+    }
+
+    // Create or update accuracy circle
+    if (!this.accuracyCircle) {
+      this.accuracyCircle = L.circle(latlng, {
+        radius: radius;
+        color: 'blue';
+        fillOpacity: 0.2;
+        weight: 1
+      }).addTo(this.map);
+    } else {
+      this.accuracyCircle.setLatLng(latlng);
+      this.accuracyCircle.setRadius(radius);
+    }
+
+    // Center map on first location or if tracking is active
+    if (!this.isTracking) {
+      this.map.setView(latlng, this.map.getZoom() || 16);
+    }
+  }
+
+  toggleTracking() {
+    this.isTracking = !this.isTracking;
+    const trackBtn = document.getElementById('trackBtn');
+    if (this.isTracking) {
+      trackBtn.textContent = '關閉即時定位';
+      if (navigator.geolocation) {
+        this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const e = {
+              latlng: L.latLng(position.coords.latitude, position.coords.longitude),
+              accuracy: position.coords.accuracy
+            };
+            this.updateUserLocation(e);
+          },
+          () => {
+            alert('無法取得你的位置，請檢查定位權限');
+            this.stopTracking();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        alert('你的瀏覽器不支援地理定位');
+        this.stopTracking();
+      }
+    } else {
+      this.stopTracking();
+    }
+  }
+
+  stopTracking() {
+    if (this.watchId !== null) {
+      navigator.geolocation.clearWatch(this.watchId);
+      this.watchId = null;
+    }
+    this.isTracking = false;
+    const trackBtn = document.getElementById('trackBtn');
+    if (trackBtn) trackBtn.textContent = '開啟即時定位';
+  }
+
+  updateInfoPanel(data) {
+    const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
+    const content = `
+      <p>時間：${data.time}</p>
+      <p>類型：${markerColors[data.type] || '原始'}</p>
+      <p>備註：${displayRemark}</p>
+      <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
+      <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
+      <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
+    `;
+    document.getElementById('panelContent').innerHTML = content;
+  }
+
+  initEventListeners() {
+    // 移除手动添加标记的点击/触摸事件监听
+  }
+
+  getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+    const iconUrls = {
+      0: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png',
+      1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+      2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+      3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+      4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
+    };
+
+    let useIconUrl = iconUrls[type];
+    if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
+      // Check if the marker is in an ancient dragon state based on remark and time
+      const remark = marker.data.remark;
+      const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+      if (times.length && remark.includes('確認')) {
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        let currentSlot = -1;
+        for (let i = 0; i < times.length; i++) {
+          const [h, m] = times[i].split(':').map(Number);
+          const timeMin = h * 60 + m;
+          const nextTime = times[i + 1] || times[0];
+          const [nh, nm] = nextTime.split(':').map(Number);
+          let nextTimeMin = nh * 60 + nm;
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+          if (nowMin >= timeMin && nowMin < nextTimeMin) {
+            currentSlot = i;
+            break;
+          }
+        }
+        if (currentSlot >= 0) {
+          // Map remark pattern (e.g., "? A ? A") to the current slot
+          const patternMatch = remark.match(/([?AB\s]+)確認/);
+          if (patternMatch) {
+            const pattern = patternMatch[1].trim().split(/\s+/);
+            const patternLength = pattern.length;
+            const slotState = pattern[currentSlot % patternLength];
+            if (slotState === 'A') {
+              useIconUrl = iconUrls[4]; // Use elder.png for ancient dragon state
+            }
+          }
+        }
+      }
+    }
+
+    let size = 40 * scale;
+    let timeStr = getNearestTimeString(marker || { data: {} });
+
+    let timeFontSize = Math.max(10, Math.floor(14 * scale));
+
+    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+
+    const redCrossSVG = `
+      <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
+        <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+        <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    return L.divIcon({
+      className: '',
+      html: `
+        <div class="marker-wrapper" style="position:relative;">
+          <div class="marker-border" style="
+            background-image: url('${useIconUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: ${size}px;
+            height: ${size}px;
+            position: relative;
+          ">
+            ${showRedCross ? redCrossSVG : ""}
+            ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4px;white-space:nowrap;">${timeStr}</div>` : ""}
+            ${orderNumber !== null ? `
+              <div class="marker-order-badge" style="
+                position: absolute;
+                top: ${-10 * scale}px;
+                left: ${-10 * scale}px;
+                width: ${Math.max(20 * scale, 18)}px;
+                height: ${Math.max(20 * scale, 18)}px;
+                background: #ff6600;
+                color: #fff;
+                border-radius: 50%;
+                font-size: ${Math.max(11 * scale, 12)}px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border: ${2 * scale}px solid #fff;
+                z-index: 20;
+              ">${orderNumber+1}</div>
+            ` : ""}
+          </div>
+        </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
+    });
+  }
+
+  isMobile() {
+    return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  }
+
+  updateMarkerScales() {
+    const zoom = this.map.getZoom();
+    const mobile = this.isMobile();
+    let scale = 1.0;
+    if (mobile) { 
+      if (zoom >= 18) scale = 2.0;
+      else if (zoom === 17) scale = 1.6;
+      else if (zoom === 16) scale = 1.2;
+      else if (zoom === 15) scale = 1.0;
+      else if (zoom === 14) scale = 0.6;
+      else scale = 0.3;
+    } else {
+      if (zoom >= 18) scale = 1.0;
+      else if (zoom === 17) scale = 0.9;
+      else if (zoom === 16) scale = 0.8;
+      else if (zoom === 15) scale = 0.5;
+      else if (zoom === 14) scale = 0.3;
+      else scale = 0.3;
+    }
+    this.markers.eachLayer(marker => {
+      let orderNumber = null;
+      if (this.routeSelecting) {
+        const idx = this.selectedMarkers.indexOf(marker);
+        if (idx !== -1) orderNumber = idx;
+      }
+      marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker, orderNumber));
+      const el = marker.getElement();
+      if (el && this.selectedMarkers.includes(marker)) {
+        el.classList.add('markerBorder');
+      }
+    });
+    document.getElementById('zoomDisplay').textContent = `Zoom: ${zoom}`;
+  }
+
+  addMarker(latlng, data) {
+    if (!data.totalPoints) data.totalPoints = 1;
+    if (!data.mapId) data.mapId = 1;
+    if (!data.remark) data.remark = '';
+    const marker = L.marker(latlng, {
+      icon: this.getCustomIcon(data.type, 1, { data }),
+      draggable: false
+    });
+    marker.data = data;
+    this.resetAllMarkers();
+    let tapped = false;
+    const handler = (e) => {
+      if (tapped) return;
+      tapped = true;
+      setTimeout(() => tapped = false, 300);
+      this.selectedMarker = marker;
+      if (this.routeSelecting) {
+        const markerElement = marker.getElement();
+        if (this.selectedMarkers.includes(marker)) {
+          this.selectedMarkers = this.selectedMarkers.filter(m => m !== marker);
+          if (markerElement) markerElement.classList.remove('markerBorder');
+        } else {
+          this.selectedMarkers.push(marker);
+          if (markerElement) markerElement.classList.add('markerBorder');
+        }
+        this.updateMarkerScales();
+        return;
+      }
+      if (this.currentMode === "editMarker") {
+        this.resetAllMarkers();
+        marker.setOpacity(1.0);
+        marker.setZIndexOffset(1000);
+        setTimeout(() => {
+          const infoPanel = document.getElementById('infoPanel');
+          if (infoPanel) infoPanel.style.display = 'none';
+          updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
+          document.getElementById('markerType').value = marker.data.type;
+          updateRemarkOptionsForEdit(marker.data.remark);
+          document.getElementById('markerEditModal').style.display = 'block';
+          document.getElementById('saveMarkerBtn').onclick = () => {
+            const time = document.getElementById('markerTime').value;
+            const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
+            const remark = document.getElementById('markerRemark').value.trim();
+            marker.data.time = time;
+            marker.data.type = type;
+            marker.data.remark = remark;
+            marker.setIcon(this.getCustomIcon(type, 1, marker));
+
+            this.autoAssignTimeForRelatedMarkers(marker);
+
+            this.updateMarkerScales();
+            this.saveMarkers();
+            this.updateInfoPanel(marker.data);
+            const infoPanel = document.getElementById('infoPanel');
+            if (infoPanel) infoPanel.style.display = '';
+            document.getElementById('markerEditModal').style.display = 'none';
+          };
+        }, 0);
+      } else {
+        this.resetAllMarkers();
+        marker.setOpacity(1.0);
+        marker.setZIndexOffset(1000);
+        this.updateInfoPanel(marker.data);
+      }
+    };
+    marker.on('click', handler);
+    marker.on('touchstart', handler);
+    this.selectedMarker = marker;
+    this.markers.addLayer(marker);
+    this.saveMarkers();
+    this.filterMarkersByTypes();
+    this.updateMarkerScales();
+  }
+
+  resetAllMarkers() {
+    this.markers.eachLayer(m => {
+      m.setOpacity(0.6);
+      m.setZIndexOffset(0);
+    });
+  }
+
+  autoAssignTimeForRelatedMarkers(marker) {
+    const totalPoints = marker.data.totalPoints;
+    if (![2, 3, 4, 5, 6].includes(totalPoints)) return;
+
+    const selectedTime = marker.data.time;
+    const selectedMapId = marker.data.mapId;
+    const timeOptions = timeTableByTotalPoints[totalPoints];
+    const selectedTimeIndex = timeOptions.indexOf(selectedTime);
+
+    if (selectedTimeIndex === -1) {
+      console.warn('Invalid time selected for marker:', selectedTime);
+      return;
+    }
+
+    let relatedMarkers = [];
+    this.markers.eachLayer(m => {
+      if (m !== marker && m.data.mapId === selectedMapId && m.data.totalPoints === totalPoints) {
+        relatedMarkers.push(m);
+      }
+    });
+
+    const maxRelated = totalPoints - 1;
+    if (relatedMarkers.length > maxRelated) {
+      alert(`警告：找到多個具有相同 mapId 和 totalPoints=${totalPoints} 的標記，只更新前 ${maxRelated} 個。`);
+      relatedMarkers = relatedMarkers.slice(0, maxRelated);
+    }
+
+    const usedIndices = [selectedTimeIndex];
+    relatedMarkers.forEach(m => {
+      const idx = timeOptions.indexOf(m.data.time);
+      if (idx !== -1) usedIndices.push(idx);
+    });
+
+    if (usedIndices.length >= maxRelated && relatedMarkers.length >= maxRelated) {
+      const availableIndices = Array.from({ length: timeOptions.length }, (_, i) => i).filter(i => !usedIndices.includes(i));
+      if (availableIndices.length > 0) {
+        const nthMarker = relatedMarkers.find(m => !usedIndices.includes(timeOptions.indexOf(m.data.time)) || timeOptions.indexOf(m.data.time) === -1) || 
+                         relatedMarkers[relatedMarkers.length - 1];
+        if (nthMarker) {
+          nthMarker.data.time = timeOptions[availableIndices[0]];
+          nthMarker.setIcon(this.getCustomIcon(nthMarker.data.type, 1, nthMarker));
+          if (this.selectedMarker === nthMarker) {
+            this.updateInfoPanel(nthMarker.data);
+          }
+        }
+      }
+    }
+  }
+
+  saveMarkers() {
+    const saved = [];
+    this.markers.eachLayer(marker Sabine => saved.push({ ...marker.data, lat: marker.getLatLng().lat, lng: marker.getLatLng().lng }));
+    localStorage.setItem('mhnow_markers', JSON.stringify(saved));
+  }
+
+  loadSavedMarkers() {
+    this.markers.clearLayers();
+    const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
+    saved.forEach(data => {
+      if (data.totalPoints === 1) {
+        data.time = timeTableByTotalPoints[1][0];
+      }
+      // Remove name from loaded data to ensure consistency
+      delete data.name;
+      this.addMarker(L.latLng(data.lat, data.lng), data);
+    });
+    this.updateMarkerScales();
+  }
+
+  filterMarkersByTypes() {
+    const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
+                         .map(opt => parseInt(opt.value));
+    const types = selected.length ? selected : [0, 1, 2, 3, 4];
+    this.markers.eachLayer(marker => {
+      const icon = marker._icon;
+      if (icon) {
+        icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
+      }
+    });
+    this.filteredTypes = types;
+  }
+
+  confirmImportFromGitHub() {
+    if (confirm('確定從 GitHub 匯入標記？這將覆蓋現有標記。')) {
+      if (confirm('再次確認：真的要從 GitHub 匯入並覆蓋？')) {
+        this.importFromGitHub();
+      }
+    }
+  }
+
+  importFromGitHub() {
+    const url = 'https://raw.githubusercontent.com/kinbak1115/mh-map/main/mhnow_backup_2025-05-12.json';
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data)) throw new Error();
+        // Remove name from imported data
+        data.forEach(item => delete item.name);
+        localStorage.setItem('mhnow_markers', JSON.stringify(data));
+        alert('成功從 GitHub 匯入標記，重新載入地圖。');
+        location.reload();
+      })
+      .catch(() => alert('GitHub 匯入失敗，請檢查檔案連結與格式。'));
+  }
+
+  toggleEditMode() {
+    if (this.routeSelecting) {
+      this.clearAllMarkerBorders();
+      this.routeSelecting = false;
+      const routeBtn = document.getElementById('routeBtn');
+      if (routeBtn) routeBtn.textContent = '選擇路線';
+    }
+    if (this.currentMode === "done") {
+      this.currentMode = "editMarker";
+      document.getElementById('editBtn').textContent = "結束編輯";
+    } else {
+      this.currentMode = "done";
+      document.getElementById('editBtn').textContent = "開始編輯";
+      this.saveMarkers();
+      document.getElementById('markerEditModal').style.display = 'none';
+      const infoPanel = document.getElementById('infoPanel');
+      if (infoPanel) infoPanel.style.display = '';
+    }
+    this.updateMarkerScales();
+  }
+
+  toggleSelectingRoute() {
+    this.routeSelecting = !this.routeSelecting;
+    const button = document.getElementById('routeBtn');
+    if (this.routeSelecting) {
+      if (this.currentMode !== 'done') {
+        this.currentMode = 'done';
+        const editBtn = document.getElementById('editBtn');
+        if (editBtn) editBtn.textContent = '開始編輯';
+        document.getElementById('markerEditModal').style.display = 'none';
+        const infoPanel = document.getElementById('infoPanel');
+        if (infoPanel) infoPanel.style.display = '';
+      }
+      this.selectedMarkers = [];
+      button.textContent = '完成選擇';
+      this.resetAllMarkers();
+    } else {
+      this.clearAllMarkerBorders();
+      button.textContent = '選擇路線';
     }
     this.updateMarkerScales();
   }
