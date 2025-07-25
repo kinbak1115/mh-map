@@ -214,7 +214,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.10</div>
+<div id="version">版本 4.2.11</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -378,7 +378,7 @@ function updateRemarkOptionsForEdit(remark) {
     markerRemark.appendChild(opt);
   }
 
-  markerRemark.value = remark || defaultOptions[0];
+  markerRemark.value = remark || '';
 }
 
 // === 選擇最近的先前時間 ===
@@ -455,7 +455,6 @@ class MapApp {
       div.innerHTML = `
         <div class="btn-row">
           <button onclick="app.toggleEditMode()" id="editBtn">開始編輯</button>
-          <button onclick="app.deleteSelectedMarker()">🗑️ 刪除標記</button>
         </div>
         <div class="btn-row">
           <button onclick="app.toggleTracking()" id="trackBtn">開啟即時定位</button>
@@ -708,7 +707,7 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    if (!data.remark) data.remark = 'A ? A ? 確認'; // Default to first option
+    if (!data.remark) data.remark = ''; // Default to empty string
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -835,19 +834,6 @@ class MapApp {
           }
         }
       }
-    }
-  }
-
-  deleteSelectedMarker() {
-    if (!this.selectedMarker) {
-      alert('請先點選一個標記再刪除');
-      return;
-    }
-    if (confirm('確定要刪除這個標記？')) {
-      this.markers.removeLayer(this.selectedMarker);
-      this.saveMarkers();
-      this.selectedMarker = null;
-      document.getElementById('panelContent').innerText = '請點選地圖上的標記';
     }
   }
 
