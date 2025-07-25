@@ -2,8 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>MH Now 古龍記錄地圖 - 蒲种</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <title>MH Now 古龍記錄地圖</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
   <style>
     body, html { margin: 0; padding: 0; }
     #map { height: 100vh; }
@@ -55,7 +55,7 @@
       }
       select[multiple], select, input[type="number"] {
         font-size: 28px;
-        padding: 14px;
+        padding: 12px;
       }
     }
     .marker-wrapper {
@@ -83,7 +83,7 @@
       color: white;
       padding: 5px 10px;
       font-size: 16px;
-      border-radius: 5px;
+      border-radius: 4px;
       z-index: 1000;
     }
     #version { bottom: 10px; }
@@ -174,19 +174,12 @@
 <!-- 🟦 Marker 編輯用 Modal（顯示在左上角） -->
 <div id="markerEditModal">
   <h3>更改標記資訊</h3>
-  <label for="markerName">名稱：</label>
-  <select id="markerName">
-    <option value="全天古龍種">全天古龍種</option>
-    <option value="ABAB古龍種">ABAB古龍種</option>
-    <option value="BABA古龍種">BABA古龍種</option>
-    <option value="大連狩獵">大連狩獵</option>
-  </select><br/><br/>
   <label for="markerTime">時間：</label>
   <select id="markerTime">
     <!-- 由 JS 動態產生 -->
-  </select><br/><br/>
+  </select><br><br>
   <label for="timePeriod">時間段：</label>
-  <input type="text" id="timePeriod" readonly><br/><br/>
+  <input type="text" id="timePeriod" readonly><br><br>
   <label for="markerType">顏色：</label>
   <select id="markerType">
     <option value="0">⚪ 原始</option>
@@ -194,11 +187,11 @@
     <option value="2">🔵 藍</option>
     <option value="3">🟢 綠</option>
     <option value="4">🟣 紫</option>
-  </select><br/><br/>
+  </select><br><br>
   <label for="markerRemark">狀態：</label>
   <select id="markerRemark">
     <!-- 由 JS 動態產生 -->
-  </select><br/><br/>
+  </select><br><br>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
     <button onclick="
@@ -214,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.11</div>
+<div id="version">版本 4.2.22</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -567,7 +560,6 @@ class MapApp {
   updateInfoPanel(data) {
     const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
     const content = `
-      <p><strong>${data.name}</strong></p>
       <p>時間：${data.time}</p>
       <p>類型：${markerColors[data.type] || '原始'}</p>
       <p>備註：${displayRemark}</p>
@@ -582,121 +574,107 @@ class MapApp {
     // 移除手动添加标记的点击/触摸事件监听
   }
 
-getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-  const iconUrls = {
-    0: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png',
-    1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-    2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-    3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-    4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png',
-    raid: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/raid.png'
-  };
+  getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
+    const iconUrls = {
+      0: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png',
+      1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
+      2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
+      3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
+      4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
+    };
 
-  let useIconUrl = iconUrls[type];
-  let isRaid = false;
-  if (marker && marker.data && marker.data.name === "大連狩獵") {
-    useIconUrl = iconUrls.raid;
-    isRaid = true;
-  } else if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
-    // Check if the marker is in an ancient dragon state based on remark and time
-    const remark = marker.data.remark;
-    const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-    if (times.length && remark.includes('確認')) {
-      const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      let currentSlot = -1;
-      for (let i = 0; i < times.length; i++) {
-        const [h, m] = times[i].split(':').map(Number);
-        const timeMin = h * 60 + m;
-        const nextTime = times[i + 1] || times[0];
-        const [nh, nm] = nextTime.split(':').map(Number);
-        let nextTimeMin = nh * 60 + nm;
-        if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
-        if (nowMin >= timeMin && nowMin < nextTimeMin) {
-          currentSlot = i;
-          break;
+    let useIconUrl = iconUrls[type];
+    if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
+      // Check if the marker is in an ancient dragon state based on remark and time
+      const remark = marker.data.remark;
+      const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+      if (times.length && remark.includes('確認')) {
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        let currentSlot = -1;
+        for (let i = 0; i < times.length; i++) {
+          const [h, m] = times[i].split(':').map(Number);
+          const timeMin = h * 60 + m;
+          const nextTime = times[i + 1] || times[0];
+          const [nh, nm] = nextTime.split(':').map(Number);
+          let nextTimeMin = nh * 60 + nm;
+          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+          if (nowMin >= timeMin && nowMin < nextTimeMin) {
+            currentSlot = i;
+            break;
+          }
         }
-      }
-      if (currentSlot >= 0) {
-        // Map remark pattern (e.g., "? A ? A") to the current slot
-        const patternMatch = remark.match(/([?AB\s]+)確認/);
-        if (patternMatch) {
-          const pattern = patternMatch[1].trim().split(/\s+/);
-          const patternLength = pattern.length;
-          const slotState = pattern[currentSlot % patternLength];
-          if (slotState === 'A') {
-            useIconUrl = iconUrls[4]; // Use elder.png for ancient dragon state
+        if (currentSlot >= 0) {
+          // Map remark pattern (e.g., "? A ? A") to the current slot
+          const patternMatch = remark.match(/([?AB\s]+)確認/);
+          if (patternMatch) {
+            const pattern = patternMatch[1].trim().split(/\s+/);
+            const patternLength = pattern.length;
+            const slotState = pattern[currentSlot % patternLength];
+            if (slotState === 'A') {
+              useIconUrl = iconUrls[4]; // Use elder.png for ancient dragon state
+            }
           }
         }
       }
     }
+
+    let size = 40 * scale;
+    let timeStr = getNearestTimeString(marker || { data: {} });
+
+    let timeFontSize = Math.max(10, Math.floor(14 * scale));
+
+    let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
+
+    const redCrossSVG = `
+      <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
+        <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+        <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    return L.divIcon({
+      className: '',
+      html: `
+        <div class="marker-wrapper" style="position:relative;">
+          <div class="marker-border" style="
+            background-image: url('${useIconUrl}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: ${size}px;
+            height: ${size}px;
+            position: relative;
+          ">
+            ${showRedCross ? redCrossSVG : ""}
+            ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4px;white-space:nowrap;">${timeStr}</div>` : ""}
+            ${orderNumber !== null ? `
+              <div class="marker-order-badge" style="
+                position: absolute;
+                top: ${-10 * scale}px;
+                left: ${-10 * scale}px;
+                width: ${Math.max(20 * scale, 18)}px;
+                height: ${Math.max(20 * scale, 18)}px;
+                background: #ff6600;
+                color: #fff;
+                border-radius: 50%;
+                font-size: ${Math.max(11 * scale, 12)}px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border: ${2 * scale}px solid #fff;
+                z-index: 20;
+              ">${orderNumber+1}</div>
+            ` : ""}
+          </div>
+        </div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      popupAnchor: [0, -size / 2]
+    });
   }
-
-  let size = 40 * scale;
-  if (isRaid) {
-    size = size * 0.75;
-  }
-
-  let timeStr = "";
-  if (marker) {
-    if (!(marker.data && marker.data.name === "大連狩獵")) {
-      timeStr = getNearestTimeString(marker);
-    }
-  }
-
-  let timeFontSize = Math.max(10, Math.floor(14 * scale));
-
-  let showRedCross = marker && marker.data && typeof marker.data.remark === 'string' && marker.data.remark.toLowerCase().includes('f');
-
-  const redCrossSVG = `
-    <svg width="${size}" height="${size}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:11;" viewBox="0 0 ${size} ${size}">
-      <line x1="6" y1="6" x2="${size-6}" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-      <line x1="${size-6}" y1="6" x2="6" y2="${size-6}" stroke="rgba(255,0,0,0.3)" stroke-width="6" stroke-linecap="round"/>
-    </svg>
-  `;
-
-  return L.divIcon({
-    className: '',
-    html: `
-      <div class="marker-wrapper" style="position:relative;">
-        <div class="marker-border" style="
-          background-image: url('${useIconUrl}');
-          background-size: contain;
-          background-repeat: no-repeat;
-          background-position: center;
-          width: ${size}px;
-          height: ${size}px;
-          position: relative;
-        ">
-          ${showRedCross ? redCrossSVG : ""}
-          ${timeStr ? `<div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);color:#fff;font-size:${timeFontSize}px;padding:2px 8px;border-radius:4px;white-space:nowrap;">${timeStr}</div>` : ""}
-          ${orderNumber !== null ? `
-            <div class="marker-order-badge" style="
-              position: absolute;
-              top: ${-10 * scale}px;
-              left: ${-10 * scale}px;
-              width: ${Math.max(20 * scale, 18)}px;
-              height: ${Math.max(20 * scale, 18)}px;
-              background: #ff6600;
-              color: #fff;
-              border-radius: 50%;
-              font-size: ${Math.max(11 * scale, 12)}px;
-              font-weight: bold;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-              border: ${2 * scale}px solid #fff;
-              z-index: 20;
-            ">${orderNumber+1}</div>
-          ` : ""}
-        </div>
-      </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2]
-  });
-}
 
   isMobile() {
     return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -739,7 +717,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    if (!data.remark) data.remark = ''; // Default to empty string
+    if (!data.remark) data.remark = '';
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -771,17 +749,14 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         setTimeout(() => {
           const infoPanel = document.getElementById('infoPanel');
           if (infoPanel) infoPanel.style.display = 'none';
-          document.getElementById('markerName').value = marker.data.name;
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
           updateRemarkOptionsForEdit(marker.data.remark);
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
-            const name = document.getElementById('markerName').value.trim();
             const time = document.getElementById('markerTime').value;
             const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
             const remark = document.getElementById('markerRemark').value.trim();
-            marker.data.name = name;
             marker.data.time = time;
             marker.data.type = type;
             marker.data.remark = remark;
@@ -882,6 +857,8 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
+      // Remove name from loaded data to ensure consistency
+      delete data.name;
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
     this.updateMarkerScales();
@@ -914,6 +891,8 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
+        // Remove name from imported data
+        data.forEach(item => delete item.name);
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
         location.reload();
@@ -947,7 +926,7 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
     const button = document.getElementById('routeBtn');
     if (this.routeSelecting) {
       if (this.currentMode !== 'done') {
-        this.currentMode = 'done';
+        this.currentMode();
         const editBtn = document.getElementById('editBtn');
         if (editBtn) editBtn.textContent = '開始編輯';
         document.getElementById('markerEditModal').style.display = 'none';
@@ -957,12 +936,12 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
       this.selectedMarkers = [];
       button.textContent = '完成選擇';
       this.resetAllMarkers();
-    } else {
-      this.clearAllMarkerBorders();
-      button.textContent = '選擇路線';
+  } else {
+      this.clearAllMarkersBorders();
+      button.setContent = '選擇路線';
     }
     this.updateMarkerScales();
-  }
+}
 
   clearAllMarkerBorders() {
     this.markers.eachLayer(marker => {
@@ -990,7 +969,9 @@ getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
         link.target = '_blank';
         link.click();
       },
-      () => alert('無法取得你的位置，請開啟定位權限')
+      () => {
+        alert('無法取得你的位置，請開啟定位權限')
+      }
     );
   }
 }
