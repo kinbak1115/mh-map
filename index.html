@@ -198,9 +198,7 @@
     <option value="A確認">A確認</option>
     <option value="B確認">B確認</option>
     <option value="AB確認">AB確認</option>
-    <option value="A確認F">A確認F</option>
-    <option value="B確認F">B確認F</option>
-    <option value="AB確認F">AB確認F</option>
+    <!-- 動態添加 remark（如 "f"） -->
   </select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
@@ -217,7 +215,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.3</div>
+<div id="version">版本 4.2.4</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -310,7 +308,33 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   }
 }
 
-// 選擇最近的未來時間
+// === 更新 remark 選項 ===
+function updateRemarkOptionsForEdit(remark) {
+  const markerRemark = document.getElementById('markerRemark');
+  const defaultOptions = ['A確認', 'B確認', 'AB確認'];
+  markerRemark.innerHTML = '';
+  
+  // 添加默认选项
+  defaultOptions.forEach(optValue => {
+    const opt = document.createElement('option');
+    opt.value = optValue;
+    opt.textContent = optValue;
+    markerRemark.appendChild(opt);
+  });
+
+  // 如果 remark 不是默认选项（如 "f"），动态添加
+  if (remark && !defaultOptions.includes(remark)) {
+    const opt = document.createElement('option');
+    opt.value = remark;
+    opt.textContent = remark;
+    markerRemark.appendChild(opt);
+  }
+
+  // 设置当前 remark 值
+  markerRemark.value = remark || defaultOptions[0];
+}
+
+// 選擇最近的先前時間
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -320,7 +344,6 @@ function getNearestTimeString(marker) {
 
   let minDiff = Infinity;
   let bestDisplayTime = "";
-  let hasFutureTime = false;
 
   for (const t of times) {
     const m = t.match(/(\d{1,2}):(\d{2})/);
@@ -329,14 +352,8 @@ function getNearestTimeString(marker) {
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
     let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60; // Handle overnight times
-    if (diff <= 0 && Math.abs(diff) < minDiff) {
-      // Prioritize future times (diff <= 0)
-      minDiff = Math.abs(diff);
-      bestDisplayTime = t;
-      hasFutureTime = true;
-    } else if (!hasFutureTime && diff > 0 && diff < minDiff) {
-      // Fallback to past times if no future time is found
+    if (diff < -12 * 60) diff += 24 * 60;
+    if (diff >= 0 && diff < minDiff) {
       minDiff = diff;
       bestDisplayTime = t;
     }
@@ -425,7 +442,7 @@ class MapApp {
       <p><strong>${data.name}</strong></p>
       <p>時間：${data.time}</p>
       <p>類型：${markerColors[data.type] || '原始'}</p>
-      <p>備註：${data.remark}</p>
+      <p>備註：${data.remark || ''}</p>
       <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
       <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
       <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ""}</p>
@@ -562,7 +579,7 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    if (typeof data.remark !== 'string') data.remark = ''; // Ensure remark is a string
+    if (!data.remark) data.remark = ''; // 確保 remark 有值，允許空字串或 "f"
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -597,7 +614,7 @@ class MapApp {
           document.getElementById('markerName').value = marker.data.name;
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
-          document.getElementById('markerRemark').value = marker.data.remark || '';
+          updateRemarkOptionsForEdit(marker.data.remark); // 動態更新 remark 選項
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const name = document.getElementById('markerName').value.trim();
@@ -607,10 +624,12 @@ class MapApp {
             marker.data.name = name;
             marker.data.time = time;
             marker.data.type = type;
-            marker.data.remark = remark || ''; // Ensure remark is a string
+            marker.data.remark = remark; // 保存用戶選擇的 remark（包括 "f"）
             marker.setIcon(this.getCustomIcon(type, 1, marker));
+
             this.autoAssignTimeForRelatedMarkers(marker);
-            this.updateMarkerScales(); // Ensure all markers are refreshed
+
+            this.updateMarkerScales();
             this.saveMarkers();
             this.updateInfoPanel(marker.data);
             const infoPanel = document.getElementById('infoPanel');
