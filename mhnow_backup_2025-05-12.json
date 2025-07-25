@@ -288,4 +288,13 @@
 {"name":"採集點","time":"","type":0,"remark":"","lat":3.035017,"lng":101.624968,"mapId":50,"totalPoints":8},
 {"name":"採集點","time":"","type":0,"remark":"","lat":3.034486,"lng":101.624530,"mapId":50,"totalPoints":8},
 {"name":"採集點","time":"","type":0,"remark":"","lat":3.034645,"lng":101.624195,"mapId":50,"totalPoints":8},
-{"name":"採集點","time":"","type":0,"remark":"","lat":3.034581,"lng":101.623877,"mapId":50,"totalPoints":8}]
+{"name":"採集點","time":"","type":0,"remark":"","lat":3.034581,"lng":101.623877,"mapId":50,"totalPoints":8},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.871879,"lng":101.656394,"mapId":1001,"totalPoints":2},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.872084,"lng":101.656606,"mapId":1001,"totalPoints":2},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.874672,"lng":101.655865,"mapId":1002,"totalPoints":2},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.872763,"lng":101.657312,"mapId":1002,"totalPoints":2},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.874406,"lng":101.655449,"mapId":1003,"totalPoints":3},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.874732,"lng":101.654585,"mapId":1003,"totalPoints":3},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.874227,"lng":101.654528,"mapId":1003,"totalPoints":3},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.869670,"lng":101.655456,"mapId":1004,"totalPoints":2},
+{"name":"採集點","time":"","type":0,"remark":"","lat":2.869963,"lng":101.654398,"mapId":1004,"totalPoints":2}]
