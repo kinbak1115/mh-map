@@ -197,10 +197,7 @@
   </select><br/><br/>
   <label for="markerRemark">狀態：</label>
   <select id="markerRemark">
-    <option value="A確認">A確認</option>
-    <option value="B確認">B確認</option>
-    <option value="AB確認">AB確認</option>
-    <!-- 動態添加 remark（如 "f" 顯示為 "無法接觸/無法古龍"） -->
+    <!-- 由 JS 動態產生 -->
   </select><br/><br/>
   <div style="text-align:right;">
     <button id="saveMarkerBtn">儲存</button>
@@ -217,7 +214,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.9</div>
+<div id="version">版本 4.2.10</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -350,7 +347,16 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
 // === 更新 remark 選項 ===
 function updateRemarkOptionsForEdit(remark) {
   const markerRemark = document.getElementById('markerRemark');
-  const defaultOptions = ['A確認', 'B確認', 'AB確認'];
+  const defaultOptions = [
+    'A ? A ? 確認',
+    '? A ? A 確認',
+    'B ? B ? 確認',
+    '? B ? B 確認',
+    'A A A A確認',
+    'A B A B確認',
+    'B B B B確認',
+    'B A B A確認'
+  ];
   markerRemark.innerHTML = '';
 
   defaultOptions.forEach(optValue => {
@@ -557,7 +563,6 @@ class MapApp {
     this.isTracking = false;
     const trackBtn = document.getElementById('trackBtn');
     if (trackBtn) trackBtn.textContent = '開啟即時定位';
-    // Optionally keep the last known position marker and circle
   }
 
   updateInfoPanel(data) {
@@ -703,7 +708,7 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    if (!data.remark) data.remark = '';
+    if (!data.remark) data.remark = 'A ? A ? 確認'; // Default to first option
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
