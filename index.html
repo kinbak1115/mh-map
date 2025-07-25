@@ -171,7 +171,7 @@
 </head>
 <body>
 
-<!-- 🟦 Marker 編輯用 Modal（顯示在左上角） -->
+<!-- Marker 編輯用 Modal -->
 <div id="markerEditModal">
   <h3>更改標記資訊</h3>
   <label for="markerTime">時間：</label>
@@ -180,14 +180,6 @@
   </select><br><br>
   <label for="timePeriod">時間段：</label>
   <input type="text" id="timePeriod" readonly><br><br>
-  <label for="markerType">顏色：</label>
-  <select id="markerType">
-    <option value="0">⚪ 原始</option>
-    <option value="1">🔴 紅</option>
-    <option value="2">🔵 藍</option>
-    <option value="3">🟢 綠</option>
-    <option value="4">🟣 紫</option>
-  </select><br><br>
   <label for="markerRemark">狀態：</label>
   <select id="markerRemark">
     <!-- 由 JS 動態產生 -->
@@ -263,8 +255,6 @@ const timeTableByTotalPoints = {
   ]
 };
 
-const markerColors = { 0: '', 1: 'red', 2: 'blue', 3: 'green', 4: 'purple' };
-
 // 所有38種時段
 const allTimes = [
   "06:15", "06:40", "07:05", "07:30",
@@ -295,10 +285,10 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
     const nextTime = times[i + 1] || times[0];
     const [nh, nm] = nextTime.split(':').map(Number);
     let nextTimeMin = nh * 60 + nm;
-    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      period = i % 2 === 0 ? "1" : "2"; // Always alternate between "1" and "2"
+      period = i % 2 === 0 ? "1" : "2";
       break;
     }
   }
@@ -323,10 +313,9 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     markerTime.value = selectedTime;
   }
 
-  // 更新時間段顯示
   const timePeriodInput = document.getElementById('timePeriod');
   if (timePeriodInput && arr.length > 0) {
-    const timetable = arr[0]; // Use the first timetable for totalPoints
+    const timetable = arr[0];
     timePeriodInput.value = getTimePeriod(totalPoints, timetable);
   } else {
     timePeriodInput.value = "-";
@@ -391,8 +380,8 @@ function getNearestTimeString(marker) {
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
     let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60; // Handle overnight wrap
-    if (diff > 12 * 60) diff -= 24 * 60; // Handle reverse wrap
+    if (diff < -12 * 60) diff += 24 * 60;
+    if (diff > 12 * 60) diff -= 24 * 60;
     const absDiff = Math.abs(diff);
     if (absDiff < minDiff) {
       minDiff = absDiff;
@@ -410,10 +399,10 @@ class MapApp {
     });
     this.map.locate({ setView: true, maxZoom: 16 });
 
-    this.userMarker = null; // Marker for user's current location
-    this.accuracyCircle = null; // Circle for location accuracy
-    this.watchId = null; // ID for watchPosition
-    this.isTracking = false; // Tracking state
+    this.userMarker = null;
+    this.accuracyCircle = null;
+    this.watchId = null;
+    this.isTracking = false;
 
     this.map.on('locationfound', e => this.updateUserLocation(e));
     this.map.on('locationerror', () => {
@@ -422,8 +411,6 @@ class MapApp {
     });
 
     this.markers = new L.FeatureGroup();
-    this.filteredTypes = [];
-    this.lastMarkerType = 0;
     this.routeSelecting = false;
     this.selectedMarkers = [];
 
@@ -453,14 +440,6 @@ class MapApp {
         <div class="btn-row">
           <button onclick="app.toggleTracking()" id="trackBtn">開啟即時定位</button>
         </div>
-        <label>顯示顏色：</label>
-        <select id="filterSelect" multiple size="5" onchange="app.filterMarkersByTypes()">
-          <option value="0">⚪ 原始</option>
-          <option value="1">🔴 紅</option>
-          <option value="2">🔵 藍</option>
-          <option value="3">🟢 綠</option>
-          <option value="4">🟣 紫</option>
-        </select>
         <div class="btn-row">
           <button onclick="app.confirmImportFromGitHub()">🌐 匯入 GitHub 標記</button>
         </div>
@@ -481,7 +460,6 @@ class MapApp {
     const maxRadius = 100;
     const radius = Math.min(e.accuracy / 2, maxRadius);
 
-    // Create or update user marker
     if (!this.userMarker) {
       this.userMarker = L.marker(latlng, {
         icon: L.divIcon({
@@ -496,7 +474,6 @@ class MapApp {
       this.userMarker.setLatLng(latlng);
     }
 
-    // Create or update accuracy circle
     if (!this.accuracyCircle) {
       this.accuracyCircle = L.circle(latlng, {
         radius: radius,
@@ -509,7 +486,6 @@ class MapApp {
       this.accuracyCircle.setRadius(radius);
     }
 
-    // Center map on first location or if tracking is active
     if (!this.isTracking) {
       this.map.setView(latlng, this.map.getZoom() || 16);
     }
@@ -562,7 +538,6 @@ class MapApp {
     const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
     const content = `
       <p>時間：${data.time}</p>
-      <p>類型：${markerColors[data.type] || '原始'}</p>
       <p>備註：${displayRemark}</p>
       <p>座標：${data.lat ? data.lat.toFixed(6) : ""}, ${data.lng ? data.lng.toFixed(6) : ""}</p>
       <p>地圖編號：${data.mapId !== undefined ? data.mapId : ""}</p>
@@ -572,54 +547,23 @@ class MapApp {
   }
 
   initEventListeners() {
-    // 移除手动添加标记的点击/触摸事件监听
+    this.map.on('click', (e) => {
+      if (this.currentMode === 'editMarker') {
+        const mapId = this.markers.getLayers().length + 1;
+        const data = {
+          type: 0,
+          time: timeTableByTotalPoints[1][0] || '',
+          remark: '',
+          totalPoints: 1,
+          mapId: mapId
+        };
+        this.addMarker(e.latlng, data);
+      }
+    });
   }
 
- getCustomIcon(type = 0, scale = 1, marker = null, orderNumber = null) {
-    const iconUrls = {
-      0: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png',
-      1: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/redelder.png',
-      2: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png',
-      3: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/greenelder.png',
-      4: 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png'
-    };
-
-    let useIconUrl = iconUrls[type];
-    if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
-      // Check if the marker is in an ancient dragon state based on remark and time
-      const remark = marker.data.remark;
-      const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-      if (times.length && remark.includes('確認')) {
-        const now = new Date();
-        const nowMin = now.getHours() * 60 + now.getMinutes();
-        let currentSlot = -1;
-        for (let i = 0; i < times.length; i++) {
-          const [h, m] = times[i].split(':').map(Number);
-          const timeMin = h * 60 + m;
-          const nextTime = times[i + 1] || times[0];
-          const [nh, nm] = nextTime.split(':').map(Number);
-          let nextTimeMin = nh * 60 + nm;
-          if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
-          if (nowMin >= timeMin && nowMin < nextTimeMin) {
-            currentSlot = i;
-            break;
-          }
-        }
-        if (currentSlot >= 0) {
-          // Map remark pattern (e.g., "? A ? A") to the current slot
-          const patternMatch = remark.match(/([?AB\s]+)確認/);
-          if (patternMatch) {
-            const pattern = patternMatch[1].trim().split(/\s+/);
-            const patternLength = pattern.length;
-            const slotState = pattern[currentSlot % patternLength];
-            if (slotState === 'A') {
-              useIconUrl = iconUrls[4]; // Use elder.png for ancient dragon state
-            }
-          }
-        }
-      }
-    }
-
+  getCustomIcon(scale = 1, marker = null, orderNumber = null) {
+    const iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
     let size = 40 * scale;
     let timeStr = getNearestTimeString(marker || { data: {} });
 
@@ -639,7 +583,7 @@ class MapApp {
       html: `
         <div class="marker-wrapper" style="position:relative;">
           <div class="marker-border" style="
-            background-image: url('${useIconUrl}');
+            background-image: url('${iconUrl}');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
@@ -706,7 +650,7 @@ class MapApp {
         const idx = this.selectedMarkers.indexOf(marker);
         if (idx !== -1) orderNumber = idx;
       }
-      marker.setIcon(this.getCustomIcon(marker.data.type, scale, marker, orderNumber));
+      marker.setIcon(this.getCustomIcon(scale, marker, orderNumber));
       const el = marker.getElement();
       if (el && this.selectedMarkers.includes(marker)) {
         el.classList.add('markerBorder');
@@ -719,8 +663,9 @@ class MapApp {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
     if (!data.remark) data.remark = '';
+    data.type = 0; // 强制使用默认图标
     const marker = L.marker(latlng, {
-      icon: this.getCustomIcon(data.type, 1, { data }),
+      icon: this.getCustomIcon(1, { data }),
       draggable: false
     });
     marker.data = data;
@@ -751,17 +696,14 @@ class MapApp {
           const infoPanel = document.getElementById('infoPanel');
           if (infoPanel) infoPanel.style.display = 'none';
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
-          document.getElementById('markerType').value = marker.data.type;
           updateRemarkOptionsForEdit(marker.data.remark);
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const time = document.getElementById('markerTime').value;
-            const type = Math.min(Math.max(parseInt(document.getElementById('markerType').value) || 0, 0), 4);
             const remark = document.getElementById('markerRemark').value.trim();
             marker.data.time = time;
-            marker.data.type = type;
             marker.data.remark = remark;
-            marker.setIcon(this.getCustomIcon(type, 1, marker));
+            marker.setIcon(this.getCustomIcon(1, marker));
 
             this.autoAssignTimeForRelatedMarkers(marker);
 
@@ -785,7 +727,6 @@ class MapApp {
     this.selectedMarker = marker;
     this.markers.addLayer(marker);
     this.saveMarkers();
-    this.filterMarkersByTypes();
     this.updateMarkerScales();
   }
 
@@ -836,7 +777,7 @@ class MapApp {
                          relatedMarkers[relatedMarkers.length - 1];
         if (nthMarker) {
           nthMarker.data.time = timeOptions[availableIndices[0]];
-          nthMarker.setIcon(this.getCustomIcon(nthMarker.data.type, 1, nthMarker));
+          nthMarker.setIcon(this.getCustomIcon(1, nthMarker));
           if (this.selectedMarker === nthMarker) {
             this.updateInfoPanel(nthMarker.data);
           }
@@ -858,24 +799,11 @@ class MapApp {
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
-      // Remove name from loaded data to ensure consistency
       delete data.name;
+      data.type = 0; // 强制使用默认图标
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
     this.updateMarkerScales();
-  }
-
-  filterMarkersByTypes() {
-    const selected = Array.from(document.getElementById('filterSelect').selectedOptions)
-                         .map(opt => parseInt(opt.value));
-    const types = selected.length ? selected : [0, 1, 2, 3, 4];
-    this.markers.eachLayer(marker => {
-      const icon = marker._icon;
-      if (icon) {
-        icon.style.visibility = types.includes(marker.data.type) ? 'visible' : 'hidden';
-      }
-    });
-    this.filteredTypes = types;
   }
 
   confirmImportFromGitHub() {
@@ -892,8 +820,10 @@ class MapApp {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
-        // Remove name from imported data
-        data.forEach(item => delete item.name);
+        data.forEach(item => {
+          delete item.name;
+          item.type = 0; // 强制使用默认图标
+        });
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
         location.reload();
