@@ -301,6 +301,7 @@ function getCurrentActiveSlotOddEvenStatus(markerData) {
 
 /**
  * 從一個完整的時間排程字串中，找到與當前時間最接近的那個單一時間點。
+ * 考慮已過去時間比即將到來時間有 30 分鐘優勢的邏輯。
  * @param {string} scheduleString 完整的時間排程字串 (e.g., "06:15 07:05 07:55")。
  * @returns {string} 最接近的時間點字串 (e.g., "07:55")。如果無有效時間則返回空字串。
  */
@@ -311,7 +312,7 @@ function getNearestTimePointInSchedule(scheduleString) {
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  let minAbsDiff = Infinity;
+  let minClosenessScore = Infinity;
   let nearestTimePoint = "";
 
   for (const t of times) {
@@ -324,17 +325,24 @@ function getNearestTimePointInSchedule(scheduleString) {
 
     let diff = schedulePointMinutes - nowMinutes;
 
-    // 考慮跨午夜的情況，使時間差在 -12小時 到 +12小時之間
-    if (diff > 12 * 60) {
+    // 調整 diff 以考慮時間的循環性 (例如 23:50 和 00:10)
+    // 這確保 diff 代表最短的時間差 (分鐘)，正數表示未來，負數表示過去。
+    if (diff > 12 * 60) { // 如果未來時間超過 12 小時 (例如 00:10 相對於前一天的 11:50)
       diff -= 24 * 60;
-    } else if (diff < -12 * 60) {
+    } else if (diff < -12 * 60) { // 如果過去時間超過 12 小時 (例如 11:50 相對於下一天的 00:10)
       diff += 24 * 60;
     }
 
-    const absDiff = Math.abs(diff);
+    let closenessScore;
+    if (diff >= 0) { // 未來時間 (或剛好是現在)
+      closenessScore = diff;
+    } else { // 過去時間
+      closenessScore = Math.abs(diff) - 30; // 過去時間獲得 30 分鐘的優勢
+    }
 
-    if (absDiff < minAbsDiff) {
-      minAbsDiff = absDiff;
+    // 如果分數相同，則保留排程字串中先出現的那個時間點 (作為隱式的平局處理)
+    if (closenessScore < minClosenessScore) {
+      minClosenessScore = closenessScore;
       nearestTimePoint = t;
     }
   }
