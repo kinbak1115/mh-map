@@ -656,7 +656,7 @@ class MapApp {
           }
         }
 
-        if (currentSlot >= 0) {
+ if (currentSlot >= 0) {
           const patternMatch = remark.match(/([?AB\s]+)確認/);
           if (patternMatch) {
             const pattern = patternMatch[1].trim().split(/\s+/);
@@ -668,7 +668,8 @@ class MapApp {
             } else if (slotState === 'B') {
               iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // 設定為藍色古龍
             } else if (slotState === '?') {
-              iconUrl = defaultElderIconUrl; // 如果是 '?' 表示預設古龍
+              // *** 新增的邏輯：如果 slotState 是 '?'，保持 iconUrl 為 gather.png 或不變，即不顯示古龍圖標 ***
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png'; // 或讓它繼續使用初始值
             }
             // 如果 slotState 是其他未明確處理的字符，iconUrl 保持 gather.png 或之前的值
           }
