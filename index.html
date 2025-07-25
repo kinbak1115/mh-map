@@ -128,7 +128,7 @@
       margin-top: 0;
       font-size: 26px;
     }
-    #markerEditModal select {
+    #markerEditModal select, #markerEditModal input {
       width: 100%;
       font-size: 22px;
       padding: 14px;
@@ -157,7 +157,7 @@
       #markerEditModal h3 {
         font-size: 30px;
       }
-      #markerEditModal select {
+      #markerEditModal select, #markerEditModal input {
         font-size: 28px;
         padding: 16px;
       }
@@ -185,6 +185,8 @@
   <select id="markerTime">
     <!-- 由 JS 動態產生 -->
   </select><br/><br/>
+  <label for="timePeriod">時間段：</label>
+  <input type="text" id="timePeriod" readonly><br/><br/>
   <label for="markerType">顏色：</label>
   <select id="markerType">
     <option value="0">⚪ 原始</option>
@@ -215,16 +217,14 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.7</div>
+<div id="version">版本 4.2.8</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
 // 所有時間表
 const timeTableByTotalPoints = {
-  1: [
-    "06:15 07:05 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05",
-  ],
+  1: ["06:15 07:05 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05"],
   2: [
     "06:15 07:55 08:45 09:35 10:25 11:15 12:05 12:55 13:45 14:35 15:25 16:15 17:05 17:55 18:45 19:35 20:25 21:15 22:05 22:55",
     "06:40 08:20 09:10 10:00 10:50 11:40 12:30 13:20 14:10 15:00 15:50 16:40 17:30 18:20 19:10 20:00 20:50 21:40 22:30"
@@ -290,7 +290,37 @@ const allTimes = [
   "22:55", "23:20"
 ];
 
-// === 時間選項生成 ===
+// === 計算時間段 ===
+function getTimePeriod(totalPoints, timetable, currentTime) {
+  const times = timetable.split(/\s+/).filter(Boolean);
+  if (!times.length) return "-";
+
+  const now = currentTime || new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  let period = "-";
+  for (let i = 0; i < times.length; i++) {
+    const [h, m] = times[i].split(':').map(Number);
+    const timeMin = h * 60 + m;
+    const nextTime = times[i + 1] || times[0];
+    const [nh, nm] = nextTime.split(':').map(Number);
+    let nextTimeMin = nh * 60 + nm;
+    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
+
+    if (nowMin >= timeMin && nowMin < nextTimeMin) {
+      if (totalPoints === 2) {
+        period = i % 2 === 0 ? "1" : "2"; // For totalPoints=2, pattern is 121212...
+      } else {
+        period = (i + 1).toString(); // Sequential period number
+      }
+      break;
+    }
+  }
+
+  return period;
+}
+
+// === 更新時間選項 ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTime = document.getElementById('markerTime');
   markerTime.innerHTML = '';
@@ -306,6 +336,15 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   } else if (selectedTime) {
     markerTime.value = selectedTime;
   }
+
+  // 更新時間段顯示
+  const timePeriodInput = document.getElementById('timePeriod');
+  if (timePeriodInput && arr.length > 0) {
+    const timetable = arr[0]; // Use the first timetable for totalPoints
+    timePeriodInput.value = getTimePeriod(totalPoints, timetable);
+  } else {
+    timePeriodInput.value = "-";
+  }
 }
 
 // === 更新 remark 選項 ===
@@ -314,7 +353,6 @@ function updateRemarkOptionsForEdit(remark) {
   const defaultOptions = ['A確認', 'B確認', 'AB確認'];
   markerRemark.innerHTML = '';
 
-  // 添加默认选项
   defaultOptions.forEach(optValue => {
     const opt = document.createElement('option');
     opt.value = optValue;
@@ -322,25 +360,22 @@ function updateRemarkOptionsForEdit(remark) {
     markerRemark.appendChild(opt);
   });
 
-  // 如果 remark 为 "f"，添加选项显示为“無法接觸/無法古龍”，值仍为 "f"
   if (remark === 'f') {
     const opt = document.createElement('option');
     opt.value = 'f';
     opt.textContent = '無法接觸/無法古龍';
     markerRemark.appendChild(opt);
   } else if (remark && !defaultOptions.includes(remark)) {
-    // 其他非默认选项，原样显示
     const opt = document.createElement('option');
     opt.value = remark;
     opt.textContent = remark;
     markerRemark.appendChild(opt);
   }
 
-  // 设置当前 remark 值
   markerRemark.value = remark || defaultOptions[0];
 }
 
-// 選擇最近的先前時間
+// === 選擇最近的先前時間 ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -444,7 +479,6 @@ class MapApp {
   }
 
   updateInfoPanel(data) {
-    // 将 remark "f" 显示为“無法接觸/無法古龍”
     const displayRemark = data.remark === 'f' ? '無法接觸/無法古龍' : (data.remark || '');
     const content = `
       <p><strong>${data.name}</strong></p>
@@ -587,7 +621,7 @@ class MapApp {
   addMarker(latlng, data) {
     if (!data.totalPoints) data.totalPoints = 1;
     if (!data.mapId) data.mapId = 1;
-    if (!data.remark) data.remark = ''; // 確保 remark 有值，允許空字串或 "f"
+    if (!data.remark) data.remark = '';
     const marker = L.marker(latlng, {
       icon: this.getCustomIcon(data.type, 1, { data }),
       draggable: false
@@ -622,7 +656,7 @@ class MapApp {
           document.getElementById('markerName').value = marker.data.name;
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
           document.getElementById('markerType').value = marker.data.type;
-          updateRemarkOptionsForEdit(marker.data.remark); // 動態更新 remark 選項
+          updateRemarkOptionsForEdit(marker.data.remark);
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const name = document.getElementById('markerName').value.trim();
@@ -632,7 +666,7 @@ class MapApp {
             marker.data.name = name;
             marker.data.time = time;
             marker.data.type = type;
-            marker.data.remark = remark; // 保存用戶選擇的 remark（包括 "f"）
+            marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
 
             this.autoAssignTimeForRelatedMarkers(marker);
