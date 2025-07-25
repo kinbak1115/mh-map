@@ -207,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 4.2.24</div>
+<div id="version">版本 24</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -288,18 +288,6 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
   const now = currentTime || new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
-  // Define period patterns for each totalPoints
-  const periodPatterns = {
-    1: Array(20).fill(1), // Single period for all slots
-    2: [1, 2], // Alternating 1/2 (confirmed correct)
-    3: [1, 2, 3], // Sequential
-    4: [1, 2, 1, 2], // Alternating 1/2 to align with ? A ? A
-    5: [1, 2, 3, 4, 5], // Sequential
-    6: [1, 2, 3, 1, 2, 3], // Repeating 1/2/3
-    7: [1, 2, 3, 4, 1, 2, 3], // Repeating 1/2/3/4
-    8: [1, 2, 3, 4, 1, 2, 3, 4] // Repeating 1/2/3/4
-  };
-
   let period = "-";
   for (let i = 0; i < times.length; i++) {
     const [h, m] = times[i].split(':').map(Number);
@@ -310,8 +298,7 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
     if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      const pattern = periodPatterns[totalPoints] || Array(times.length).fill(1);
-      period = pattern[i % pattern.length].toString();
+      period = i % 2 === 0 ? "0" : "1"; // Alternating pattern 0, 1, 0, 1, ...
       break;
     }
   }
@@ -866,6 +853,7 @@ class MapApp {
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
+      // Remove name from loaded data to ensure consistency
       delete data.name;
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
@@ -899,6 +887,7 @@ class MapApp {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
+        // Remove name from imported data
         data.forEach(item => delete item.name);
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
@@ -962,7 +951,7 @@ class MapApp {
 
   openGoogleRoute() {
     if (!this.selectedMarkers.length) {
-      alert("請點選至少一個標記");
+      alert("請先選擇至少一個標記");
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -970,7 +959,7 @@ class MapApp {
         const current = `${position.coords.latitude},${position.coords.longitude}`;
         const waypoints = this.selectedMarkers.map(m => `${m.getLatLng().lat},${m.getLatLng().lng}`);
         const route = [current, ...waypoints];
-        const url = `https://www.google.com/maps/dir/${route.join(',')}`;
+        const url = `https://www.google.com/maps/dir/${route.join('/')}`;
         const link = document.createElement('a');
         link.href = url;
         link.target = '_blank';
