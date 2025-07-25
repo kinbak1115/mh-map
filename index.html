@@ -248,39 +248,67 @@ const timeTableByTotalPoints = {
   ]
 };
 
-// All 38 time slots (not directly used for display, but good for reference)
-const allTimes = [
-  "06:15", "06:40", "07:05", "07:30",
-  "07:55", "08:20", "08:45", "09:10",
-  "09:35", "10:00", "10:25", "10:50",
-  "11:15", "11:40", "12:05", "12:30",
-  "12:55", "13:20", "13:45", "14:10",
-  "14:35", "15:00", "15:25", "15:50",
-  "16:15", "16:40", "17:05", "17:30",
-  "17:55", "18:20", "20:25", "20:50",
-  "21:15", "21:40", "22:05", "22:30",
-  "22:55", "23:20"
-];
+// --- 新增輔助函數 ---
+/**
+ * 根據標記的時間排程和當前實時時間，判斷當前活躍時段的奇偶狀態 (1 或 2)。
+ * @param {object} markerData 包含 'time' 屬性的標記資料。
+ * @returns {string} 如果找到活躍時段，返回 '1' 或 '2'；否則返回 '無活躍時段' 或 'N/A'。
+ */
+function getCurrentActiveSlotOddEvenStatus(markerData) {
+  const times = (markerData.time || "").split(/\s+/).filter(Boolean);
+  if (!times.length) return "N/A"; // 沒有設定時間排程
 
-// === 計算時間段 (Modified to find index of a selected timetable string) ===
-function getTimePeriod(totalPoints, selectedTimetableString) {
-  const timetablesForPoints = timeTableByTotalPoints[totalPoints];
-  if (!timetablesForPoints || timetablesForPoints.length === 0) return "-";
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const bufferMinutes = 9; // 與 getCustomIcon 中使用的緩衝時間相同
 
-  const index = timetablesForPoints.indexOf(selectedTimetableString);
-  return index !== -1 ? (index + 1).toString() : "-";
+  let currentSlotIndex = -1; // 0-indexed 位置
+
+  for (let i = 0; i < times.length; i++) {
+    const [h, m] = times[i].split(':').map(Number);
+    const timeMin = h * 60 + m;
+
+    let displayWindowStartMin = timeMin - bufferMinutes;
+    // 處理跨午夜的時間起始點
+    if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60;
+
+    const nextTime = times[i + 1] || times[0]; // 循環到排程的第一個時間
+    const [nh, nm] = nextTime.split(':').map(Number);
+    let nextTimeMin = nh * 60 + nm;
+    // 如果下一個時間比當前時間小（代表跨午夜了），則加上24小時的分鐘數
+    if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
+
+    // 檢查當前時間是否落在這個時段的活躍窗口內
+    let isNowWithinWindow = false;
+    if (displayWindowStartMin <= nextTimeMin) {
+      isNowWithinWindow = (nowMin >= displayWindowStartMin && nowMin < nextTimeMin);
+    } else { // 窗口跨午夜 (例如 23:00 到 01:00)
+      isNowWithinWindow = (nowMin >= displayWindowStartMin || nowMin < nextTimeMin);
+    }
+
+    if (isNowWithinWindow) {
+      currentSlotIndex = i;
+      break;
+    }
+  }
+
+  if (currentSlotIndex === -1) {
+    return "無活躍時段"; // 未找到當前活躍時段
+  }
+  // 返回 1 表示奇數位置 (索引 0, 2, 4...)，2 表示偶數位置 (索引 1, 3, 5...)
+  return ((currentSlotIndex % 2) + 1).toString();
 }
+// --- 結束新增輔助函數 ---
 
-// === 更新時間選項 (Modified to not auto-select) ===
+
+// === 更新時間選項 (Modified to not auto-select and not handle timePeriodInput change) ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTimeSelect = document.getElementById('markerTime');
-  const timePeriodInput = document.getElementById('timePeriod');
-  markerTimeSelect.innerHTML = ''; // Clear existing options
-  timePeriodInput.value = ''; // Ensure time period is empty initially
+  markerTimeSelect.innerHTML = ''; // 清除現有選項
 
-  // Add a default "Please select" option
+  // 添加一個預設的「請選擇」選項
   const defaultOpt = document.createElement('option');
-  defaultOpt.value = ''; // Empty value
+  defaultOpt.value = ''; // 空值
   defaultOpt.textContent = '請選擇時間';
   markerTimeSelect.appendChild(defaultOpt);
 
@@ -292,29 +320,14 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     markerTimeSelect.appendChild(opt);
   });
 
-  // Set the selected value based on the marker's existing time
+  // 根據標記現有時間設定選中值
   if (selectedTime) {
     markerTimeSelect.value = selectedTime;
   } else {
-    markerTimeSelect.value = ''; // Explicitly set to empty if no time is selected for the marker
+    markerTimeSelect.value = ''; // 如果標記沒有時間，則明確設定為空
   }
-
-  // Set initial time period if a selection was made
-  if (markerTimeSelect.value) {
-    timePeriodInput.value = getTimePeriod(totalPoints, markerTimeSelect.value);
-  }
-
-  // Update time period when the dropdown value changes
-  markerTimeSelect.onchange = () => {
-    const currentSelectedTimetableString = markerTimeSelect.value;
-    if (currentSelectedTimetableString === '') {
-      timePeriodInput.value = ''; // Clear if "請選擇時間" is picked
-    } else {
-      timePeriodInput.value = getTimePeriod(totalPoints, currentSelectedTimetableString);
-    }
-  };
+  // 這裡不再處理 timePeriodInput 的更新，因為它現在由 getCurrentActiveSlotOddEvenStatus 獨立計算
 }
-
 
 // === 更新 remark 選項 ===
 function updateRemarkOptionsForEdit(remark) {
@@ -353,7 +366,7 @@ function updateRemarkOptionsForEdit(remark) {
   markerRemark.value = remark || '';
 }
 
-// === 選擇最近的先前時間 ===
+// === 選擇最近的先前時間 (用於地圖上顯示的倒數計時) ===
 function getNearestTimeString(marker) {
   let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
   if (!times.length) return "";
@@ -374,8 +387,8 @@ function getNearestTimeString(marker) {
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
     let diff = nowMin - total;
-    if (diff < -12 * 60) diff += 24 * 60; // Adjust for times spanning midnight
-    if (diff > 12 * 60) diff -= 24 * 60; // Adjust for times spanning midnight
+    if (diff < -12 * 60) diff += 24 * 60; // 調整跨午夜的時間差
+    if (diff > 12 * 60) diff -= 24 * 60; // 調整跨午夜的時間差
     const absDiff = Math.abs(diff);
     if (absDiff < minDiff) {
       minDiff = absDiff;
@@ -420,7 +433,7 @@ class MapApp {
     this.map.on('zoomend', () => this.updateMarkerScales());
     this.updateMarkerScales();
 
-    // Update marker scales every minute to reflect time-based icon changes
+    // 每分鐘更新標記比例以反映基於時間的圖標變化
     setInterval(() => this.updateMarkerScales(), 60 * 1000);
   }
 
@@ -541,7 +554,7 @@ class MapApp {
       <p>備註：${displayRemark}</p>
       <p>座標：${data.lat ? data.lat.toFixed(6) : ''}, ${data.lng ? data.lng.toFixed(6) : ''}</p>
       <p>地圖編號：${data.mapId !== undefined ? data.mapId : ''}</p>
-      <p>地图总采集点：${data.totalPoints !== undefined ? data.totalPoints : ''}</p>
+      <p>地图總採集點：${data.totalPoints !== undefined ? data.totalPoints : ''}</p>
     `;
     document.getElementById('panelContent').innerHTML = content;
     infoPanel.style.display = 'block';
@@ -549,24 +562,24 @@ class MapApp {
   }
 
   initEventListeners() {
-    // No marker addition on click/double-click
+    // 沒有點擊/雙擊添加標記的功能
   }
 
   getCustomIcon(scale = 1, marker = null, orderNumber = null) {
     let iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/gather.png';
-    // Base Elder Dragon icon (non-blue)
+    // 預設古龍圖標 (非藍色)
     const defaultElderIconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/elder.png';
 
-    // Check if the marker has a remark that is not 'f' and includes '確認'
+    // 檢查標記是否有備註且不是 'f' 且包含 '確認'
     if (marker && marker.data && marker.data.remark && !marker.data.remark.toLowerCase().includes('f')) {
       const remark = marker.data.remark;
       const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
 
-      // Only apply Elder Dragon logic if there are times and the remark is a confirmation pattern
+      // 只有當有時間且備註是確認模式時才應用古龍邏輯
       if (times.length && remark.includes('確認')) {
         const now = new Date();
         const nowMin = now.getHours() * 60 + now.getMinutes();
-        const bufferMinutes = 9; // Buffer to show the icon earlier
+        const bufferMinutes = 9; // 提前顯示圖標的緩衝時間
 
         let currentSlot = -1;
         for (let i = 0; i < times.length; i++) {
@@ -574,16 +587,24 @@ class MapApp {
           const timeMin = h * 60 + m;
 
           let displayWindowStartMin = timeMin - bufferMinutes;
-          // Handle overnight times for the display window start
+          // 處理跨午夜的時間起始點
           if (displayWindowStartMin < 0) displayWindowStartMin += 24 * 60;
 
           const nextTime = times[i + 1] || times[0];
           const [nh, nm] = nextTime.split(':').map(Number);
           let nextTimeMin = nh * 60 + nm;
-          // Adjust for next day if it wraps around
+          // 如果下一個時間比當前時間小（代表跨午夜了），則加上24小時的分鐘數
           if (nextTimeMin < timeMin) nextTimeMin += 24 * 60;
 
-          if (nowMin >= displayWindowStartMin && nowMin < nextTimeMin) {
+          // 檢查當前時間是否落在這個時段的活躍窗口內
+          let isNowWithinWindow = false;
+          if (displayWindowStartMin <= nextTimeMin) {
+            isNowWithinWindow = (nowMin >= displayWindowStartMin && nowMin < nextTimeMin);
+          } else { // 窗口跨午夜 (例如 23:00 到 01:00)
+            isNowWithinWindow = (nowMin >= displayWindowStartMin || nowMin < nextTimeMin);
+          }
+
+          if (isNowWithinWindow) {
             currentSlot = i;
             break;
           }
@@ -597,13 +618,13 @@ class MapApp {
             const slotState = pattern[currentSlot % patternLength];
 
             if (slotState === 'A') {
-              iconUrl = defaultElderIconUrl; // Set to default Elder Dragon
+              iconUrl = defaultElderIconUrl; // 設定為預設古龍
             } else if (slotState === 'B') {
-              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // Set to Blue Elder Dragon
+              iconUrl = 'https://raw.githubusercontent.com/kinbak1115/mh-map/refs/heads/main/blueelder.png'; // 設定為藍色古龍
             } else if (slotState === '?') {
-              iconUrl = defaultElderIconUrl; // If '?' means default Elder Dragon
+              iconUrl = defaultElderIconUrl; // 如果是 '?' 表示預設古龍
             }
-            // If slotState is anything else not explicitly handled, iconUrl remains gather.png or previous
+            // 如果 slotState 是其他未明確處理的字符，iconUrl 保持 gather.png 或之前的值
           }
         }
       }
@@ -746,8 +767,14 @@ class MapApp {
             console.log('Hiding info panel for edit mode');
             infoPanel.style.display = 'none';
           }
+          // 更新時間選項 (不自動選中)
           updateTimeOptionsForEdit(marker.data.totalPoints || 1, marker.data.time);
+          // 更新備註選項
           updateRemarkOptionsForEdit(marker.data.remark);
+          
+          // 計算並設定「時間段」為當前活躍時段的奇偶狀態
+          document.getElementById('timePeriod').value = getCurrentActiveSlotOddEvenStatus(marker.data);
+
           document.getElementById('markerEditModal').style.display = 'block';
           document.getElementById('saveMarkerBtn').onclick = () => {
             const time = document.getElementById('markerTime').value;
@@ -849,9 +876,8 @@ class MapApp {
     const saved = JSON.parse(localStorage.getItem('mhnow_markers') || '[]');
     saved.forEach(data => {
       if (data.totalPoints === 1) {
-        // Keep this if you always want single-point markers to have a default time
+        // 如果您希望單點標記總是自動設定一個預設時間，請取消註解下面這行
         // data.time = timeTableByTotalPoints[1][0];
-        // Otherwise, remove it to leave time empty for new point 1 markers
       }
       delete data.name;
       data.type = 0;
@@ -966,8 +992,7 @@ class MapApp {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // We no longer need to call updateTimeOptionsForEdit here with a default value,
-  // as it's handled when a marker is clicked in edit mode.
+  // 頁面載入時不需要預設調用 updateTimeOptionsForEdit，因為它會在點擊標記時處理
 });
 
 const app = new MapApp();
