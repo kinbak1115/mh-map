@@ -207,7 +207,7 @@
   <h3>標記資訊</h3>
   <div id="panelContent">請點選地圖上的標記</div>
 </div>
-<div id="version">版本 27</div>
+<div id="version">版本 4.2.23</div>
 <div id="zoomDisplay">Zoom: -</div>
 
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -283,35 +283,26 @@ const allTimes = [
 // === 計算時間段 ===
 function getTimePeriod(totalPoints, timetable, currentTime) {
   const times = timetable.split(/\s+/).filter(Boolean);
-  if (!times.length) {
-    console.warn('No valid times in timetable:', timetable);
-    return "-";
-  }
+  if (!times.length) return "-";
 
   const now = currentTime || new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   let period = "-";
   for (let i = 0; i < times.length; i++) {
-    const timeMatch = times[i].match(/(\d{1,2}):(\d{2})/);
-    if (!timeMatch) {
-      console.warn('Invalid time format:', times[i]);
-      continue;
-    }
-    const [h, m] = timeMatch.slice(1).map(Number);
+    const [h, m] = times[i].split(':').map(Number);
     const timeMin = h * 60 + m;
     const nextTime = times[i + 1] || times[0];
-    const nextTimeMatch = nextTime.match(/(\d{1,2}):(\d{2})/);
-    if (!nextTimeMatch) {
-      console.warn('Invalid next time format:', nextTime);
-      continue;
-    }
-    const [nh, nm] = nextTimeMatch.slice(1).map(Number);
+    const [nh, nm] = nextTime.split(':').map(Number);
     let nextTimeMin = nh * 60 + nm;
     if (nextTimeMin < timeMin) nextTimeMin += 24 * 60; // Handle overnight wrap
 
     if (nowMin >= timeMin && nowMin < nextTimeMin) {
-      period = i % 2 === 0 ? "1" : "2"; // Alternating pattern 1, 2, 1, 2, ...
+      if (totalPoints === 2) {
+        period = i % 2 === 0 ? "1" : "2"; // For totalPoints=2, pattern is 121212...
+      } else {
+        period = (i + 1).toString(); // Sequential period number
+      }
       break;
     }
   }
@@ -322,15 +313,8 @@ function getTimePeriod(totalPoints, timetable, currentTime) {
 // === 更新時間選項 ===
 function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   const markerTime = document.getElementById('markerTime');
-  if (!markerTime) {
-    console.error('markerTime element not found');
-    return;
-  }
   markerTime.innerHTML = '';
   const arr = timeTableByTotalPoints[totalPoints] || [];
-  if (!arr.length) {
-    console.warn('No timetable for totalPoints:', totalPoints);
-  }
   arr.forEach(timestr => {
     const opt = document.createElement('option');
     opt.value = timestr;
@@ -339,7 +323,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
   });
   if (totalPoints === 1 && arr.length === 1) {
     markerTime.value = arr[0];
-  } else if (selectedTime && arr.includes(selectedTime)) {
+  } else if (selectedTime) {
     markerTime.value = selectedTime;
   }
 
@@ -349,7 +333,7 @@ function updateTimeOptionsForEdit(totalPoints, selectedTime) {
     const timetable = arr[0]; // Use the first timetable for totalPoints
     timePeriodInput.value = getTimePeriod(totalPoints, timetable);
   } else {
-    if (timePeriodInput) timePeriodInput.value = "-";
+    timePeriodInput.value = "-";
   }
 }
 
@@ -392,11 +376,8 @@ function updateRemarkOptionsForEdit(remark) {
 
 // === 選擇最近的先前時間 ===
 function getNearestTimeString(marker) {
-  const times = (marker.data.time || "").split(/\s+/).filter(Boolean);
-  if (!times.length) {
-    console.warn('No valid times for marker:', marker.data);
-    return "";
-  }
+  let times = (marker.data.time || "").split(/\s+/).filter(Boolean);
+  if (!times.length) return "";
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -406,10 +387,7 @@ function getNearestTimeString(marker) {
 
   for (const t of times) {
     const m = t.match(/(\d{1,2}):(\d{2})/);
-    if (!m) {
-      console.warn('Invalid time format:', t);
-      continue;
-    }
+    if (!m) continue;
     const h = parseInt(m[1], 10);
     const mm = parseInt(m[2], 10);
     const total = h * 60 + mm;
@@ -520,9 +498,9 @@ class MapApp {
     // Create or update accuracy circle
     if (!this.accuracyCircle) {
       this.accuracyCircle = L.circle(latlng, {
-        radius: radius;
-        color: 'blue';
-        fillOpacity: 0.2;
+        radius: radius,
+        color: 'blue',
+        fillOpacity: 0.2,
         weight: 1
       }).addTo(this.map);
     } else {
@@ -783,7 +761,9 @@ class MapApp {
             marker.data.type = type;
             marker.data.remark = remark;
             marker.setIcon(this.getCustomIcon(type, 1, marker));
+
             this.autoAssignTimeForRelatedMarkers(marker);
+
             this.updateMarkerScales();
             this.saveMarkers();
             this.updateInfoPanel(marker.data);
@@ -877,6 +857,7 @@ class MapApp {
       if (data.totalPoints === 1) {
         data.time = timeTableByTotalPoints[1][0];
       }
+      // Remove name from loaded data to ensure consistency
       delete data.name;
       this.addMarker(L.latLng(data.lat, data.lng), data);
     });
@@ -910,6 +891,7 @@ class MapApp {
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) throw new Error();
+        // Remove name from imported data
         data.forEach(item => delete item.name);
         localStorage.setItem('mhnow_markers', JSON.stringify(data));
         alert('成功從 GitHub 匯入標記，重新載入地圖。');
